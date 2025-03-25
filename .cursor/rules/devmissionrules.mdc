@@ -1,0 +1,18 @@
+---
+description: task list and requirements
+globs: 
+alwaysApply: false
+---
+
+# Your rule content
+
+- You can @ files here
+- You can use markdown but dont have to
+@开发文档.md  作为唯一需求来源，仅在需求变更或新增功能时修改，需记录修改日期和内容。更新后，务必同步调整任务清单。  
+
+@任务清单.md  任务完成或进度更新时，需查看并勾选任务，保持进度透明。任务内容应随开发文档调整，并优先拆分复杂任务。  
+ 
+1. **需求变更** → 更新 @开发文档.md，并同步 @任务清单.md  
+2. **任务执行** → 按优先级推进，完成后勾选 @任务清单.md  
+3. **进度管理** → 定期检查，确保任务符合开发文档  
+
