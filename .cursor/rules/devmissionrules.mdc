@@ -3,11 +3,10 @@ description: task list and requirements
 globs: 
 alwaysApply: false
 ---
+你给我稳扎稳打，慢慢来，一步一步来，仔仔细细的做。
 
-# Your rule content
+你把前后端的内容给我分开，项目结构一定要清晰。
 
-- You can @ files here
-- You can use markdown but dont have to
 @开发文档.md  作为唯一需求来源，仅在需求变更或新增功能时修改，需记录修改日期和内容。更新后，务必同步调整任务清单。  
 
 @任务清单.md  任务完成或进度更新时，需查看并勾选任务，保持进度透明。任务内容应随开发文档调整，并优先拆分复杂任务。  
@@ -16,3 +15,4 @@ alwaysApply: false
 2. **任务执行** → 按优先级推进，完成后勾选 @任务清单.md  
 3. **进度管理** → 定期检查，确保任务符合开发文档  
 
+如果项目遇到需要选择技术或者是一些可以找到更好解决方案的时候，那你帮我做出决定。
