@@ -1,0 +1,3 @@
+@echo off
+echo 正在启动交互式艺术与哲学研究展示网站开发环境...
+powershell -ExecutionPolicy Bypass -File "%~dp0start-dev.ps1" 
