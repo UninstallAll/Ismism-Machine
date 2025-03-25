@@ -1,6 +1,6 @@
 const { chromium } = require('playwright');
 
-async function openBrowser(url = 'http://localhost:3000') {
+async function openBrowser(url = 'http://localhost:3001') {
   console.log(`正在打开浏览器并访问 ${url}...`);
   
   try {
@@ -32,7 +32,7 @@ async function openBrowser(url = 'http://localhost:3000') {
 // 如果直接运行脚本，则打开浏览器
 if (require.main === module) {
   // 获取命令行参数中的URL，如果没有则使用默认值
-  const url = process.argv[2] || 'http://localhost:3000';
+  const url = process.argv[2] || 'http://localhost:3001';
   openBrowser(url);
 }
 
