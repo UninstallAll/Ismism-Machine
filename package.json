@@ -1,0 +1,31 @@
+{
+  "name": "ismism-machine",
+  "version": "1.0.0",
+  "description": "这是一个基于Next.js, TypeScript和Tailwind CSS开发的交互式网站，旨在以创新和艺术化的方式展示艺术与哲学研究内容。",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "cd ismism-website && npm run dev",
+    "open-browser": "node open-browser.js",
+    "start": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && npm run open-browser\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UninstallAll/Ismism-Machine.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/UninstallAll/Ismism-Machine/issues"
+  },
+  "homepage": "https://github.com/UninstallAll/Ismism-Machine#readme",
+  "dependencies": {
+    "concurrently": "^9.1.2",
+    "playwright": "^1.51.1",
+    "wait-on": "^8.0.3"
+  }
+}
