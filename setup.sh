@@ -1,144 +1,144 @@
 #!/bin/bash
 
 echo "=================================================="
-echo "        主义主义机 - 安装与运行工具 (Unix/Linux)"
+echo "        Ismism Machine - Installation Tool (Unix/Linux)"
 echo "=================================================="
 echo
 
-# 检查Node.js安装
+# Check Node.js installation
 check_nodejs() {
   if ! command -v node &> /dev/null; then
-    echo "未找到Node.js"
+    echo "Node.js not found"
     return 1
   fi
 
-  echo "已检测到Node.js版本:"
+  echo "Node.js version detected:"
   node -v
   return 0
 }
 
-# 安装依赖并启动开发环境
+# Install dependencies and start development environment
 install_and_start() {
   echo
-  echo "正在安装依赖..."
+  echo "Installing dependencies..."
   npm install
 
   if [ $? -ne 0 ]; then
-    echo "依赖安装失败，请检查错误信息"
-    read -p "按Enter键继续..."
+    echo "Dependency installation failed. Please check error messages"
+    read -p "Press Enter to continue..."
     return 1
   fi
 
   echo
-  echo "启动开发服务器..."
+  echo "Starting development server..."
   npm run dev
   return 0
 }
 
-# 构建项目
+# Build project
 build_project() {
   echo
-  echo "正在构建项目..."
+  echo "Building project..."
   npm run build
 
   if [ $? -ne 0 ]; then
-    echo "构建失败，请检查错误信息"
-    read -p "按Enter键继续..."
+    echo "Build failed. Please check error messages"
+    read -p "Press Enter to continue..."
     return 1
   fi
 
   echo
-  echo "构建完成！构建文件位于 dist 目录"
-  read -p "按Enter键继续..."
+  echo "Build complete! Build files are in the dist directory"
+  read -p "Press Enter to continue..."
   return 0
 }
 
-# 预览构建结果
+# Preview build result
 preview_build() {
   echo
   if [ ! -d "dist" ]; then
-    echo "构建文件夹不存在，请先构建项目"
-    read -p "按Enter键继续..."
+    echo "Build directory does not exist. Please build the project first"
+    read -p "Press Enter to continue..."
     return 1
   fi
 
-  echo "启动预览服务器..."
+  echo "Starting preview server..."
   npm run preview
   return 0
 }
 
-# 使用Docker启动开发环境
+# Start development environment using Docker
 docker_dev() {
   echo
   if ! command -v docker &> /dev/null; then
-    echo "未找到Docker，请确保已安装Docker"
-    echo "可以从 https://www.docker.com/products/docker-desktop 下载安装"
-    read -p "按Enter键继续..."
+    echo "Docker not found. Please ensure Docker is installed"
+    echo "Download from https://www.docker.com/products/docker-desktop"
+    read -p "Press Enter to continue..."
     return 1
   fi
 
-  echo "使用Docker Compose启动开发环境..."
+  echo "Starting development environment using Docker Compose..."
   docker-compose up
   return 0
 }
 
-# 构建Docker镜像并运行
+# Build Docker image and run
 docker_build() {
   echo
   if ! command -v docker &> /dev/null; then
-    echo "未找到Docker，请确保已安装Docker"
-    echo "可以从 https://www.docker.com/products/docker-desktop 下载安装"
-    read -p "按Enter键继续..."
+    echo "Docker not found. Please ensure Docker is installed"
+    echo "Download from https://www.docker.com/products/docker-desktop"
+    read -p "Press Enter to continue..."
     return 1
   fi
 
-  echo "构建Docker镜像..."
+  echo "Building Docker image..."
   docker build -t ismism-machine:latest .
 
   if [ $? -ne 0 ]; then
-    echo "Docker镜像构建失败"
-    read -p "按Enter键继续..."
+    echo "Docker image build failed"
+    read -p "Press Enter to continue..."
     return 1
   fi
 
-  echo "运行Docker容器..."
+  echo "Running Docker container..."
   docker run -d -p 80:80 --name ismism-machine ismism-machine:latest
 
   if [ $? -ne 0 ]; then
-    echo "Docker容器启动失败"
-    read -p "按Enter键继续..."
+    echo "Docker container startup failed"
+    read -p "Press Enter to continue..."
     return 1
   fi
 
   echo
-  echo "Docker容器启动成功，请访问 http://localhost 查看应用"
-  read -p "按Enter键继续..."
+  echo "Docker container started successfully. Visit http://localhost to view the application"
+  read -p "Press Enter to continue..."
   return 0
 }
 
-# 检查Node.js安装
+# Check Node.js installation
 check_nodejs
 if [ $? -ne 0 ]; then
-  echo "未检测到Node.js，请先安装Node.js（推荐v18.12.1或更高版本）"
-  echo "可以从 https://nodejs.org 下载安装，或使用nvm管理Node.js版本"
-  read -p "按Enter键继续..."
+  echo "Node.js not detected. Please install Node.js (recommended v18.12.1 or higher)"
+  echo "Download from https://nodejs.org or use nvm to manage Node.js versions"
+  read -p "Press Enter to continue..."
   exit 1
 fi
 
-# 主菜单循环
+# Main menu loop
 while true; do
   clear
-  echo "请选择要执行的操作:"
+  echo "Please select an operation:"
   echo
-  echo "[1] 安装依赖并启动开发环境"
-  echo "[2] 构建项目"
-  echo "[3] 预览构建结果"
-  echo "[4] 使用Docker启动开发环境"
-  echo "[5] 构建Docker镜像并运行"
-  echo "[0] 退出"
+  echo "[1] Install dependencies and start development environment"
+  echo "[2] Build project"
+  echo "[3] Preview build result"
+  echo "[4] Start development environment using Docker"
+  echo "[5] Build Docker image and run"
+  echo "[0] Exit"
   echo
 
-  read -p "请输入数字选择操作: " choice
+  read -p "Enter number to select operation: " choice
 
   case $choice in
     1) install_and_start ;;
@@ -148,7 +148,7 @@ while true; do
     5) docker_build ;;
     0) exit 0 ;;
     *) 
-      echo "无效的选择，请重新输入"
+      echo "Invalid selection, please try again"
       sleep 2
       ;;
   esac

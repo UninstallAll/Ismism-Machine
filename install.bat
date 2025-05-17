@@ -2,33 +2,33 @@
 setlocal enabledelayedexpansion
 
 echo ==================================================
-echo            主义主义机 - 安装与运行工具
+echo            Ismism Machine - Installation Tool
 echo ==================================================
 echo.
 
-:: 检查Node.js安装
+:: Check Node.js installation
 call :check_nodejs
 if %errorlevel% neq 0 (
-    echo 未检测到Node.js，请先安装Node.js（推荐v18.12.1或更高版本）
-    echo 可以从 https://nodejs.org 下载安装，或使用nvm管理Node.js版本
+    echo Node.js not detected. Please install Node.js (recommended v18.12.1 or higher)
+    echo Download from https://nodejs.org or use nvm to manage Node.js versions
     pause
     exit /b 1
 )
 
-:: 显示菜单
+:: Display menu
 :menu
 cls
-echo 请选择要执行的操作:
+echo Please select an operation:
 echo.
-echo [1] 安装依赖并启动开发环境
-echo [2] 构建项目
-echo [3] 预览构建结果
-echo [4] 使用Docker启动开发环境
-echo [5] 构建Docker镜像并运行
-echo [0] 退出
+echo [1] Install dependencies and start development environment
+echo [2] Build project
+echo [3] Preview build result
+echo [4] Start development environment using Docker
+echo [5] Build Docker image and run
+echo [0] Exit
 echo.
 
-set /p choice="请输入数字选择操作: "
+set /p choice="Enter number to select operation: "
 
 if "%choice%"=="1" (
     call :install_and_start
@@ -43,120 +43,120 @@ if "%choice%"=="1" (
 ) else if "%choice%"=="0" (
     exit /b 0
 ) else (
-    echo 无效的选择，请重新输入
+    echo Invalid selection, please try again
     timeout /t 2 >nul
     goto menu
 )
 
 goto menu
 
-:: 检查Node.js是否安装
+:: Check if Node.js is installed
 :check_nodejs
 where node >nul 2>nul
 if %errorlevel% neq 0 (
-    echo 未找到Node.js
+    echo Node.js not found
     exit /b 1
 )
 
-echo 已检测到Node.js版本:
+echo Node.js version detected:
 node -v
 exit /b 0
 
-:: 安装依赖并启动开发环境
+:: Install dependencies and start development environment
 :install_and_start
 echo.
-echo 正在安装依赖...
+echo Installing dependencies...
 call npm install
 
 if %errorlevel% neq 0 (
-    echo 依赖安装失败，请检查错误信息
+    echo Dependency installation failed. Please check error messages
     pause
     exit /b 1
 )
 
 echo.
-echo 启动开发服务器...
+echo Starting development server...
 call npm run dev
 
 exit /b 0
 
-:: 构建项目
+:: Build project
 :build_project
 echo.
-echo 正在构建项目...
+echo Building project...
 call npm run build
 
 if %errorlevel% neq 0 (
-    echo 构建失败，请检查错误信息
+    echo Build failed. Please check error messages
     pause
     exit /b 1
 )
 
 echo.
-echo 构建完成！构建文件位于 dist 目录
+echo Build complete! Build files are in the dist directory
 pause
 exit /b 0
 
-:: 预览构建结果
+:: Preview build result
 :preview_build
 echo.
 if not exist "dist" (
-    echo 构建文件夹不存在，请先构建项目
+    echo Build directory does not exist. Please build the project first
     pause
     exit /b 1
 )
 
-echo 启动预览服务器...
+echo Starting preview server...
 call npm run preview
 
 exit /b 0
 
-:: 使用Docker启动开发环境
+:: Start development environment using Docker
 :docker_dev
 echo.
 where docker >nul 2>nul
 if %errorlevel% neq 0 (
-    echo 未找到Docker，请确保已安装Docker
-    echo 可以从 https://www.docker.com/products/docker-desktop 下载安装
+    echo Docker not found. Please ensure Docker is installed
+    echo Download from https://www.docker.com/products/docker-desktop
     pause
     exit /b 1
 )
 
-echo 使用Docker Compose启动开发环境...
+echo Starting development environment using Docker Compose...
 docker-compose up
 
 exit /b 0
 
-:: 构建Docker镜像并运行
+:: Build Docker image and run
 :docker_build
 echo.
 where docker >nul 2>nul
 if %errorlevel% neq 0 (
-    echo 未找到Docker，请确保已安装Docker
-    echo 可以从 https://www.docker.com/products/docker-desktop 下载安装
+    echo Docker not found. Please ensure Docker is installed
+    echo Download from https://www.docker.com/products/docker-desktop
     pause
     exit /b 1
 )
 
-echo 构建Docker镜像...
+echo Building Docker image...
 docker build -t ismism-machine:latest .
 
 if %errorlevel% neq 0 (
-    echo Docker镜像构建失败
+    echo Docker image build failed
     pause
     exit /b 1
 )
 
-echo 运行Docker容器...
+echo Running Docker container...
 docker run -d -p 80:80 --name ismism-machine ismism-machine:latest
 
 if %errorlevel% neq 0 (
-    echo Docker容器启动失败
+    echo Docker container startup failed
     pause
     exit /b 1
 )
 
 echo.
-echo Docker容器启动成功，请访问 http://localhost 查看应用
+echo Docker container started successfully. Visit http://localhost to view the application
 pause
 exit /b 0 
