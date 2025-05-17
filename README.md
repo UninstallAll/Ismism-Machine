@@ -1,116 +1,112 @@
 # 主义主义机 (Ismism Machine)
 
-一个基于React、TypeScript和Vite的现代Web应用程序。
+主义主义机是一个交互式的艺术流派可视化平台，用于展示和探索各种艺术主义(ism)之间的关系。项目使用React、Vite和TailwindCSS构建，支持交互式时间线、多层级分类系统和AI辅助艺术创作功能。
 
-## 环境要求
+## 项目特性
 
-- Node.js 14.x 或更高版本
-- npm 6.x 或更高版本
+- 📊 **交互式时间线**：可视化展示艺术流派的发展历程
+- 🔄 **多层级分类**：通过不同的属性和关系对艺术流派进行分类
+- 🏷️ **关键词标签**：使用标签系统快速筛选艺术流派
+- 🌐 **响应式设计**：适配桌面和移动设备的界面
+- 🎨 **AI生图支持**：基于艺术风格的AI图像生成功能
+
+## 技术栈
+
+- **前端框架**：React 18 + TypeScript
+- **构建工具**：Vite
+- **样式方案**：TailwindCSS + CSS Modules
+- **状态管理**：Zustand
+- **部署方案**：Docker / Nginx
 
 ## 快速开始
 
-### Windows用户
+### 方法一：使用Node.js
 
-双击`install.bat`文件安装依赖，然后双击`start-dev.bat`启动开发服务器。
-
-或在命令行中执行：
+#### 前提条件
+- Node.js v18.12.1或更高版本
+- npm v8.0.0或更高版本
 
 ```bash
-# 安装依赖
-npm install
+# 克隆仓库
+git clone https://github.com/yourusername/ismism-machine.git
+cd ismism-machine
 
-# 启动开发服务器
-npm run dev
+# Windows系统
+.\install.bat
+
+# Mac/Linux系统
+chmod +x setup.sh
+./setup.sh
 ```
 
-### 其他操作系统用户
+### 方法二：使用Docker
+
+#### 前提条件
+- 安装Docker和Docker Compose
 
 ```bash
-# 给setup.js添加执行权限
-chmod +x setup.js
+# 开发环境
+docker-compose up
 
-# 运行安装脚本
-./setup.js
-
-# 或者直接使用npm命令
-npm install
-npm run dev
+# 生产环境
+docker build -t ismism-machine:latest .
+docker run -d -p 80:80 --name ismism-machine ismism-machine:latest
 ```
 
 ## 项目结构
 
 ```
-ismism-machine/
+Ismism-Machine/
 ├── public/             # 静态资源
-├── src/                # 源代码
-│   ├── assets/         # 项目资源（图片、样式等）
-│   ├── components/     # React组件
-│   └── ...             # 其他源代码文件
-├── package.json        # 项目依赖和脚本
-├── tsconfig.json       # TypeScript配置
-├── vite.config.ts      # Vite配置
+├── src/
+│   ├── components/     # 组件目录
+│   │   ├── Navbar.tsx  # 导航栏组件
+│   │   ├── Sidebar.tsx # 侧边栏组件
+│   │   └── ...         # 其他组件
+│   ├── App.tsx         # 主应用组件
+│   ├── main.tsx        # 入口文件
+│   └── index.css       # 全局样式
+├── Dockerfile          # Docker构建文件
+├── docker-compose.yml  # Docker Compose配置
+├── setup.sh            # Unix/Linux安装脚本
+├── install.bat         # Windows安装脚本
 └── ...                 # 其他配置文件
 ```
 
-## 可用命令
+## 开发指南
 
-- `npm run dev` - 启动开发服务器
-- `npm run build` - 构建生产版本
-- `npm run lint` - 运行ESLint检查代码
-- `npm run preview` - 预览生产构建
+### 本地开发
 
-## 技术栈
+启动本地开发服务器:
 
-- React 18
-- TypeScript
-- Vite
-- Tailwind CSS
-- Zustand (状态管理)
+```bash
+npm run dev
+```
 
-## 项目概述
+### 构建项目
 
-"主义主义机"是一个用于探索、学习和比较不同艺术主义（如印象派、立体主义、超现实主义等）的交互式平台。该项目旨在以直观的方式展示艺术史，并提供艺术作品、艺术家和艺术流派之间复杂联系的可视化。
+```bash
+npm run build
+```
 
-## 核心功能
+### 预览构建结果
 
-- **交互式时间线**：按时间顺序展示艺术主义的发展和演变
-- **多层级分类系统**：按时期、地区、影响关系等对艺术主义进行分类
-- **关联视图**：展示不同艺术主义之间的影响和关联
-- **AI辅助创作工具**：基于特定艺术风格的创作辅助工具
+```bash
+npm run preview
+```
 
-## 设计理念
+## 部署
 
-项目的核心设计理念是将艺术史中复杂的关系转化为直观的视觉体验。通过多维度的数据可视化和交互设计，让用户能够更容易理解不同艺术主义之间的联系、影响和演变过程。
+详细的部署指南请参考 [deployment.md](deployment.md) 文档。
 
-## 项目目标
+## 贡献指南
 
-1. 建立一个全面的艺术主义数据库，包含详细的历史背景、代表作品和艺术家
-2. 提供用户友好的学习工具，让艺术史研究和学习变得更加直观和有趣
-3. 通过AI技术探索新的艺术可能性，推动艺术创新
-
-## 项目UI设计
-
-本项目已完成基础UI结构设计，包含以下主要组件：
-
-1. **Navbar (导航栏)** - 顶部导航栏，包含项目标题和主要功能区导航
-2. **Sidebar (侧边栏)** - 左侧分类侧边栏，包含艺术主义分类和时间筛选
-3. **MainContent (主内容区)** - 根据导航切换显示不同内容:
-   - GalleryGrid (画廊网格) - 以网格形式展示艺术作品
-   - TimelineView (时间线视图) - 展示艺术主义发展历程
-   - StatsDisplay (数据统计) - 展示艺术数据可视化
-   - AICreateSection (AI创作) - AI辅助创作实验室
-
-UI设计遵循现代简约风格，使用Tailwind CSS实现响应式设计。
-
-## 其他文档
-
-- [技术文档.md](./技术文档.md) - 详细的技术实现文档
-- [工作计划.md](./工作计划.md) - 项目开发计划和进度追踪
-
-## 协作与贡献
-
-我们欢迎各种形式的贡献，包括但不限于：添加新的艺术主义数据、改进UI设计、提升性能、修复错误等。
+1. Fork项目
+2. 创建特性分支 (`git checkout -b feature/amazing-feature`)
+3. 提交更改 (`git commit -m 'Add some amazing feature'`)
+4. 推送到分支 (`git push origin feature/amazing-feature`)
+5. 创建Pull Request
 
 ## 许可证
 
-本项目采用 MIT 许可证。 
+[MIT License](LICENSE) 
