@@ -1,7 +1,37 @@
 import { create } from 'zustand';
 import { fetchTimelineNodes, updateNode, createNode, deleteNode } from '../api/timelineApi';
 
-export const useTimelineStore = create((set, get) => ({
+interface TimelineNode {
+  id: string;
+  title: string;
+  year: number;
+  description: string;
+  imageUrl?: string;
+  artists: string[];
+  styleMovement: string;
+  influences: string[];
+  influencedBy: string[];
+  position?: { x: number; y: number };
+}
+
+interface Connection {
+  source: string;
+  target: string;
+  type: string;
+}
+
+interface TimelineState {
+  nodes: TimelineNode[];
+  connections: Connection[];
+  loading: boolean;
+  error: string | null;
+  fetchNodes: () => Promise<void>;
+  updateNodePosition: (id: string, position: { x: number; y: number }) => void;
+  addNode: (nodeData: Partial<TimelineNode>) => Promise<void>;
+  removeNode: (id: string) => Promise<void>;
+}
+
+export const useTimelineStore = create<TimelineState>((set) => ({
   nodes: [],
   connections: [],
   loading: false,
@@ -14,7 +44,7 @@ export const useTimelineStore = create((set, get) => ({
       const nodes = await fetchTimelineNodes();
       set({ nodes, loading: false });
     } catch (error) {
-      set({ error: error.message, loading: false });
+      set({ error: error instanceof Error ? error.message : 'Unknown error', loading: false });
     }
   },
   
@@ -39,7 +69,7 @@ export const useTimelineStore = create((set, get) => ({
         loading: false
       }));
     } catch (error) {
-      set({ error: error.message, loading: false });
+      set({ error: error instanceof Error ? error.message : 'Unknown error', loading: false });
     }
   },
 
@@ -53,7 +83,7 @@ export const useTimelineStore = create((set, get) => ({
         loading: false
       }));
     } catch (error) {
-      set({ error: error.message, loading: false });
+      set({ error: error instanceof Error ? error.message : 'Unknown error', loading: false });
     }
   }
 })); 
