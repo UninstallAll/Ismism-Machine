@@ -1,5 +1,3 @@
-import React, { useState } from 'react';
-
 interface TimelineItem {
   id: string;
   title: string;

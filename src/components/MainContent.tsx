@@ -82,7 +82,11 @@ const MainContent = ({ artworks, timelineItems, activeView }: MainContentProps) 
       <div className="p-4">
         {activeView === 'gallery' && <GalleryGrid artworks={artworks} onSelect={setSelectedArtwork} />}
         {activeView === 'timeline' && <TimelineView items={timelineItems} />}
-        {activeView === 'stats' && <StatsDisplay />}
+        {activeView === 'stats' && <StatsDisplay 
+          topArtists={[]} 
+          topStyles={[]} 
+          decadeData={[]} 
+        />}
         {activeView === 'ai' && <AICreateSection />}
       </div>
       

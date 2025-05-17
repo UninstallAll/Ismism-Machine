@@ -52,7 +52,7 @@ const StatCard = ({ title, value, description, icon }: StatCardProps) => (
   </div>
 );
 
-const StatsDisplay: React.FC<StatsDisplayProps> = ({ topArtists, topStyles, decadeData }) => {
+const StatsDisplay: React.FC<StatsDisplayProps> = () => {
   // 示例数据
   const movementCountByPeriod = [
     { label: '1800-1850', value: 8, color: '#3b82f6' },

@@ -1,5 +1,3 @@
-import React, { useState } from 'react';
-
 interface Artwork {
   id: string;
   title: string;
