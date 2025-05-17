@@ -32,3 +32,8 @@ Postman / Insomnia - API测试
 单元测试与功能测试
 数据完整性与API性能测试
 交互效果与界面兼容性测试
+
+选择 RESTful API + Axios，因为：
+开发效率高：与现有 Node.js + Express + React 技术栈完美契合。
+足够灵活：通过合理设计端点可覆盖所有需求。
+未来可扩展：如需 GraphQL，可逐步迁移（如将 /graphql 作为附加路由）。
