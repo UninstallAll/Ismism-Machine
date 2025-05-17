@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { fetchTimelineNodes, updateNode, createNode, deleteNode } from '../api/timelineApi';
+import { fetchTimelineNodes, updateNode, createNode, deleteNode } from './api/timelineApi';
 
 interface TimelineNode {
   id: string;
