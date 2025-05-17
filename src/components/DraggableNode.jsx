@@ -1,5 +1,5 @@
 import React from 'react';
-import { useTimelineStore } from '../store/timelineStore';
+import { useTimelineStore } from '../timelineStore';
 
 // 这是一个简单的可拖拽节点组件
 // 在实际项目中，可能需要替换为使用Framer Motion或React DnD等库实现更复杂的拖拽功能

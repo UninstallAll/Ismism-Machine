@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useTimelineStore } from '../store/timelineStore';
+import { useTimelineStore } from '../timelineStore';
 import DraggableNode from './DraggableNode';
 
 const Timeline = () => {
