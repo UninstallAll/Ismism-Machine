@@ -1,6 +1,71 @@
 # 主义主义机 (Ismism Machine)
 
-艺术主义的集合体——一个展示和探索不同艺术主义、流派和风格的数字平台。
+一个基于React、TypeScript和Vite的现代Web应用程序。
+
+## 环境要求
+
+- Node.js 14.x 或更高版本
+- npm 6.x 或更高版本
+
+## 快速开始
+
+### Windows用户
+
+双击`install.bat`文件安装依赖，然后双击`start-dev.bat`启动开发服务器。
+
+或在命令行中执行：
+
+```bash
+# 安装依赖
+npm install
+
+# 启动开发服务器
+npm run dev
+```
+
+### 其他操作系统用户
+
+```bash
+# 给setup.js添加执行权限
+chmod +x setup.js
+
+# 运行安装脚本
+./setup.js
+
+# 或者直接使用npm命令
+npm install
+npm run dev
+```
+
+## 项目结构
+
+```
+ismism-machine/
+├── public/             # 静态资源
+├── src/                # 源代码
+│   ├── assets/         # 项目资源（图片、样式等）
+│   ├── components/     # React组件
+│   └── ...             # 其他源代码文件
+├── package.json        # 项目依赖和脚本
+├── tsconfig.json       # TypeScript配置
+├── vite.config.ts      # Vite配置
+└── ...                 # 其他配置文件
+```
+
+## 可用命令
+
+- `npm run dev` - 启动开发服务器
+- `npm run build` - 构建生产版本
+- `npm run lint` - 运行ESLint检查代码
+- `npm run preview` - 预览生产构建
+
+## 技术栈
+
+- React 18
+- TypeScript
+- Vite
+- Tailwind CSS
+- Zustand (状态管理)
 
 ## 项目概述
 
@@ -12,16 +77,6 @@
 - **多层级分类系统**：按时期、地区、影响关系等对艺术主义进行分类
 - **关联视图**：展示不同艺术主义之间的影响和关联
 - **AI辅助创作工具**：基于特定艺术风格的创作辅助工具
-
-## 技术栈
-
-### 前端技术
-- **框架**：React + Vite + TypeScript
-- **样式**：Tailwind CSS
-- **状态管理**：Zustand (计划中)
-- **动画**：Framer Motion (计划中)
-- **数据可视化**：D3.js (计划中)
-- **响应式设计**：Flexbox + CSS Grid + 媒体查询
 
 ## 设计理念
 
@@ -46,65 +101,6 @@
    - AICreateSection (AI创作) - AI辅助创作实验室
 
 UI设计遵循现代简约风格，使用Tailwind CSS实现响应式设计。
-
-## 安装和运行
-
-### 前提条件
-
-确保你的系统已安装：
-
-- Node.js (推荐 v14.x 或更高版本)
-- npm 或 yarn
-
-### 快速启动（推荐）
-
-**Windows用户**:
-1. 双击`setup.bat`文件
-2. 脚本将自动检查Node.js环境，安装依赖并启动项目
-
-**Mac/Linux用户**:
-1. 在终端中运行 `chmod +x setup.sh` 使脚本可执行
-2. 运行 `./setup.sh`
-
-### 手动安装步骤
-
-1. 克隆仓库:
-```bash
-git clone https://github.com/YourUsername/Ismism-Machine.git
-cd Ismism-Machine
-```
-
-2. 安装依赖:
-```bash
-npm install
-# 或使用 yarn
-yarn
-```
-
-3. 启动开发服务器:
-```bash
-npm run dev
-# 或使用 yarn
-yarn dev
-```
-
-4. 在浏览器中访问: `http://localhost:5173`
-
-## 项目结构
-```
-src/
-├── components/       # UI组件
-│   ├── AICreateSection.tsx    # AI创作组件
-│   ├── GalleryGrid.tsx        # 画廊网格组件
-│   ├── MainContent.tsx        # 主内容区组件
-│   ├── Navbar.tsx             # 导航栏组件
-│   ├── Sidebar.tsx            # 侧边栏组件
-│   ├── StatsDisplay.tsx       # 数据统计组件
-│   └── TimelineView.tsx       # 时间线视图组件
-├── App.tsx           # 应用主组件
-├── index.css         # 全局样式
-└── main.tsx          # 应用入口
-```
 
 ## 其他文档
 

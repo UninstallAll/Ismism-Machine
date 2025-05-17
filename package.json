@@ -2,17 +2,12 @@
   "name": "ismism-machine",
   "private": true,
   "version": "0.1.0",
-  "description": "艺术主义的集合体——一个展示和探索不同艺术主义、流派和风格的数字平台",
   "type": "module",
-  "engines": {
-    "node": ">=14.0.0",
-    "npm": ">=6.0.0"
-  },
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview"
   },
   "dependencies": {
     "react": "^18.2.0",
