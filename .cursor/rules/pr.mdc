@@ -1,0 +1,34 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+[工作计划.md](mdc:工作计划.md) 在每一次关键操作的时候阅读这个文件，然后在操作完之后进行标记已完成内容。
+
+技术栈与工具选择
+前端技术栈
+React + Tailwind CSS - 组件化开发与响应式设计
+React Flow / D3.js - 时间线与关系图展示
+Framer Motion - 动画与交互效果
+Three.js / Babylon.js - 三维场景与模型展示
+后端技术栈
+Node.js + Express.js - RESTful API与服务器逻辑
+MongoDB - 非关系型数据库，存储时间节点与艺术家分类数据
+Mongoose - 数据库模型与数据校验
+AI生图工具
+Stable Diffusion / Midjourney - 图像生成
+ComfyUI / TouchDesigner - 图像后期与效果优化
+部署与测试
+Vercel / Netlify - 前端部署
+Railway / DigitalOcean / AWS EC2 - 后端与数据库部署
+GitHub / GitLab - 版本控制与协作
+Postman / Insomnia - API测试
+代码规范与测试流程
+代码规范
+统一命名规范
+注释要求与代码格式
+文件结构与模块划分
+测试流程
+单元测试与功能测试
+数据完整性与API性能测试
+交互效果与界面兼容性测试
