@@ -1,18 +1,34 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTimelineStore } from '../store/timelineStore';
 
-// 这是一个简单的可拖拽节点组件
-// 在实际项目中，可能需要替换为使用Framer Motion或React DnD等库实现更复杂的拖拽功能
-const DraggableNode = ({ node }) => {
+interface Position {
+  x: number;
+  y: number;
+}
+
+interface NodeProps {
+  id: string;
+  title: string;
+  year: number;
+  description: string;
+  position?: Position;
+  tags?: string[];
+}
+
+interface DraggableNodeProps {
+  node: NodeProps;
+}
+
+const DraggableNode: React.FC<DraggableNodeProps> = ({ node }) => {
   const updateNodePosition = useTimelineStore(state => state.updateNodePosition);
-  const [isDragging, setIsDragging] = React.useState(false);
-  const [position, setPosition] = React.useState(node.position || { x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [position, setPosition] = useState<Position>(node.position || { x: 0, y: 0 });
   
   // 拖拽相关状态
-  const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 });
+  const [dragStart, setDragStart] = useState<Position>({ x: 0, y: 0 });
   
   // 开始拖拽
-  const handleMouseDown = (e) => {
+  const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
     setDragStart({
       x: e.clientX - position.x,
@@ -25,7 +41,7 @@ const DraggableNode = ({ node }) => {
   };
   
   // 拖拽中
-  const handleMouseMove = (e) => {
+  const handleMouseMove = (e: MouseEvent) => {
     if (!isDragging) return;
     
     const newPosition = {
@@ -48,7 +64,7 @@ const DraggableNode = ({ node }) => {
     document.removeEventListener('mouseup', handleMouseUp);
   };
   
-  React.useEffect(() => {
+  useEffect(() => {
     // 组件卸载时确保移除事件监听
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
