@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import React, { ReactNode } from 'react';
 
 interface NavbarProps {
   title: string;
@@ -6,7 +6,7 @@ interface NavbarProps {
   onNavChange: (view: 'gallery' | 'timeline' | 'stats' | 'ai') => void;
 }
 
-const Navbar = ({ title, activeView, onNavChange }: NavbarProps) => {
+const Navbar: React.FC<NavbarProps> = ({ title, activeView, onNavChange }) => {
   return (
     <header className="fixed top-0 left-0 right-0 bg-white shadow-md z-50">
       <div className="flex justify-between items-center h-16 px-6">

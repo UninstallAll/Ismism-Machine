@@ -18,17 +18,10 @@
 ### 前端技术
 - **框架**：React + Vite + TypeScript
 - **样式**：Tailwind CSS
-- **可视化**：D3.js、Three.js
-- **动画**：Framer Motion、GSAP
-- **性能优化**：React.memo、动态导入、虚拟滚动
-- **测试**：Jest、React Testing Library
-
-### 后端技术
-- **服务器**：Node.js + Express
-- **数据库**：MongoDB
-- **API**：GraphQL
-- **图像处理**：Sharp
-- **搜索引擎**：Elasticsearch
+- **状态管理**：Zustand (计划中)
+- **动画**：Framer Motion (计划中)
+- **数据可视化**：D3.js (计划中)
+- **响应式设计**：Flexbox + CSS Grid + 媒体查询
 
 ## 设计理念
 
@@ -63,11 +56,21 @@ UI设计遵循现代简约风格，使用Tailwind CSS实现响应式设计。
 - Node.js (推荐 v14.x 或更高版本)
 - npm 或 yarn
 
-### 安装步骤
+### 快速启动（推荐）
+
+**Windows用户**:
+1. 双击`setup.bat`文件
+2. 脚本将自动检查Node.js环境，安装依赖并启动项目
+
+**Mac/Linux用户**:
+1. 在终端中运行 `chmod +x setup.sh` 使脚本可执行
+2. 运行 `./setup.sh`
+
+### 手动安装步骤
 
 1. 克隆仓库:
 ```bash
-git clone https://github.com/UninstallAll/Ismism-Machine.git
+git clone https://github.com/YourUsername/Ismism-Machine.git
 cd Ismism-Machine
 ```
 
@@ -91,13 +94,22 @@ yarn dev
 ```
 src/
 ├── components/       # UI组件
-├── pages/            # 页面组件
-├── assets/           # 静态资源
-├── styles/           # 样式文件
-├── data/             # 数据文件
-├── hooks/            # 自定义Hooks
-└── utils/            # 工具函数
+│   ├── AICreateSection.tsx    # AI创作组件
+│   ├── GalleryGrid.tsx        # 画廊网格组件
+│   ├── MainContent.tsx        # 主内容区组件
+│   ├── Navbar.tsx             # 导航栏组件
+│   ├── Sidebar.tsx            # 侧边栏组件
+│   ├── StatsDisplay.tsx       # 数据统计组件
+│   └── TimelineView.tsx       # 时间线视图组件
+├── App.tsx           # 应用主组件
+├── index.css         # 全局样式
+└── main.tsx          # 应用入口
 ```
+
+## 其他文档
+
+- [技术文档.md](./技术文档.md) - 详细的技术实现文档
+- [工作计划.md](./工作计划.md) - 项目开发计划和进度追踪
 
 ## 协作与贡献
 
