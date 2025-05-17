@@ -1,22 +1,29 @@
-import api from './axios';
+import axios from 'axios';
 
-// 获取所有时间线节点
+const API_URL = '/api/timeline';
+
+/**
+ * 获取所有时间线节点
+ * @returns {Promise<Array>} 返回节点数组
+ */
 export const fetchTimelineNodes = async () => {
   try {
-    console.log('正在请求时间线数据...');
-    const response = await api.get('/timeline');
-    console.log('获取数据成功:', response.data);
+    const response = await axios.get(API_URL);
     return response.data;
   } catch (error) {
-    console.error('获取时间线数据失败:', error);
+    console.error('获取时间线节点失败:', error);
     throw error;
   }
 };
 
-// 获取单个节点
+/**
+ * 获取单个节点
+ * @param {string} id 节点ID
+ * @returns {Promise<Object>} 返回节点数据
+ */
 export const fetchNodeById = async (id) => {
   try {
-    const response = await api.get(`/timeline/${id}`);
+    const response = await axios.get(`${API_URL}/${id}`);
     return response.data;
   } catch (error) {
     console.error(`获取节点 ${id} 失败:`, error);
@@ -24,10 +31,14 @@ export const fetchNodeById = async (id) => {
   }
 };
 
-// 创建新节点
+/**
+ * 创建新节点
+ * @param {Object} nodeData 节点数据
+ * @returns {Promise<Object>} 返回创建的节点
+ */
 export const createNode = async (nodeData) => {
   try {
-    const response = await api.post('/timeline', nodeData);
+    const response = await axios.post(API_URL, nodeData);
     return response.data;
   } catch (error) {
     console.error('创建节点失败:', error);
@@ -35,10 +46,15 @@ export const createNode = async (nodeData) => {
   }
 };
 
-// 更新节点
-export const updateNode = async (id, nodeData) => {
+/**
+ * 更新节点信息
+ * @param {string} id 节点ID
+ * @param {Object} data 要更新的数据
+ * @returns {Promise<Object>} 返回更新后的节点
+ */
+export const updateNode = async (id, data) => {
   try {
-    const response = await api.put(`/timeline/${id}`, nodeData);
+    const response = await axios.put(`${API_URL}/${id}`, data);
     return response.data;
   } catch (error) {
     console.error(`更新节点 ${id} 失败:`, error);
@@ -46,11 +62,14 @@ export const updateNode = async (id, nodeData) => {
   }
 };
 
-// 删除节点
+/**
+ * 删除节点
+ * @param {string} id 节点ID
+ * @returns {Promise<void>}
+ */
 export const deleteNode = async (id) => {
   try {
-    const response = await api.delete(`/timeline/${id}`);
-    return response.data;
+    await axios.delete(`${API_URL}/${id}`);
   } catch (error) {
     console.error(`删除节点 ${id} 失败:`, error);
     throw error;

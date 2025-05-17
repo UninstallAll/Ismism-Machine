@@ -1,37 +1,37 @@
 import { create } from 'zustand';
 import { fetchTimelineNodes, updateNode, createNode, deleteNode } from './api/timelineApi';
 
-// 使用JSDoc替代TypeScript接口
-/**
- * @typedef {Object} TimelineNode
- * @property {string} id
- * @property {string} title
- * @property {number} year
- * @property {string} description
- * @property {string} [imageUrl]
- * @property {string[]} artists
- * @property {string} styleMovement
- * @property {string[]} influences
- * @property {string[]} influencedBy
- * @property {{x: number, y: number}} [position]
- */
+interface TimelineNode {
+  id: string;
+  title: string;
+  year: number;
+  description: string;
+  imageUrl?: string;
+  artists: string[];
+  styleMovement: string;
+  influences: string[];
+  influencedBy: string[];
+  position?: { x: number; y: number };
+}
 
-/**
- * @typedef {Object} Connection
- * @property {string} source
- * @property {string} target
- * @property {string} type
- */
+interface Connection {
+  source: string;
+  target: string;
+  type: string;
+}
 
-/**
- * @typedef {Object} TimelineState
- * @property {TimelineNode[]} nodes
- * @property {Connection[]} connections
- * @property {boolean} loading
- * @property {string|null} error
- */
+interface TimelineState {
+  nodes: TimelineNode[];
+  connections: Connection[];
+  loading: boolean;
+  error: string | null;
+  fetchNodes: () => Promise<void>;
+  updateNodePosition: (id: string, position: { x: number; y: number }) => void;
+  addNode: (nodeData: Partial<TimelineNode>) => Promise<void>;
+  removeNode: (id: string) => Promise<void>;
+}
 
-export const useTimelineStore = create((set) => ({
+export const useTimelineStore = create<TimelineState>((set) => ({
   nodes: [],
   connections: [],
   loading: false,

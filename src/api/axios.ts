@@ -1,41 +1,33 @@
-import axios from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
-console.log('创建Axios实例，baseURL:', 'http://localhost:3000/api');
-
-const api = axios.create({
-  baseURL: 'http://localhost:3000/api',
+// 创建axios实例
+const api: AxiosInstance = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api',
   headers: {
     'Content-Type': 'application/json'
   },
-  timeout: 10000, // 10秒超时
+  timeout: 10000
 });
 
-// 添加请求拦截器 - 用于调试
+// 请求拦截器
 api.interceptors.request.use(
-  (config) => {
-    console.log(`发送请求: ${config.method.toUpperCase()} ${config.url}`);
+  (config: AxiosRequestConfig): AxiosRequestConfig => {
+    // 可以在这里设置认证令牌等
     return config;
   },
-  (error) => {
-    console.error('请求错误:', error);
+  (error: any) => {
     return Promise.reject(error);
   }
 );
 
-// 添加响应拦截器 - 用于调试
+// 响应拦截器
 api.interceptors.response.use(
-  (response) => {
-    console.log(`接收响应: ${response.status} ${response.config.url}`);
+  (response: AxiosResponse): AxiosResponse => {
     return response;
   },
-  (error) => {
-    console.error('响应错误:', error.message);
-    if (error.response) {
-      console.error('响应状态:', error.response.status);
-      console.error('响应数据:', error.response.data);
-    } else if (error.request) {
-      console.error('无响应，请求详情:', error.request);
-    }
+  (error: any) => {
+    // 统一错误处理
+    console.error('API请求错误:', error);
     return Promise.reject(error);
   }
 );
