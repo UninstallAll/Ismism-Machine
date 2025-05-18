@@ -1,3 +1,6 @@
+import { Grid, Card, CardMedia, CardContent, Typography, Box, Button, CardActionArea } from '@mui/material';
+import { useState } from 'react';
+
 interface Artwork {
   id: string;
   title: string;
@@ -21,52 +24,115 @@ const GalleryGrid = ({ artworks, onSelect }: GalleryGridProps) => {
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+    <Grid container spacing={3}>
       {artworks.map(artwork => (
-        <div 
-          key={artwork.id} 
-          className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow"
-          onClick={() => onSelect(artwork)}
-        >
-          <div className="h-48 overflow-hidden relative">
-            <img 
-              src={artwork.imageUrl} 
-              alt={artwork.title} 
-              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-              onError={handleImageError}
-              loading="lazy"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300">
-              <div className="absolute bottom-0 left-0 right-0 p-3">
-                <h4 className="text-white font-bold truncate">{artwork.title}</h4>
-                <p className="text-white/80 text-sm">{artwork.artist}</p>
-              </div>
-            </div>
-          </div>
-          <div className="p-4">
-            <h3 className="text-lg font-semibold mb-1 truncate">{artwork.title}</h3>
-            <div className="flex justify-between mb-2">
-              <p className="text-sm text-gray-600">{artwork.artist}</p>
-              <p className="text-sm text-gray-500">{artwork.year}</p>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-                {artwork.style}
-              </span>
-              <button 
-                className="text-sm text-blue-600 hover:text-blue-800"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelect(artwork);
-                }}
-              >
-                查看详情
-              </button>
-            </div>
-          </div>
-        </div>
+        <Grid item xs={12} sm={6} md={4} key={artwork.id}>
+          <Card 
+            sx={{ 
+              height: '100%', 
+              display: 'flex', 
+              flexDirection: 'column',
+              borderRadius: 0,
+              border: '1px solid #000',
+              boxShadow: 'none',
+              transition: 'transform 0.2s',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+              }
+            }}
+          >
+            <CardActionArea onClick={() => onSelect(artwork)}>
+              <Box sx={{ position: 'relative', height: 200, overflow: 'hidden' }}>
+                <CardMedia
+                  component="img"
+                  height="200"
+                  image={artwork.imageUrl}
+                  alt={artwork.title}
+                  onError={handleImageError}
+                  sx={{
+                    objectFit: 'cover',
+                    transition: 'transform 0.3s',
+                    '&:hover': {
+                      transform: 'scale(1.05)',
+                    }
+                  }}
+                />
+                <Box 
+                  sx={{
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
+                    p: 1.5,
+                    opacity: 0,
+                    transition: 'opacity 0.3s',
+                    '.MuiCardActionArea-root:hover &': {
+                      opacity: 1
+                    }
+                  }}
+                >
+                  <Typography variant="subtitle1" sx={{ color: 'white', fontWeight: 'bold' }}>
+                    {artwork.title}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+                    {artwork.artist}
+                  </Typography>
+                </Box>
+              </Box>
+            </CardActionArea>
+            
+            <CardContent sx={{ flexGrow: 1, p: 2 }}>
+              <Typography variant="h6" sx={{ mb: 0.5, fontWeight: 600 }}>
+                {artwork.title}
+              </Typography>
+              
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5 }}>
+                <Typography variant="body2" color="text.secondary">
+                  {artwork.artist}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {artwork.year}
+                </Typography>
+              </Box>
+              
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box 
+                  component="span" 
+                  sx={{ 
+                    bgcolor: '#FF3B30', 
+                    color: 'white', 
+                    fontSize: '0.75rem',
+                    px: 1,
+                    py: 0.5,
+                    fontWeight: 500
+                  }}
+                >
+                  {artwork.style}
+                </Box>
+                <Button 
+                  size="small" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelect(artwork);
+                  }}
+                  sx={{ 
+                    color: '#000',
+                    fontWeight: 500,
+                    '&:hover': {
+                      bgcolor: 'transparent',
+                      textDecoration: 'underline'
+                    }
+                  }}
+                >
+                  查看详情
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
       ))}
-    </div>
+    </Grid>
   );
 }
 

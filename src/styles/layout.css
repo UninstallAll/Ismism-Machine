@@ -37,7 +37,14 @@
   gap: 1.5rem;
 }
 
-/* 模态框动画 */
+/* 瑞士国际主义风格 - MUI覆盖样式 */
+body {
+  margin: 0;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* 确保MUI组件正常工作，移除可能冲突的样式 */
+/* 保留有用的动画 */
 .modal-enter {
   opacity: 0;
 }
