@@ -1,0 +1,417 @@
+# 艺术主义数据库导入执行步骤
+
+## 1. 环境准备
+
+1.1 确保已安装以下软件：
+- Node.js (v14.x 或更高版本)
+- MongoDB (本地或云数据库)
+- npm 或 yarn
+
+1.2 安装必要的依赖包：
+```bash
+npm install mongoose express dotenv cors
+# 或使用 yarn
+yarn add mongoose express dotenv cors
+```
+
+## 2. 项目结构设置
+
+2.1 创建数据库配置文件：
+```
+mkdir -p src/config
+touch src/config/database.js
+```
+
+2.2 创建数据库模型文件夹：
+```
+mkdir -p src/models
+touch src/models/ArtMovement.js
+```
+
+2.3 创建API控制器：
+```
+mkdir -p src/controllers
+touch src/controllers/artMovementController.js
+```
+
+2.4 创建API路由：
+```
+mkdir -p src/routes
+touch src/routes/artMovementRoutes.js
+```
+
+2.5 创建种子数据脚本：
+```
+mkdir -p scripts
+touch scripts/seedDatabase.js
+```
+
+## 3. 数据库配置
+
+3.1 编辑 `src/config/database.js`：
+```javascript
+const mongoose = require('mongoose');
+require('dotenv').config();
+
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    });
+    console.log('MongoDB连接成功');
+  } catch (error) {
+    console.error('MongoDB连接失败:', error.message);
+    process.exit(1);
+  }
+};
+
+module.exports = connectDB;
+```
+
+3.2 创建 `.env` 文件，配置数据库连接：
+```
+MONGODB_URI=mongodb://localhost:27017/artism-db
+# 或使用MongoDB Atlas
+# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/artism-db
+PORT=5000
+```
+
+## 4. 创建数据模型
+
+4.1 编辑 `src/models/ArtMovement.js`：
+```javascript
+const mongoose = require('mongoose');
+
+const ArtMovementSchema = new mongoose.Schema({
+  name: { type: String, required: true },          // 艺术主义名称，如"立体主义"
+  period: { 
+    start: Number,                                 // 开始年份
+    end: Number                                    // 结束年份
+  },
+  description: { type: String, required: true },   // 详细描述
+  keyCharacteristics: [String],                    // 关键特征
+  majorArtists: [{                                 // 主要艺术家
+    name: String,
+    birthYear: Number,
+    deathYear: Number,
+    nationality: String,
+    bio: String
+  }],
+  keyArtworks: [{                                  // 代表作品
+    title: String,
+    artist: String,
+    year: Number,
+    imageUrl: String,
+    description: String
+  }],
+  influences: [String],                            // 受哪些流派影响
+  influencedMovements: [String],                   // 影响了哪些流派
+  tags: [String]                                   // 标签分类
+});
+
+module.exports = mongoose.model('ArtMovement', ArtMovementSchema);
+```
+
+## 5. 准备种子数据
+
+5.1 编辑 `scripts/seedDatabase.js`：
+```javascript
+const mongoose = require('mongoose');
+const ArtMovement = require('../src/models/ArtMovement');
+require('dotenv').config();
+
+const artMovementsData = [
+  {
+    name: '印象派',
+    period: { start: 1860, end: 1890 },
+    description: '印象派起源于19世纪60年代末的法国巴黎，重视光线和颜色的即时视觉印象。',
+    keyCharacteristics: ['户外写生', '捕捉光影变化', '短促笔触', '鲜艳色彩'],
+    majorArtists: [
+      {
+        name: '克劳德·莫奈',
+        birthYear: 1840,
+        deathYear: 1926,
+        nationality: '法国',
+        bio: '印象派代表人物，以描绘光线和色彩的变化著称。'
+      },
+      {
+        name: '皮埃尔-奥古斯特·雷诺阿',
+        birthYear: 1841,
+        deathYear: 1919,
+        nationality: '法国',
+        bio: '印象派画家，以描绘欢乐的、充满活力的人物场景和裸体而闻名。'
+      }
+    ],
+    keyArtworks: [
+      {
+        title: '日出·印象',
+        artist: '克劳德·莫奈',
+        year: 1872,
+        imageUrl: '/images/impression-sunrise.jpg',
+        description: '这幅画给印象派命名，描绘了勒阿弗尔港口的日出景象。'
+      },
+      {
+        title: '睡莲',
+        artist: '克劳德·莫奈',
+        year: 1899,
+        imageUrl: '/images/water-lilies.jpg',
+        description: '莫奈晚年创作的系列作品，描绘了他花园中的睡莲池塘。'
+      }
+    ],
+    influences: ['巴比松画派', '日本浮世绘'],
+    influencedMovements: ['后印象派', '野兽派'],
+    tags: ['19世纪', '法国', '光影', '自然']
+  },
+  {
+    name: '立体主义',
+    period: { start: 1907, end: 1922 },
+    description: '立体主义由毕加索和布拉克开创，强调几何形式和多视角分析。',
+    keyCharacteristics: ['几何形式', '多视角', '分析与综合', '单色调'],
+    majorArtists: [
+      {
+        name: '巴勃罗·毕加索',
+        birthYear: 1881,
+        deathYear: 1973,
+        nationality: '西班牙',
+        bio: '20世纪最有影响力的艺术家之一，立体主义的创始人。'
+      },
+      {
+        name: '乔治·布拉克',
+        birthYear: 1882,
+        deathYear: 1963,
+        nationality: '法国',
+        bio: '与毕加索一起发展了立体主义，以静物画和风景画著称。'
+      }
+    ],
+    keyArtworks: [
+      {
+        title: '亚维农少女',
+        artist: '巴勃罗·毕加索',
+        year: 1907,
+        imageUrl: '/images/les-demoiselles-davignon.jpg',
+        description: '被视为立体主义的开端，打破了传统透视法。'
+      },
+      {
+        title: '吉他手',
+        artist: '巴勃罗·毕加索',
+        year: 1910,
+        imageUrl: '/images/guitarist.jpg',
+        description: '分析立体主义时期的代表作，将对象分解为几何形状。'
+      }
+    ],
+    influences: ['塞尚', '非洲雕塑', '伊比利亚雕塑'],
+    influencedMovements: ['未来主义', '构成主义', '超现实主义'],
+    tags: ['20世纪初', '法国', '西班牙', '几何', '抽象']
+  },
+  {
+    name: '超现实主义',
+    period: { start: 1924, end: 1966 },
+    description: '超现实主义强调潜意识和梦境的表达，试图超越理性思维的限制。',
+    keyCharacteristics: ['梦境元素', '意外并置', '自动性技法', '心理学影响'],
+    majorArtists: [
+      {
+        name: '萨尔瓦多·达利',
+        birthYear: 1904,
+        deathYear: 1989,
+        nationality: '西班牙',
+        bio: '以其奇特的梦境般图像和精确的绘画技巧而闻名。'
+      },
+      {
+        name: '勒内·马格利特',
+        birthYear: 1898,
+        deathYear: 1967,
+        nationality: '比利时',
+        bio: '以创造日常物体的意外并置和概念性矛盾而著称。'
+      }
+    ],
+    keyArtworks: [
+      {
+        title: '记忆的永恒',
+        artist: '萨尔瓦多·达利',
+        year: 1931,
+        imageUrl: '/images/persistence-of-memory.jpg',
+        description: '以融化的钟表为特征，探讨时间和记忆的流动性。'
+      },
+      {
+        title: '这不是一个烟斗',
+        artist: '勒内·马格利特',
+        year: 1929,
+        imageUrl: '/images/not-a-pipe.jpg',
+        description: '挑战图像与现实之间的关系，探索表征的本质。'
+      }
+    ],
+    influences: ['达达主义', '弗洛伊德心理学'],
+    influencedMovements: ['抽象表现主义', '观念艺术'],
+    tags: ['20世纪', '梦境', '潜意识', '心理学']
+  }
+];
+
+const seedDatabase = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('MongoDB连接成功');
+    
+    // 清空现有数据
+    await ArtMovement.deleteMany({});
+    console.log('已清空现有数据');
+    
+    // 插入新数据
+    await ArtMovement.insertMany(artMovementsData);
+    console.log('数据导入成功');
+    
+    mongoose.disconnect();
+  } catch (error) {
+    console.error('数据导入失败:', error);
+    process.exit(1);
+  }
+};
+
+seedDatabase();
+```
+
+## 6. 创建API控制器
+
+6.1 编辑 `src/controllers/artMovementController.js`：
+```javascript
+const ArtMovement = require('../models/ArtMovement');
+
+// 获取所有艺术主义
+exports.getAllMovements = async (req, res) => {
+  try {
+    const movements = await ArtMovement.find().select('name period description');
+    res.json(movements);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// 获取单个艺术主义详情
+exports.getMovementById = async (req, res) => {
+  try {
+    const movement = await ArtMovement.findById(req.params.id);
+    if (!movement) {
+      return res.status(404).json({ message: '未找到该艺术主义' });
+    }
+    res.json(movement);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// 按时间线获取艺术主义
+exports.getMovementsByTimeline = async (req, res) => {
+  try {
+    const movements = await ArtMovement.find().sort({ 'period.start': 1 });
+    res.json(movements);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// 按标签筛选艺术主义
+exports.getMovementsByTags = async (req, res) => {
+  try {
+    const { tags } = req.query;
+    const tagsArray = tags.split(',');
+    
+    const movements = await ArtMovement.find({
+      tags: { $in: tagsArray }
+    });
+    
+    res.json(movements);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+```
+
+## 7. 创建API路由
+
+7.1 编辑 `src/routes/artMovementRoutes.js`：
+```javascript
+const express = require('express');
+const router = express.Router();
+const artMovementController = require('../controllers/artMovementController');
+
+// 获取所有艺术主义
+router.get('/', artMovementController.getAllMovements);
+
+// 获取单个艺术主义详情
+router.get('/:id', artMovementController.getMovementById);
+
+// 按时间线获取艺术主义
+router.get('/timeline/all', artMovementController.getMovementsByTimeline);
+
+// 按标签筛选艺术主义
+router.get('/filter/tags', artMovementController.getMovementsByTags);
+
+module.exports = router;
+```
+
+## 8. 创建主应用文件
+
+8.1 创建 `src/app.js`：
+```javascript
+const express = require('express');
+const cors = require('cors');
+const connectDB = require('./config/database');
+const artMovementRoutes = require('./routes/artMovementRoutes');
+
+// 连接数据库
+connectDB();
+
+const app = express();
+
+// 中间件
+app.use(cors());
+app.use(express.json());
+
+// 路由
+app.use('/api/art-movements', artMovementRoutes);
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`服务器运行在端口 ${PORT}`));
+```
+
+## 9. 执行数据导入
+
+9.1 运行种子脚本导入数据：
+```bash
+node scripts/seedDatabase.js
+```
+
+9.2 启动API服务器：
+```bash
+node src/app.js
+```
+
+## 10. 前端集成
+
+10.1 在前端项目中创建API服务文件 `src/api/artMovementApi.ts`
+
+10.2 创建Zustand状态管理 `src/store/artMovementStore.ts`
+
+10.3 修改相关组件使用数据库数据，如 `src/components/Timeline.tsx`
+
+## 11. 测试与验证
+
+11.1 测试API端点：
+- GET http://localhost:5000/api/art-movements
+- GET http://localhost:5000/api/art-movements/timeline/all
+- GET http://localhost:5000/api/art-movements/filter/tags?tags=法国,20世纪
+
+11.2 验证前端数据显示
+
+## 12. 部署注意事项
+
+12.1 确保生产环境变量正确配置：
+- 数据库连接字符串
+- 前端API地址
+- 端口设置
+
+12.2 考虑添加以下优化：
+- 数据库索引优化
+- API缓存层
+- 图片CDN存储
+- 数据备份策略 
