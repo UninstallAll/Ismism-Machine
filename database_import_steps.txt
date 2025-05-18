@@ -1,0 +1,277 @@
+# 艺术主义数据库导入执行步骤 (简化版)
+
+## 1. 环境准备
+
+1. 安装必要软件:
+   - Node.js (v14+)
+   - MongoDB (本地或云数据库)
+
+2. 安装依赖包:
+   ```
+   npm install mongoose express dotenv cors
+   ```
+
+## 2. 创建项目结构
+
+1. 创建以下目录和文件:
+   ```
+   mkdir -p src/config src/models src/controllers src/routes scripts
+   touch src/config/database.js
+   touch src/models/ArtMovement.js
+   touch src/controllers/artMovementController.js
+   touch src/routes/artMovementRoutes.js
+   touch scripts/seedDatabase.js
+   touch .env
+   touch src/app.js
+   ```
+
+## 3. 配置数据库连接
+
+1. 在 `.env` 文件中添加:
+   ```
+   MONGODB_URI=mongodb://localhost:27017/artism-db
+   PORT=5000
+   ```
+
+2. 在 `src/config/database.js` 中添加连接代码:
+   ```javascript
+   const mongoose = require('mongoose');
+   require('dotenv').config();
+
+   const connectDB = async () => {
+     try {
+       await mongoose.connect(process.env.MONGODB_URI, {
+         useNewUrlParser: true,
+         useUnifiedTopology: true
+       });
+       console.log('MongoDB连接成功');
+     } catch (error) {
+       console.error('MongoDB连接失败:', error.message);
+       process.exit(1);
+     }
+   };
+
+   module.exports = connectDB;
+   ```
+
+## 4. 创建数据模型
+
+1. 在 `src/models/ArtMovement.js` 中定义模型:
+   ```javascript
+   const mongoose = require('mongoose');
+
+   const ArtMovementSchema = new mongoose.Schema({
+     name: { type: String, required: true },
+     period: { 
+       start: Number,
+       end: Number
+     },
+     description: { type: String, required: true },
+     keyCharacteristics: [String],
+     majorArtists: [{
+       name: String,
+       birthYear: Number,
+       deathYear: Number,
+       nationality: String,
+       bio: String
+     }],
+     keyArtworks: [{
+       title: String,
+       artist: String,
+       year: Number,
+       imageUrl: String,
+       description: String
+     }],
+     influences: [String],
+     influencedMovements: [String],
+     tags: [String]
+   });
+
+   module.exports = mongoose.model('ArtMovement', ArtMovementSchema);
+   ```
+
+## 5. 创建种子数据脚本
+
+1. 在 `scripts/seedDatabase.js` 中添加导入脚本:
+   ```javascript
+   const mongoose = require('mongoose');
+   const ArtMovement = require('../src/models/ArtMovement');
+   require('dotenv').config();
+
+   // 示例数据 - 可以根据需要扩展
+   const artMovementsData = [
+     {
+       name: '印象派',
+       period: { start: 1860, end: 1890 },
+       description: '印象派起源于19世纪60年代末的法国巴黎，重视光线和颜色的即时视觉印象。',
+       keyCharacteristics: ['户外写生', '捕捉光影变化', '短促笔触', '鲜艳色彩'],
+       majorArtists: [
+         {
+           name: '克劳德·莫奈',
+           birthYear: 1840,
+           deathYear: 1926,
+           nationality: '法国',
+           bio: '印象派代表人物，以描绘光线和色彩的变化著称。'
+         }
+       ],
+       keyArtworks: [
+         {
+           title: '日出·印象',
+           artist: '克劳德·莫奈',
+           year: 1872,
+           imageUrl: '/images/impression-sunrise.jpg',
+           description: '这幅画给印象派命名，描绘了勒阿弗尔港口的日出景象。'
+         }
+       ],
+       influences: ['巴比松画派', '日本浮世绘'],
+       influencedMovements: ['后印象派', '野兽派'],
+       tags: ['19世纪', '法国', '光影', '自然']
+     }
+     // 可以添加更多艺术主义数据
+   ];
+
+   const seedDatabase = async () => {
+     try {
+       await mongoose.connect(process.env.MONGODB_URI);
+       console.log('MongoDB连接成功');
+       
+       // 清空现有数据
+       await ArtMovement.deleteMany({});
+       console.log('已清空现有数据');
+       
+       // 插入新数据
+       await ArtMovement.insertMany(artMovementsData);
+       console.log('数据导入成功');
+       
+       mongoose.disconnect();
+     } catch (error) {
+       console.error('数据导入失败:', error);
+       process.exit(1);
+     }
+   };
+
+   seedDatabase();
+   ```
+
+## 6. 执行数据导入
+
+1. 运行种子脚本导入数据:
+   ```
+   node scripts/seedDatabase.js
+   ```
+
+2. 验证数据已成功导入:
+   - 使用MongoDB Compass或mongo shell连接到数据库
+   - 检查 `artism-db` 数据库中的 `artmovements` 集合
+
+## 7. 创建API服务
+
+1. 在 `src/app.js` 创建简单的API服务:
+   ```javascript
+   const express = require('express');
+   const cors = require('cors');
+   const connectDB = require('./config/database');
+   const ArtMovement = require('./models/ArtMovement');
+
+   // 连接数据库
+   connectDB();
+
+   const app = express();
+
+   // 中间件
+   app.use(cors());
+   app.use(express.json());
+
+   // 简单路由 - 获取所有艺术主义
+   app.get('/api/art-movements', async (req, res) => {
+     try {
+       const movements = await ArtMovement.find();
+       res.json(movements);
+     } catch (error) {
+       res.status(500).json({ message: error.message });
+     }
+   });
+
+   const PORT = process.env.PORT || 5000;
+   app.listen(PORT, () => console.log(`服务器运行在端口 ${PORT}`));
+   ```
+
+2. 启动API服务:
+   ```
+   node src/app.js
+   ```
+
+3. 测试API:
+   - 访问 http://localhost:5000/api/art-movements
+
+## 8. 前端集成
+
+1. 在前端项目中创建API服务文件:
+   ```typescript
+   // src/api/artMovementApi.ts
+   import axios from './axios';
+
+   export const fetchAllMovements = async () => {
+     const response = await axios.get('/api/art-movements');
+     return response.data;
+   };
+   ```
+
+2. 在组件中使用API获取数据:
+   ```typescript
+   // 示例组件
+   import { useEffect, useState } from 'react';
+   import { fetchAllMovements } from '../api/artMovementApi';
+
+   const ArtMovementList = () => {
+     const [movements, setMovements] = useState([]);
+     const [loading, setLoading] = useState(true);
+
+     useEffect(() => {
+       const loadMovements = async () => {
+         try {
+           const data = await fetchAllMovements();
+           setMovements(data);
+         } catch (error) {
+           console.error('加载失败:', error);
+         } finally {
+           setLoading(false);
+         }
+       };
+       
+       loadMovements();
+     }, []);
+
+     if (loading) return <div>加载中...</div>;
+
+     return (
+       <div>
+         <h1>艺术主义列表</h1>
+         <ul>
+           {movements.map(movement => (
+             <li key={movement._id}>
+               <h2>{movement.name} ({movement.period.start}-{movement.period.end})</h2>
+               <p>{movement.description}</p>
+             </li>
+           ))}
+         </ul>
+       </div>
+     );
+   };
+
+   export default ArtMovementList;
+   ```
+
+## 注意事项
+
+1. 数据安全:
+   - 生产环境中不要将数据库凭证直接硬编码
+   - 使用环境变量存储敏感信息
+
+2. 数据备份:
+   - 定期备份数据库
+   - 考虑使用MongoDB Atlas的自动备份功能
+
+3. 性能优化:
+   - 为常用查询字段创建索引
+   - 考虑添加缓存层减少数据库查询 
