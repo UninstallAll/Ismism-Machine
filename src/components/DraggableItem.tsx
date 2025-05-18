@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, ReactNode } from 'react';
+import { useState, useRef, useEffect, ReactNode } from 'react';
 
 interface DraggableItemProps {
   children: ReactNode;
@@ -22,59 +22,61 @@ const DraggableItem = ({
 
   // 处理鼠标按下事件
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return; // 只响应左键点击
+    
     e.preventDefault();
-    setIsDragging(true);
+    e.stopPropagation();
+    
     const rect = elementRef.current?.getBoundingClientRect();
     if (rect) {
       offsetRef.current = {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
+        x: e.clientX - position.x,
+        y: e.clientY - position.y
       };
+      setIsDragging(true);
     }
   };
 
   // 处理触摸开始事件
   const handleTouchStart = (e: React.TouchEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
+    e.stopPropagation();
+    
     const rect = elementRef.current?.getBoundingClientRect();
     if (rect && e.touches[0]) {
       offsetRef.current = {
-        x: e.touches[0].clientX - rect.left,
-        y: e.touches[0].clientY - rect.top
+        x: e.touches[0].clientX - position.x,
+        y: e.touches[0].clientY - position.y
       };
+      setIsDragging(true);
     }
   };
 
   // 处理鼠标移动事件
-  const handleMouseMove = useCallback((e: MouseEvent) => {
+  const handleMouseMove = (e: MouseEvent) => {
     if (!isDragging) return;
     
-    let newX = e.clientX - offsetRef.current.x;
-    let newY = e.clientY - offsetRef.current.y;
+    e.preventDefault();
     
-    // 如果指定了容器，确保元素不会超出容器边界
-    if (containerId && elementRef.current) {
-      const container = document.getElementById(containerId);
-      if (container) {
-        const containerRect = container.getBoundingClientRect();
-        const elementRect = elementRef.current.getBoundingClientRect();
-        
-        newX = Math.max(0, Math.min(newX, containerRect.width - elementRect.width));
-        newY = Math.max(0, Math.min(newY, containerRect.height - elementRect.height));
-      }
-    }
+    const newX = e.clientX - offsetRef.current.x;
+    const newY = e.clientY - offsetRef.current.y;
     
-    setPosition({ x: newX, y: newY });
-    onPositionChange?.({ x: newX, y: newY });
-  }, [isDragging, containerId, onPositionChange]);
+    updatePosition(newX, newY);
+  };
 
   // 处理触摸移动事件
-  const handleTouchMove = useCallback((e: TouchEvent) => {
+  const handleTouchMove = (e: TouchEvent) => {
     if (!isDragging || !e.touches[0]) return;
     
-    let newX = e.touches[0].clientX - offsetRef.current.x;
-    let newY = e.touches[0].clientY - offsetRef.current.y;
+    const newX = e.touches[0].clientX - offsetRef.current.x;
+    const newY = e.touches[0].clientY - offsetRef.current.y;
+    
+    updatePosition(newX, newY);
+  };
+
+  // 更新位置的通用函数
+  const updatePosition = (x: number, y: number) => {
+    let newX = x;
+    let newY = y;
     
     // 如果指定了容器，确保元素不会超出容器边界
     if (containerId && elementRef.current) {
@@ -90,39 +92,39 @@ const DraggableItem = ({
     
     setPosition({ x: newX, y: newY });
     onPositionChange?.({ x: newX, y: newY });
-  }, [isDragging, containerId, onPositionChange]);
+  };
 
   // 处理鼠标释放事件
-  const handleMouseUp = useCallback(() => {
+  const handleMouseUp = () => {
     setIsDragging(false);
-  }, []);
+  };
 
   // 处理触摸结束事件
-  const handleTouchEnd = useCallback(() => {
+  const handleTouchEnd = () => {
     setIsDragging(false);
-  }, []);
+  };
 
   // 添加和移除事件监听器
   useEffect(() => {
+    const mouseMoveHandler = (e: MouseEvent) => handleMouseMove(e);
+    const mouseUpHandler = () => handleMouseUp();
+    const touchMoveHandler = (e: TouchEvent) => handleTouchMove(e);
+    const touchEndHandler = () => handleTouchEnd();
+    
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      document.addEventListener('touchmove', handleTouchMove);
-      document.addEventListener('touchend', handleTouchEnd);
-    } else {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
+      document.addEventListener('mousemove', mouseMoveHandler);
+      document.addEventListener('mouseup', mouseUpHandler);
+      document.addEventListener('touchmove', touchMoveHandler, { passive: false });
+      document.addEventListener('touchend', touchEndHandler);
     }
     
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
+      document.removeEventListener('mousemove', mouseMoveHandler);
+      document.removeEventListener('mouseup', mouseUpHandler);
+      document.removeEventListener('touchmove', touchMoveHandler);
+      document.removeEventListener('touchend', touchEndHandler);
     };
-  }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
+  }, [isDragging, position.x, position.y]);
 
   return (
     <div

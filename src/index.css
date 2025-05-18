@@ -28,6 +28,12 @@
   body {
     @apply antialiased text-gray-900;
   }
+  
+  /* 全局禁用浏览器默认的拖拽行为 */
+  [draggable="false"] {
+    -webkit-user-drag: none;
+    user-drag: none;
+  }
 }
 
 @layer components {
@@ -54,11 +60,19 @@
   /* 拖动相关样式 */
   .draggable {
     @apply transition-shadow duration-200;
+    touch-action: none !important;
+    user-select: none !important;
+    -webkit-user-drag: none !important;
+    cursor: grab;
+    will-change: transform;
+    position: absolute;
   }
   
   .dragging {
-    @apply shadow-lg opacity-90 z-10;
+    @apply shadow-lg z-10;
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+    cursor: grabbing !important;
+    opacity: 0.9;
   }
 }
 
@@ -106,6 +120,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 code {

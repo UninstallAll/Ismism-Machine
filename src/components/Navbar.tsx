@@ -2,8 +2,8 @@ import React from 'react';
 
 interface NavbarProps {
   title: string;
-  activeView: 'gallery' | 'timeline' | 'stats' | 'ai';
-  onNavChange: (view: 'gallery' | 'timeline' | 'stats' | 'ai') => void;
+  activeView: 'gallery' | 'timeline' | 'stats' | 'ai' | 'drag';
+  onNavChange: (view: 'gallery' | 'timeline' | 'stats' | 'ai' | 'drag') => void;
   onToggleSidebar?: () => void;
   sidebarOpen?: boolean;
 }
@@ -77,6 +77,17 @@ const Navbar: React.FC<NavbarProps> = ({
           >
             AI创作
           </button>
+          
+          <button 
+            className={`px-4 py-2 mx-1 rounded-full transition-colors ${
+              activeView === 'drag' 
+                ? 'bg-blue-800 text-white' 
+                : 'text-gray-800 hover:bg-gray-200'
+            }`}
+            onClick={() => onNavChange('drag')}
+          >
+            拖拽演示
+          </button>
         </nav>
         
         {/* 移动设备导航下拉菜单按钮 */}
@@ -87,6 +98,7 @@ const Navbar: React.FC<NavbarProps> = ({
               {activeView === 'timeline' && '时间线视图'}
               {activeView === 'stats' && '数据统计'}
               {activeView === 'ai' && 'AI创作'}
+              {activeView === 'drag' && '拖拽演示'}
               <span className="ml-2">▼</span>
             </button>
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-300 hidden group-hover:block">
@@ -122,6 +134,14 @@ const Navbar: React.FC<NavbarProps> = ({
                   onClick={() => onNavChange('ai')}
                 >
                   AI创作
+                </button>
+                <button
+                  className={`block w-full text-left px-4 py-2 text-sm ${
+                    activeView === 'drag' ? 'bg-blue-100 text-blue-800' : 'text-gray-800 hover:bg-gray-100'
+                  }`}
+                  onClick={() => onNavChange('drag')}
+                >
+                  拖拽演示
                 </button>
               </div>
             </div>

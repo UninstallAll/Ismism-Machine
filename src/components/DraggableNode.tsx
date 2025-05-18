@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTimelineStore } from '../store/timelineStore';
 
 interface Position {
@@ -23,57 +23,106 @@ const DraggableNode: React.FC<DraggableNodeProps> = ({ node }) => {
   const updateNodePosition = useTimelineStore(state => state.updateNodePosition);
   const [isDragging, setIsDragging] = useState(false);
   const [position, setPosition] = useState<Position>(node.position || { x: 0, y: 0 });
-  
-  // 拖拽相关状态
-  const [dragStart, setDragStart] = useState<Position>({ x: 0, y: 0 });
+  const nodeRef = useRef<HTMLDivElement>(null);
+  const offsetRef = useRef({ x: 0, y: 0 });
   
   // 开始拖拽
   const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setDragStart({
-      x: e.clientX - position.x,
-      y: e.clientY - position.y
-    });
+    if (e.button !== 0) return; // 只响应左键点击
     
-    // 添加全局事件监听
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const rect = nodeRef.current?.getBoundingClientRect();
+    if (rect) {
+      offsetRef.current = {
+        x: e.clientX - position.x,
+        y: e.clientY - position.y
+      };
+      setIsDragging(true);
+    }
+  };
+  
+  // 处理触摸开始事件
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    
+    const rect = nodeRef.current?.getBoundingClientRect();
+    if (rect && e.touches[0]) {
+      offsetRef.current = {
+        x: e.touches[0].clientX - position.x,
+        y: e.touches[0].clientY - position.y
+      };
+      setIsDragging(true);
+    }
   };
   
   // 拖拽中
   const handleMouseMove = (e: MouseEvent) => {
     if (!isDragging) return;
     
-    const newPosition = {
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y
-    };
+    e.preventDefault();
     
-    setPosition(newPosition);
+    const newX = e.clientX - offsetRef.current.x;
+    const newY = e.clientY - offsetRef.current.y;
+    
+    setPosition({ x: newX, y: newY });
+  };
+  
+  // 处理触摸移动
+  const handleTouchMove = (e: TouchEvent) => {
+    if (!isDragging || !e.touches[0]) return;
+    
+    const newX = e.touches[0].clientX - offsetRef.current.x;
+    const newY = e.touches[0].clientY - offsetRef.current.y;
+    
+    setPosition({ x: newX, y: newY });
   };
   
   // 结束拖拽
   const handleMouseUp = () => {
-    setIsDragging(false);
-    
-    // 更新存储中的位置
-    updateNodePosition(node.id, position);
-    
-    // 移除全局事件监听
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
+    if (isDragging) {
+      setIsDragging(false);
+      
+      // 更新存储中的位置
+      updateNodePosition(node.id, position);
+    }
+  };
+  
+  // 处理触摸结束
+  const handleTouchEnd = () => {
+    if (isDragging) {
+      setIsDragging(false);
+      
+      // 更新存储中的位置
+      updateNodePosition(node.id, position);
+    }
   };
   
   useEffect(() => {
-    // 组件卸载时确保移除事件监听
+    const mouseMoveHandler = (e: MouseEvent) => handleMouseMove(e);
+    const mouseUpHandler = () => handleMouseUp();
+    const touchMoveHandler = (e: TouchEvent) => handleTouchMove(e);
+    const touchEndHandler = () => handleTouchEnd();
+    
+    if (isDragging) {
+      document.addEventListener('mousemove', mouseMoveHandler);
+      document.addEventListener('mouseup', mouseUpHandler);
+      document.addEventListener('touchmove', touchMoveHandler, { passive: false });
+      document.addEventListener('touchend', touchEndHandler);
+    }
+    
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mousemove', mouseMoveHandler);
+      document.removeEventListener('mouseup', mouseUpHandler);
+      document.removeEventListener('touchmove', touchMoveHandler);
+      document.removeEventListener('touchend', touchEndHandler);
     };
-  }, []);
+  }, [isDragging, position.x, position.y]);
   
   return (
     <div 
+      ref={nodeRef}
       className={`absolute p-4 bg-white rounded-lg shadow-md border-2 ${
         isDragging ? 'border-blue-500 cursor-grabbing' : 'border-gray-200 cursor-grab'
       }`}
@@ -81,9 +130,12 @@ const DraggableNode: React.FC<DraggableNodeProps> = ({ node }) => {
         left: `${position.x}px`,
         top: `${position.y}px`,
         zIndex: isDragging ? 10 : 1,
-        width: '200px'
+        width: '200px',
+        userSelect: 'none',
+        touchAction: 'none'
       }}
       onMouseDown={handleMouseDown}
+      onTouchStart={handleTouchStart}
     >
       <h3 className="text-lg font-bold">{node.title}</h3>
       <div className="text-sm text-gray-600">{node.year}</div>

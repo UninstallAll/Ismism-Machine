@@ -3,6 +3,7 @@ import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import MainContent from './components/MainContent';
+import DragDemo from './components/DragDemo';
 
 // 使用更高对比度的颜色方案
 const theme = createTheme({
@@ -124,7 +125,7 @@ const mockTimelineItems = [
 ];
 
 function App() {
-  const [activeView, setActiveView] = useState('gallery');
+  const [activeView, setActiveView] = useState('drag');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
   const toggleSidebar = () => {
@@ -156,12 +157,19 @@ function App() {
             onClose={() => setSidebarOpen(false)}
           />
           
-          <MainContent 
-            artworks={mockArtworks}
-            timelineItems={mockTimelineItems}
-            activeView={activeView}
-            sidebarOpen={sidebarOpen}
-          />
+          {activeView === 'drag' ? (
+            <div className="flex-1 p-4">
+              <h1 className="text-2xl font-bold mb-6">拖拽演示</h1>
+              <DragDemo />
+            </div>
+          ) : (
+            <MainContent 
+              artworks={mockArtworks}
+              timelineItems={mockTimelineItems}
+              activeView={activeView}
+              sidebarOpen={sidebarOpen}
+            />
+          )}
         </div>
       </div>
     </ThemeProvider>

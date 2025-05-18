@@ -1,6 +1,6 @@
 import React from 'react';
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
-import Timeline from './components/Timeline';
+import DragDemo from './components/DragDemo';
 
 // 使用更高对比度的颜色方案
 const theme = createTheme({
@@ -57,7 +57,10 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Timeline />
+      <div className="container mx-auto p-4">
+        <h1 className="text-2xl font-bold mb-6">艺术主义拖拽演示</h1>
+        <DragDemo />
+      </div>
     </ThemeProvider>
   );
 }
