@@ -1,0 +1,57 @@
+/* 布局样式 */
+.page-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+/* 内容滚动区域 */
+.content-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 标题栏样式 */
+.page-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+/* 卡片样式 */
+.card-hover {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
+}
+
+/* 响应式grid布局 */
+.grid-responsive {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+/* 模态框动画 */
+.modal-enter {
+  opacity: 0;
+}
+
+.modal-enter-active {
+  opacity: 1;
+  transition: opacity 300ms;
+}
+
+.modal-exit {
+  opacity: 1;
+}
+
+.modal-exit-active {
+  opacity: 0;
+  transition: opacity 300ms;
+} 

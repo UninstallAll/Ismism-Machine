@@ -1,4 +1,5 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+/// <reference types="vite/client" />
+import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 
 // 创建axios实例
 const api: AxiosInstance = axios.create({
@@ -11,7 +12,7 @@ const api: AxiosInstance = axios.create({
 
 // 请求拦截器
 api.interceptors.request.use(
-  (config: AxiosRequestConfig): AxiosRequestConfig => {
+  (config: InternalAxiosRequestConfig): InternalAxiosRequestConfig => {
     // 可以在这里设置认证令牌等
     return config;
   },

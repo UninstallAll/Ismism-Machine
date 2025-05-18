@@ -52,7 +52,10 @@ const StatCard = ({ title, value, description, icon }: StatCardProps) => (
   </div>
 );
 
-const StatsDisplay: React.FC<StatsDisplayProps> = () => {
+const StatsDisplay: React.FC<StatsDisplayProps> = (props) => {
+  // 因为props目前没有使用，添加这一行来表明我们知道它存在
+  console.log('接收到的统计数据:', props);
+
   // 示例数据
   const movementCountByPeriod = [
     { label: '1800-1850', value: 8, color: '#3b82f6' },

@@ -1,6 +1,11 @@
 import React from 'react';
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
-import DragDemo from './components/DragDemo';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import MainLayout from './components/MainLayout';
+import GalleryPage from './pages/GalleryPage';
+import TimelinePage from './pages/TimelinePage';
+import StatsPage from './pages/StatsPage';
+import AICreatePage from './pages/AICreatePage';
 
 // 使用更高对比度的颜色方案
 const theme = createTheme({
@@ -57,10 +62,17 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-6">艺术主义拖拽演示</h1>
-        <DragDemo />
-      </div>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<MainLayout />}>
+            <Route index element={<Navigate to="/gallery" replace />} />
+            <Route path="gallery" element={<GalleryPage />} />
+            <Route path="timeline" element={<TimelinePage />} />
+            <Route path="stats" element={<StatsPage />} />
+            <Route path="ai-create" element={<AICreatePage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
     </ThemeProvider>
   );
 }
