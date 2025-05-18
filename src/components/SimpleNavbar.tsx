@@ -1,7 +1,7 @@
 import React from 'react';
-import { AppBar, Toolbar, Typography, IconButton, Box, InputBase } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import SearchIcon from '@mui/icons-material/Search';
+import { motion } from 'framer-motion';
+import { Search, Menu } from 'lucide-react';
+import { Button } from './ui/button';
 
 interface SimpleNavbarProps {
   onMenuClick: () => void;
@@ -9,24 +9,45 @@ interface SimpleNavbarProps {
 
 const SimpleNavbar: React.FC<SimpleNavbarProps> = ({ onMenuClick }) => {
   return (
-    <AppBar position="fixed" color="default" sx={{ backgroundColor: '#fff', borderLeft: '4px solid #FF3B30' }}>
-      <Toolbar sx={{ justifyContent: 'space-between' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <IconButton edge="start" color="inherit" aria-label="menu" onClick={onMenuClick} sx={{ mr: 2 }}>
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#000' }}>
+    <header className="fixed top-0 left-0 right-0 h-16 border-b border-l-4 border-l-secondary bg-background flex items-center z-20 shadow-sm">
+      <div className="container flex items-center justify-between px-4 mx-auto">
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="mr-2"
+            onClick={onMenuClick}
+            aria-label="Toggle menu"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <motion.h1 
+            className="text-xl font-bold uppercase tracking-wider"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
             艺术主义机器
-          </Typography>
-        </Box>
-        <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', border: '1px solid #000', px: 2, py: 0.5 }}>
-          <InputBase placeholder="搜索艺术品..." inputProps={{ 'aria-label': '搜索艺术品' }} sx={{ ml: 1, flex: 1, fontFamily: 'Helvetica, Arial, sans-serif' }} />
-          <IconButton type="button" aria-label="search">
-            <SearchIcon />
-          </IconButton>
-        </Box>
-      </Toolbar>
-    </AppBar>
+          </motion.h1>
+        </div>
+        
+        <motion.div 
+          className="hidden sm:flex items-center border rounded-md px-3 py-1 w-64"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+        >
+          <input 
+            type="text" 
+            placeholder="搜索艺术品..." 
+            className="border-none bg-transparent outline-none flex-1 text-sm"
+          />
+          <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Search className="h-4 w-4" />
+          </Button>
+        </motion.div>
+      </div>
+    </header>
   );
 };
 
