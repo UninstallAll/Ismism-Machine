@@ -7,60 +7,46 @@ import TimelinePage from './pages/TimelinePage';
 import StatsPage from './pages/StatsPage';
 import AICreatePage from './pages/AICreatePage';
 
-// 使用更高对比度的颜色方案
-const theme = createTheme({
+// 瑞士国际主义风格设计主题
+const swissTheme = createTheme({
   palette: {
     primary: {
-      main: '#1a237e', // 更深的蓝色
-      light: '#534bae',
-      dark: '#000051',
-      contrastText: '#ffffff',
+      main: '#000',
+      contrastText: '#fff',
     },
     secondary: {
-      main: '#d50000', // 更鲜艳的红色
-      light: '#ff5131',
-      dark: '#9b0000',
-      contrastText: '#ffffff',
+      main: '#FF3B30',
+      contrastText: '#fff',
     },
     background: {
-      default: '#f5f5f5',
-      paper: '#ffffff',
+      default: '#fff',
+      paper: '#fff',
     },
     text: {
-      primary: '#212121',
-      secondary: '#424242',
-    },
-    error: {
-      main: '#d50000',
-    },
-    warning: {
-      main: '#ff6d00',
-    },
-    info: {
-      main: '#2962ff',
-    },
-    success: {
-      main: '#00c853',
+      primary: '#000',
+      secondary: '#333',
     },
   },
   typography: {
     fontFamily: [
-      'Inter',
-      'system-ui',
-      '-apple-system',
-      'BlinkMacSystemFont',
-      'Segoe UI',
-      'Roboto',
-      'Helvetica Neue',
-      'Arial',
-      'sans-serif',
+      'Helvetica Neue', 'Arial', 'sans-serif',
     ].join(','),
+    h1: { fontWeight: 700, textTransform: 'uppercase' },
+    h2: { fontWeight: 700, textTransform: 'uppercase' },
+    h3: { fontWeight: 700 },
+    button: { fontWeight: 700, textTransform: 'uppercase' },
+  },
+  shape: { borderRadius: 0 },
+  components: {
+    MuiButton: { styleOverrides: { root: { borderRadius: 0 } } },
+    MuiPaper: { styleOverrides: { root: { borderRadius: 0, boxShadow: 'none', border: '1px solid #eee' } } },
+    MuiAppBar: { styleOverrides: { root: { boxShadow: 'none', borderBottom: '2px solid #FF3B30' } } },
   },
 });
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={swissTheme}>
       <CssBaseline />
       <BrowserRouter>
         <Routes>
