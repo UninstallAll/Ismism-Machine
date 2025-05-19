@@ -1,8 +1,14 @@
 #!/usr/bin/env node
 
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { MongoClient } from 'mongodb';
+
+// 获取当前文件的目录
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // 颜色输出
 const colors = {
@@ -210,4 +216,44 @@ console.log(`${colors.blue}====================================${colors.reset}`)
 console.log(`${colors.green}环境配置完成!${colors.reset}`);
 console.log(`${colors.blue}运行开发服务器: ${colors.yellow}npm run dev${colors.reset}`);
 console.log(`${colors.blue}构建项目: ${colors.yellow}npm run build${colors.reset}`);
-console.log(`${colors.blue}====================================${colors.reset}`); 
+console.log(`${colors.blue}====================================${colors.reset}`);
+
+async function setupDatabase() {
+  const uri = 'mongodb://localhost:27017/ismism_machine_db';
+  const client = new MongoClient(uri);
+
+  try {
+    await client.connect();
+    console.log('Connected to MongoDB');
+    
+    const db = client.db('ismism_machine_db');
+    
+    await db.createCollection('users');
+    console.log('Created users collection');
+    
+    await db.createCollection('projects');
+    console.log('Created projects collection');
+    
+    await db.createCollection('items');
+    console.log('Created items collection');
+
+    const admin = await db.command({
+      createUser: 'ismism_admin',
+      pwd: 'secure_password',
+      roles: [{ role: 'readWrite', db: 'ismism_machine_db' }]
+    });
+    console.log('Created admin user');
+
+    return 'Database setup completed!';
+  } catch (error) {
+    console.error('Error setting up database:', error);
+    throw error;
+  } finally {
+    await client.close();
+    console.log('MongoDB connection closed');
+  }
+}
+
+setupDatabase()
+  .then(console.log)
+  .catch(console.error); 

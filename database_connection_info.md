@@ -71,4 +71,120 @@ MongoDB数据库 → 后端API服务 → 前端API服务 → 前端状态管理 
 http://localhost:5000/api/art-movements
 ```
 
-如果返回JSON数据，则表示数据库连接成功。 
+如果返回JSON数据，则表示数据库连接成功。
+
+# MongoDB 数据库连接信息
+
+## 连接参数
+
+- **数据库类型**: MongoDB
+- **服务器地址**: localhost (127.0.0.1)
+- **端口**: 27017
+- **数据库名**: ismism_machine_db
+- **连接字符串**: `mongodb://localhost:27017/ismism_machine_db`
+
+## 身份验证信息
+
+- **用户名**: ismism_admin
+- **密码**: secure_password
+- **认证数据库**: ismism_machine_db
+- **身份验证连接字符串**: `mongodb://ismism_admin:secure_password@localhost:27017/ismism_machine_db`
+
+## 数据库结构
+
+### 集合 (Collections)
+
+1. **users** - 用户信息
+   - _id: ObjectId
+   - username: String
+   - email: String (唯一索引)
+   - password: String (加密后的密码)
+   - name: String
+   - createdAt: Date
+   - updatedAt: Date
+
+2. **projects** - 项目信息
+   - _id: ObjectId
+   - title: String
+   - description: String
+   - userId: ObjectId (外键关联到users集合)
+   - status: String (active, completed, archived)
+   - tags: Array
+   - createdAt: Date
+   - updatedAt: Date
+
+3. **items** - 项目条目
+   - _id: ObjectId
+   - name: String
+   - description: String
+   - projectId: ObjectId (外键关联到projects集合)
+   - status: String (todo, in-progress, completed)
+   - createdAt: Date
+   - updatedAt: Date
+
+## 索引信息
+
+- **users.email**: 唯一索引
+- **users.username**: 普通索引
+- **projects.userId**: 普通索引
+- **projects.title, projects.description**: 文本索引
+- **items.projectId**: 普通索引
+
+## 连接代码示例
+
+### 使用Node.js连接
+
+```javascript
+import { MongoClient } from 'mongodb';
+
+async function connectToDatabase() {
+  const uri = 'mongodb://localhost:27017/ismism_machine_db';
+  // 使用身份验证时
+  // const uri = 'mongodb://ismism_admin:secure_password@localhost:27017/ismism_machine_db';
+  
+  const client = new MongoClient(uri);
+  
+  try {
+    await client.connect();
+    console.log('已连接到MongoDB');
+    
+    const db = client.db('ismism_machine_db');
+    return db;
+  } catch (err) {
+    console.error('MongoDB连接错误:', err);
+    throw err;
+  }
+}
+```
+
+### 使用连接管理器连接
+
+```javascript
+import dbConnection from './database/scripts/db_connection.js';
+
+async function example() {
+  try {
+    // 获取数据库实例
+    const db = await dbConnection.getDb();
+    
+    // 获取集合
+    const usersCollection = await dbConnection.getCollection('users');
+    
+    // 执行查询
+    const users = await usersCollection.find({}).toArray();
+    console.log('用户列表:', users);
+  } catch (err) {
+    console.error('操作失败:', err);
+  } finally {
+    // 关闭连接 (在应用程序关闭时)
+    // await dbConnection.close();
+  }
+}
+```
+
+## 注意事项
+
+1. 在生产环境中，必须更改默认密码
+2. 确保MongoDB服务已启动
+3. 使用适当的索引来优化查询性能
+4. 建议使用连接池来管理数据库连接 
