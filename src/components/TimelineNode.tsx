@@ -21,70 +21,69 @@ const TimelineNode = ({ data }: NodeProps<TimelineNodeData>) => {
         position={Position.Left}
         style={{ background: '#555' }}
       />
-      <Card 
-        sx={{ 
-          width: 280, 
-          maxWidth: 280,
-          boxShadow: 3,
-          '&:hover': {
-            boxShadow: 6,
-          }
-        }}
-      >
-        <CardContent>
-          <Typography variant="h6" component="div" gutterBottom>
-            {data.title} ({data.year})
-          </Typography>
+      <div className="p-0.5 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg">
+        <div 
+          className="w-72 max-w-72 rounded-lg bg-[#111] p-4 backdrop-blur-md"
+        >
+          <div className="flex justify-between items-start mb-3">
+            <h3 className="text-xl font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              {data.title}
+            </h3>
+            <span className="text-sm bg-blue-500/10 text-blue-300 px-2 py-0.5 rounded-full">
+              {data.year}
+            </span>
+          </div>
           
           {data.imageUrl && (
-            <Box 
-              component="img"
-              src={data.imageUrl}
-              alt={data.title}
-              sx={{ 
-                width: '100%', 
-                height: 140, 
-                objectFit: 'cover',
-                mb: 1,
-                borderRadius: 1
-              }}
-            />
+            <div 
+              className="w-full h-32 mb-3 rounded-md overflow-hidden"
+            >
+              <img
+                src={data.imageUrl}
+                alt={data.title}
+                className="w-full h-full object-cover transition-transform hover:scale-105"
+              />
+            </div>
           )}
           
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+          <p className="text-sm text-gray-300 mb-3 line-clamp-3">
             {data.description}
-          </Typography>
+          </p>
           
-          <Typography variant="subtitle2" color="primary" sx={{ mb: 0.5 }}>
-            艺术家:
-          </Typography>
-          <Stack direction="row" spacing={0.5} flexWrap="wrap" sx={{ mb: 1 }}>
-            {data.artists.map((artist, index) => (
-              <Chip 
-                key={index} 
-                label={artist} 
-                size="small" 
-                variant="outlined"
-                sx={{ mb: 0.5 }}
-              />
-            ))}
-          </Stack>
+          <div className="mb-2">
+            <h4 className="text-xs font-medium text-blue-400 mb-1">艺术家:</h4>
+            <div className="flex flex-wrap gap-1">
+              {data.artists.map((artist, index) => (
+                <span 
+                  key={index} 
+                  className="px-2 py-0.5 text-xs rounded-full bg-blue-500/10 text-blue-300"
+                >
+                  {artist}
+                </span>
+              ))}
+            </div>
+          </div>
           
           {data.tags && data.tags.length > 0 && (
-            <Stack direction="row" spacing={0.5} flexWrap="wrap">
+            <div className="flex flex-wrap gap-1 mt-2">
               {data.tags.map((tag, index) => (
-                <Chip 
+                <span 
                   key={index} 
-                  label={tag} 
-                  size="small"
-                  color="secondary"
-                  sx={{ mb: 0.5 }}
-                />
+                  className="px-2 py-0.5 text-xs rounded-full bg-purple-500/10 text-purple-300"
+                >
+                  {tag}
+                </span>
               ))}
-            </Stack>
+            </div>
           )}
-        </CardContent>
-      </Card>
+          
+          <div className="mt-3 pt-2 border-t border-white/10">
+            <span className="text-xs font-medium text-purple-400">
+              流派: {data.styleMovement}
+            </span>
+          </div>
+        </div>
+      </div>
       <Handle
         type="source"
         position={Position.Right}

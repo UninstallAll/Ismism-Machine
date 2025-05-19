@@ -1,0 +1,21 @@
+[
+  { "source": "impressionism", "target": "cubism", "type": "influence" },
+  { "source": "cubism", "target": "surrealism", "type": "influence" },
+  { "source": "impressionism", "target": "neo-impressionism", "type": "influence" },
+  { "source": "neo-impressionism", "target": "post-impressionism", "type": "influence" },
+  { "source": "post-impressionism", "target": "expressionism", "type": "influence" },
+  { "source": "post-impressionism", "target": "fauvism", "type": "influence" },
+  { "source": "expressionism", "target": "dadaism", "type": "influence" },
+  { "source": "cubism", "target": "constructivism", "type": "influence" },
+  { "source": "surrealism", "target": "abstract-expressionism", "type": "influence" },
+  { "source": "abstract-expressionism", "target": "pop-art", "type": "influence" },
+  { "source": "abstract-expressionism", "target": "minimalism", "type": "influence" },
+  { "source": "minimalism", "target": "conceptual-art", "type": "influence" },
+  { "source": "expressionism", "target": "neo-expressionism", "type": "influence" },
+  { "source": "conceptual-art", "target": "installation-art", "type": "influence" },
+  { "source": "conceptual-art", "target": "video-art", "type": "influence" },
+  { "source": "conceptual-art", "target": "performance-art", "type": "influence" },
+  { "source": "video-art", "target": "digital-art", "type": "influence" },
+  { "source": "pop-art", "target": "street-art", "type": "influence" },
+  { "source": "digital-art", "target": "nft-art", "type": "influence" }
+]
