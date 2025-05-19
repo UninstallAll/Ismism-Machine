@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from './ui/button';
 import { useTimelineStore } from '../store/timelineStore';
 import { useSearchParams, useLocation } from 'react-router-dom';
@@ -12,6 +12,8 @@ const Timeline: React.FC = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const [highlightedNodeId, setHighlightedNodeId] = useState<string | null>(null);
+  const [timelineScroll, setTimelineScroll] = useState(0);
+  const timelineYearsRef = useRef<HTMLDivElement>(null);
   
   // 节点引用，用于滚动到特定节点
   const nodeRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -24,6 +26,8 @@ const Timeline: React.FC = () => {
   // 从URL参数获取艺术主义名称并设置搜索条件或滚动到该节点
   useEffect(() => {
     const styleParam = searchParams.get('style');
+    const yearParam = searchParams.get('year');
+    
     if (styleParam) {
       // 设置搜索条件为URL参数中的艺术主义名称
       setSearchTerm(styleParam);
@@ -52,6 +56,34 @@ const Timeline: React.FC = () => {
           }
         }
       }, 500); // 给予足够时间让节点渲染
+    } else if (yearParam) {
+      // 如果有年份参数，查找最接近该年份的节点
+      const year = parseInt(yearParam, 10);
+      if (!isNaN(year)) {
+        setTimeout(() => {
+          // 按照年份排序的节点
+          const sortedByYear = [...timelineNodes].sort((a, b) => 
+            Math.abs(a.year - year) - Math.abs(b.year - year)
+          );
+          
+          if (sortedByYear.length > 0) {
+            const closestNode = sortedByYear[0];
+            setHighlightedNodeId(closestNode.id);
+            
+            if (nodeRefs.current[closestNode.id]) {
+              nodeRefs.current[closestNode.id]?.scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'center'
+              });
+              
+              // 3秒后取消高亮
+              setTimeout(() => {
+                setHighlightedNodeId(null);
+              }, 3000);
+            }
+          }
+        }, 500);
+      }
     }
   }, [searchParams, timelineNodes]);
 
@@ -75,6 +107,76 @@ const Timeline: React.FC = () => {
   // 计算每个节点在时间轴上的位置百分比
   const getPositionPercentage = (year: number) => {
     return ((year - minYear) / timeRange) * 100;
+  };
+  
+  // 生成时间轴上的年份标记
+  const generateYearMarks = () => {
+    if (timeRange === 0) return [];
+    
+    // 创建更均匀分布的年份标记点
+    const numMarks = 12; // 标记点数量
+    const marks = [];
+    
+    for (let i = 0; i <= numMarks; i++) {
+      const year = Math.round(minYear + (timeRange * i) / numMarks);
+      marks.push(year);
+    }
+    
+    return marks;
+  };
+  
+  // 时间轴年份标记点
+  const yearMarks = generateYearMarks();
+  
+  // 滚动时间轴
+  const scrollTimeline = (direction: 'left' | 'right') => {
+    if (!timelineYearsRef.current) return;
+    
+    const container = timelineYearsRef.current;
+    const scrollWidth = container.scrollWidth;
+    const containerWidth = container.clientWidth;
+    const maxScroll = scrollWidth - containerWidth;
+    
+    // 计算滚动量，每次滚动视窗宽度的25%
+    const scrollAmount = containerWidth * 0.25;
+    const currentScroll = container.scrollLeft;
+    
+    let newScroll;
+    if (direction === 'left') {
+      newScroll = Math.max(0, currentScroll - scrollAmount);
+    } else {
+      newScroll = Math.min(maxScroll, currentScroll + scrollAmount);
+    }
+    
+    container.scrollTo({
+      left: newScroll,
+      behavior: 'smooth'
+    });
+  };
+  
+  // 点击年份，跳转到对应时间的艺术主义
+  const handleYearClick = (year: number) => {
+    // 查找最接近该年份的节点
+    const sortedByYear = [...sortedNodes].sort((a, b) => 
+      Math.abs(a.year - year) - Math.abs(b.year - year)
+    );
+    
+    if (sortedByYear.length > 0) {
+      const closestNode = sortedByYear[0];
+      setHighlightedNodeId(closestNode.id);
+      
+      if (nodeRefs.current[closestNode.id]) {
+        nodeRefs.current[closestNode.id]?.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'center'
+        });
+        
+        // 3秒后取消高亮
+        setTimeout(() => {
+          setHighlightedNodeId(null);
+        }, 3000);
+      }
+    }
   };
 
   return (
@@ -119,18 +221,56 @@ const Timeline: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* 顶部时间轴 */}
-      <div className="relative mb-8 mt-4" ref={timelineRef}>
+      {/* 顶部时间轴 - 可滑动 */}
+      <div className="relative mb-12 mt-6 px-8" ref={timelineRef}>
         {/* 时间轴线 */}
-        <div className="h-1 bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-blue-500/30 w-full"></div>
+        <div className="h-1 bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-blue-500/30 w-full rounded-full"></div>
         
-        {/* 年份标记 */}
-        <div className="flex justify-between mt-2">
-          <div className="text-xs text-blue-400">{minYear}</div>
-          <div className="text-xs text-blue-400">{Math.floor(minYear + timeRange * 0.25)}</div>
-          <div className="text-xs text-blue-400">{Math.floor(minYear + timeRange * 0.5)}</div>
-          <div className="text-xs text-blue-400">{Math.floor(minYear + timeRange * 0.75)}</div>
-          <div className="text-xs text-blue-400">{maxYear}</div>
+        {/* 滑动按钮 */}
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 rounded-full bg-black/40 text-white hover:bg-black/60 z-10 h-8 w-8 p-1 border border-white/10"
+          onClick={() => scrollTimeline('left')}
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        
+        <Button 
+          variant="outline" 
+          size="icon" 
+          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 rounded-full bg-black/40 text-white hover:bg-black/60 z-10 h-8 w-8 p-1 border border-white/10"
+          onClick={() => scrollTimeline('right')}
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+        
+        {/* 年份标记容器，提供固定高度 */}
+        <div className="relative h-10">
+          {/* 年份标记，支持水平滚动 */}
+          <div 
+            className="absolute left-0 right-0 mt-2 hide-scrollbar" 
+            ref={timelineYearsRef}
+            style={{ overflow: 'hidden', height: '30px' }}
+          >
+            {/* 年份标记背景轨道 */}
+            <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-white/5 transform -translate-y-1/2"></div>
+            
+            {yearMarks.map((year, index) => (
+              <button
+                key={index}
+                className="text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 hover:scale-110 transition-all cursor-pointer px-2 py-1 rounded-full absolute"
+                style={{ 
+                  left: `${(year - minYear) / timeRange * 100}%`,
+                  transform: 'translateX(-50%)'
+                }}
+                onClick={() => handleYearClick(year)}
+              >
+                <div className="absolute bottom-full mb-1 w-1 h-1 bg-blue-400 rounded-full left-1/2 transform -translate-x-1/2"></div>
+                {year}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
