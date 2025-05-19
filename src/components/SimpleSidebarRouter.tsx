@@ -103,16 +103,6 @@ const SimpleSidebarRouter: React.FC<SimpleSidebarRouterProps> = ({ isOpen }) => 
             </motion.li>
           </ul>
         </nav>
-
-        <div className="mt-8 p-4 rounded-md border border-primary/20 bg-card/50 backdrop-blur-sm">
-          <div className="flex items-center mb-2">
-            <Clock className="h-4 w-4 text-primary mr-2" />
-            <h3 className="text-sm font-semibold text-primary/90">艺术时间探索</h3>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            探索艺术主义历史与风格演变
-          </p>
-        </div>
       </div>
     </motion.aside>
   );
