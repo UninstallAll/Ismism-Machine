@@ -203,11 +203,11 @@ const Gallery = () => {
       
       {/* 内容区域 */}
       {!loading && (
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
           {filteredArtworks.length > 0 ? (
             <GalleryGrid artworks={filteredArtworks} onSelect={setSelectedArtwork} />
           ) : (
@@ -215,7 +215,7 @@ const Gallery = () => {
               <p className="text-lg">没有找到符合条件的艺术作品</p>
             </div>
           )}
-        </motion.div>
+      </motion.div>
       )}
       
       {/* 作品详情模态框 */}

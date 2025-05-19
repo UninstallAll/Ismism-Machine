@@ -11,6 +11,7 @@ interface TimelineNode {
   year: number;
   description: string;
   imageUrl?: string;
+  images?: string[];  // 添加images数组以支持多张图片
   artists: string[];
   styleMovement: string;
   influences: string[];
@@ -41,10 +42,17 @@ interface TimelineState {
 const mapArtStyleToTimelineNode = (artStyle: any, index: number): TimelineNode => {
   // 图片URL处理
   let imageUrl = `/TestData/${10001 + (index % 30)}.jpg`; // 默认图片
+  let images: string[] = [];
   
-  // 如果artStyle中有images属性，使用第一张图片
+  // 如果artStyle中有images属性，使用所有图片
   if (artStyle.images && artStyle.images.length > 0) {
-    imageUrl = artStyle.images[0];
+    imageUrl = artStyle.images[0]; // 第一张图片作为主图
+    images = artStyle.images; // 保存所有图片
+  } else {
+    // 如果没有图片，创建4个默认图片
+    for (let i = 0; i < 4; i++) {
+      images.push(`/TestData/${10001 + ((index * 4 + i) % 30)}.jpg`);
+    }
   }
   
   return {
@@ -53,6 +61,7 @@ const mapArtStyleToTimelineNode = (artStyle: any, index: number): TimelineNode =
     year: artStyle.year,
     description: artStyle.description,
     imageUrl: imageUrl,
+    images: images,
     artists: artStyle.artists,
     styleMovement: artStyle.styleMovement,
     influences: artStyle.influences || [],
