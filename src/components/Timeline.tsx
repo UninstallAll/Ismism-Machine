@@ -3,16 +3,57 @@ import { motion } from 'framer-motion';
 import { Search, Filter } from 'lucide-react';
 import { Button } from './ui/button';
 import { useTimelineStore } from '../store/timelineStore';
+import { useSearchParams, useLocation } from 'react-router-dom';
 
 const Timeline: React.FC = () => {
   const { nodes: timelineNodes, fetchNodes } = useTimelineStore();
   const [searchTerm, setSearchTerm] = useState('');
   const timelineRef = useRef<HTMLDivElement>(null);
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const [highlightedNodeId, setHighlightedNodeId] = useState<string | null>(null);
+  
+  // 节点引用，用于滚动到特定节点
+  const nodeRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   // 加载时间线节点
   useEffect(() => {
     fetchNodes();
   }, [fetchNodes]);
+
+  // 从URL参数获取艺术主义名称并设置搜索条件或滚动到该节点
+  useEffect(() => {
+    const styleParam = searchParams.get('style');
+    if (styleParam) {
+      // 设置搜索条件为URL参数中的艺术主义名称
+      setSearchTerm(styleParam);
+      
+      // 等待节点加载和渲染后，滚动到该节点
+      setTimeout(() => {
+        const targetNode = timelineNodes.find(node => 
+          node.title.toLowerCase() === styleParam.toLowerCase() || 
+          node.styleMovement.toLowerCase() === styleParam.toLowerCase()
+        );
+        
+        if (targetNode) {
+          // 设置高亮节点ID
+          setHighlightedNodeId(targetNode.id);
+          
+          if (nodeRefs.current[targetNode.id]) {
+            nodeRefs.current[targetNode.id]?.scrollIntoView({ 
+              behavior: 'smooth',
+              block: 'center'
+            });
+            
+            // 3秒后取消高亮
+            setTimeout(() => {
+              setHighlightedNodeId(null);
+            }, 3000);
+          }
+        }
+      }, 500); // 给予足够时间让节点渲染
+    }
+  }, [searchParams, timelineNodes]);
 
   // 筛选节点
   const filteredNodes = timelineNodes.filter(node => 
@@ -99,10 +140,12 @@ const Timeline: React.FC = () => {
           sortedNodes.map((node, index) => (
             <motion.div 
               key={node.id}
+              ref={el => nodeRefs.current[node.id] = el}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: index * 0.05 }}
-              className="flex flex-col md:flex-row items-start gap-4 border-b border-white/10 pb-6"
+              className={`flex flex-col md:flex-row items-start gap-4 border-b border-white/10 pb-6 
+                ${highlightedNodeId === node.id ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg p-4 -mx-4 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : ''}`}
             >
               {/* 左侧：艺术主义名称和信息 */}
               <div className="w-full md:w-1/3">

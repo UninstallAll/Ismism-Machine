@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Grid, List, Search, X, Zap } from 'lucide-react';
 import GalleryGrid from './GalleryGrid';
 import { Button } from './ui/button';
+import { useNavigate } from 'react-router-dom';
 
 // 导入本地数据库
 import artStylesData from '../../data/artStyles.json';
@@ -54,6 +55,7 @@ const Gallery = () => {
   const [filteredArtworks, setFilteredArtworks] = useState<Artwork[]>([]);
   const [loading, setLoading] = useState(true);
   const [artStylesWithImages, setArtStylesWithImages] = useState(artStylesData);
+  const navigate = useNavigate();
 
   // 尝试加载带图片的艺术风格数据
   useEffect(() => {
@@ -130,6 +132,12 @@ const Gallery = () => {
   // 关闭详情模态框
   const closeArtworkDetails = () => {
     setSelectedArtwork(null);
+  };
+
+  // 查看艺术主义在时间线上的位置
+  const viewInTimeline = (style: string) => {
+    // 跳转到时间线页面，通过URL参数传递艺术主义名称
+    navigate(`/timeline?style=${encodeURIComponent(style)}`);
   };
 
   return (
@@ -285,6 +293,7 @@ const Gallery = () => {
                   <div className="pt-4 border-t border-white/5 flex flex-wrap gap-2">
                     <Button 
                       className="gap-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white border-none"
+                      onClick={() => viewInTimeline(selectedArtwork.style)}
                     >
                       <Zap className="h-4 w-4" />
                       在时间线查看
