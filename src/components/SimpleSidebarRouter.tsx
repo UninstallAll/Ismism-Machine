@@ -71,9 +71,7 @@ const SimpleSidebarRouter: React.FC<SimpleSidebarRouterProps> = ({ isOpen }) => 
                     : 'hover:bg-white/5 text-gray-200'} transition-all duration-200`
                 }
               >
-                <div className={({ isActive }: NavLinkStateProps) => 
-                  `p-2 rounded-lg mr-3 ${isActive ? 'bg-blue-500/20' : 'bg-gray-800/80'}`
-                }>
+                <div className="p-2 rounded-lg mr-3 bg-gray-800/80 hover:bg-blue-500/20">
                   <Image className="h-5 w-5" />
                 </div>
                 <span>艺术主义画廊</span>
@@ -99,9 +97,7 @@ const SimpleSidebarRouter: React.FC<SimpleSidebarRouterProps> = ({ isOpen }) => 
                     : 'hover:bg-white/5 text-gray-200'} transition-all duration-200`
                 }
               >
-                <div className={({ isActive }: NavLinkStateProps) => 
-                  `p-2 rounded-lg mr-3 ${isActive ? 'bg-blue-500/20' : 'bg-gray-800/80'}`
-                }>
+                <div className="p-2 rounded-lg mr-3 bg-gray-800/80 hover:bg-blue-500/20">
                   <Clock className="h-5 w-5" />
                 </div>
                 <span>时间线视图</span>

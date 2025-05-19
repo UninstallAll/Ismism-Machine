@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Box, Container } from '@mui/material';
 import SimpleNavbar from './SimpleNavbar';
 import SimpleSidebarRouter from './SimpleSidebarRouter';
 
@@ -21,7 +20,7 @@ const MainLayout: React.FC = () => {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
         style={{
-          marginLeft: sidebarOpen ? '250px' : 0,
+          marginLeft: sidebarOpen ? '280px' : 0,
           transition: 'margin-left 0.2s',
         }}
       >
