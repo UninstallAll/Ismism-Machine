@@ -4,6 +4,7 @@ import { Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from './ui/button';
 import { useTimelineStore } from '../store/timelineStore';
 import { useSearchParams, useLocation } from 'react-router-dom';
+import { ArtMovement } from "@/types";
 
 const Timeline: React.FC = () => {
   const { nodes: timelineNodes, fetchNodes } = useTimelineStore();
@@ -18,6 +19,11 @@ const Timeline: React.FC = () => {
   // 节点引用，用于滚动到特定节点
   const nodeRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
+  // 拖动相关状态
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  
   // 加载时间线节点
   useEffect(() => {
     fetchNodes();
@@ -179,6 +185,30 @@ const Timeline: React.FC = () => {
     }
   };
 
+  // 处理鼠标拖动
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!timelineYearsRef.current) return;
+    setIsDragging(true);
+    setStartX(e.pageX - timelineYearsRef.current.offsetLeft);
+    setScrollLeft(timelineYearsRef.current.scrollLeft);
+  };
+  
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+  
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+  
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging || !timelineYearsRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - timelineYearsRef.current.offsetLeft;
+    const walk = (x - startX) * 2; // 滚动速度因子
+    timelineYearsRef.current.scrollLeft = scrollLeft - walk;
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* 标题和搜索栏 */}
@@ -221,55 +251,61 @@ const Timeline: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* 顶部时间轴 - 可滑动 */}
-      <div className="relative mb-12 mt-6 px-8" ref={timelineRef}>
-        {/* 时间轴线 */}
-        <div className="h-1 bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-blue-500/30 w-full rounded-full"></div>
-        
-        {/* 滑动按钮 */}
-        <Button 
-          variant="outline" 
-          size="icon" 
-          className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 rounded-full bg-black/40 text-white hover:bg-black/60 z-10 h-8 w-8 p-1 border border-white/10"
-          onClick={() => scrollTimeline('left')}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        
-        <Button 
-          variant="outline" 
-          size="icon" 
-          className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 rounded-full bg-black/40 text-white hover:bg-black/60 z-10 h-8 w-8 p-1 border border-white/10"
-          onClick={() => scrollTimeline('right')}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-        
-        {/* 年份标记容器，提供固定高度 */}
-        <div className="relative h-10">
-          {/* 年份标记，支持水平滚动 */}
-          <div 
-            className="absolute left-0 right-0 mt-2 hide-scrollbar" 
-            ref={timelineYearsRef}
-            style={{ overflow: 'hidden', height: '30px' }}
+      {/* 顶部时间轴 - 固定在页面顶部 */}
+      <div className="sticky top-16 bg-background z-10 pt-4 pb-6 border-b border-white/5 shadow-md">
+        <div className="relative px-8" ref={timelineRef}>
+          {/* 时间轴线 */}
+          <div className="h-1 bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-blue-500/30 w-full rounded-full"></div>
+          
+          {/* 滑动按钮 */}
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 rounded-full bg-black/40 text-white hover:bg-black/60 z-10 h-8 w-8 p-1 border border-white/10"
+            onClick={() => scrollTimeline('left')}
           >
-            {/* 年份标记背景轨道 */}
-            <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-white/5 transform -translate-y-1/2"></div>
-            
-            {yearMarks.map((year, index) => (
-              <button
-                key={index}
-                className="text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 hover:scale-110 transition-all cursor-pointer px-2 py-1 rounded-full absolute"
-                style={{ 
-                  left: `${(year - minYear) / timeRange * 100}%`,
-                  transform: 'translateX(-50%)'
-                }}
-                onClick={() => handleYearClick(year)}
-              >
-                <div className="absolute bottom-full mb-1 w-1 h-1 bg-blue-400 rounded-full left-1/2 transform -translate-x-1/2"></div>
-                {year}
-              </button>
-            ))}
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 rounded-full bg-black/40 text-white hover:bg-black/60 z-10 h-8 w-8 p-1 border border-white/10"
+            onClick={() => scrollTimeline('right')}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          
+          {/* 年份标记容器，提供固定高度 */}
+          <div className="relative h-10">
+            {/* 年份标记，支持水平滚动和鼠标拖动 */}
+            <div 
+              className="absolute left-0 right-0 mt-2 hide-scrollbar cursor-grab active:cursor-grabbing" 
+              ref={timelineYearsRef}
+              style={{ overflow: 'hidden', height: '30px' }}
+              onMouseDown={handleMouseDown}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseLeave}
+              onMouseMove={handleMouseMove}
+            >
+              {/* 年份标记背景轨道 */}
+              <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-white/5 transform -translate-y-1/2"></div>
+              
+              {yearMarks.map((year, index) => (
+                <button
+                  key={index}
+                  className="text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 hover:scale-110 transition-all cursor-pointer px-2 py-1 rounded-full absolute"
+                  style={{ 
+                    left: `${(year - minYear) / timeRange * 100}%`,
+                    transform: 'translateX(-50%)'
+                  }}
+                  onClick={() => handleYearClick(year)}
+                >
+                  <div className="absolute bottom-full mb-1 w-1 h-1 bg-blue-400 rounded-full left-1/2 transform -translate-x-1/2"></div>
+                  {year}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
