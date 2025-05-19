@@ -4,7 +4,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './components/MainLayout';
 import GalleryPage from './pages/GalleryPage';
 import TimelinePage from './pages/TimelinePage';
-import AICreatePage from './pages/AICreatePage';
 import { CursorGlow } from './components/ui/cursor-glow';
 import { TechBackground } from './components/ui/tech-background';
 
@@ -103,7 +102,6 @@ function App() {
             <Route index element={<Navigate to="/gallery" replace />} />
             <Route path="gallery" element={<GalleryPage />} />
             <Route path="timeline" element={<TimelinePage />} />
-            <Route path="ai-create" element={<AICreatePage />} />
           </Route>
         </Routes>
       </BrowserRouter>

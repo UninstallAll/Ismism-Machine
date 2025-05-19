@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Image, Clock, Sparkles, Zap } from 'lucide-react';
+import { Image, Clock, Zap } from 'lucide-react';
 
 interface SimpleSidebarRouterProps {
   isOpen: boolean;
@@ -101,41 +101,16 @@ const SimpleSidebarRouter: React.FC<SimpleSidebarRouterProps> = ({ isOpen }) => 
                 </NavLink>
               </NavLink>
             </motion.li>
-            <motion.li
-              custom={2}
-              variants={listItemVariants}
-              initial="hidden"
-              animate="visible"
-              whileHover={{ x: 5 }}
-            >
-              <NavLink
-                to="/ai-create"
-                className={({ isActive }: NavLinkStateProps) => 
-                  `flex items-center p-3 mb-1 rounded-md border border-transparent ${isActive 
-                    ? 'bg-gradient-to-r from-primary/20 to-secondary/20 text-white border-secondary/30 shadow-[0_0_15px_rgba(var(--secondary),0.2)]' 
-                    : 'hover:bg-secondary/10 hover:border-secondary/20'} transition-all duration-300`
-                }
-              >
-                <Sparkles className="mr-3 h-5 w-5" />
-                <span className="font-medium">AI 创作实验室</span>
-                {/* 活跃状态指示器 */}
-                <NavLink to="/ai-create">
-                  {({ isActive }: NavLinkStateProps) => isActive ? (
-                    <Zap className="ml-auto h-4 w-4 text-secondary animate-pulse" />
-                  ) : null}
-                </NavLink>
-              </NavLink>
-            </motion.li>
           </ul>
         </nav>
 
         <div className="mt-8 p-4 rounded-md border border-primary/20 bg-card/50 backdrop-blur-sm">
           <div className="flex items-center mb-2">
-            <Sparkles className="h-4 w-4 text-primary mr-2" />
-            <h3 className="text-sm font-semibold text-primary/90">科技艺术探索</h3>
+            <Clock className="h-4 w-4 text-primary mr-2" />
+            <h3 className="text-sm font-semibold text-primary/90">艺术时间探索</h3>
           </div>
           <p className="text-xs text-muted-foreground">
-            通过人工智能和数据可视化探索艺术主义历史与风格演变
+            探索艺术主义历史与风格演变
           </p>
         </div>
       </div>
