@@ -1,85 +1,66 @@
-import React, { useEffect } from 'react';
-import ReactFlow, { 
-  Background, 
-  Controls, 
-  MiniMap, 
-  Node, 
-  Edge,
-  NodeTypes,
-  useNodesState,
-  useEdgesState,
-  MarkerType
-} from 'reactflow';
-import 'reactflow/dist/style.css';
-import { useTimelineStore } from '../store/timelineStore';
-import TimelineNode from './TimelineNode';
-import { motion } from 'framer-motion';
-import { Search, Filter } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { ChevronLeft, ChevronRight, Search, Filter } from 'lucide-react';
 import { Button } from './ui/button';
-
-// 定义节点类型
-const nodeTypes: NodeTypes = {
-  timelineNode: TimelineNode,
-};
+import { useTimelineStore } from '../store/timelineStore';
 
 const Timeline: React.FC = () => {
-  const { nodes: storeNodes, connections, fetchNodes } = useTimelineStore();
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [searchTerm, setSearchTerm] = React.useState('');
-
-  // 从store加载数据并转换为ReactFlow格式
+  const { nodes: timelineNodes, fetchNodes } = useTimelineStore();
+  const [searchTerm, setSearchTerm] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  
+  // 加载时间线节点
   useEffect(() => {
     fetchNodes();
   }, [fetchNodes]);
 
-  // 当store数据变化时，更新ReactFlow节点和边
-  useEffect(() => {
-    if (storeNodes.length > 0) {
-      // 转换节点为ReactFlow格式
-      const flowNodes: Node[] = storeNodes
-        .filter(node => 
-          searchTerm === '' || 
-          node.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          node.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          node.artists.some(artist => artist.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          node.styleMovement.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-        .map(node => ({
-          id: node.id,
-          type: 'timelineNode',
-          position: node.position || { x: 0, y: 0 },
-          data: { ...node },
-      }));
+  // 筛选节点
+  const filteredNodes = timelineNodes.filter(node => 
+    searchTerm === '' || 
+    node.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    node.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    node.artists.some(artist => artist.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    node.styleMovement.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-      // 转换连接为ReactFlow边
-      const flowEdges: Edge[] = connections
-        .filter(conn => 
-          flowNodes.some(node => node.id === conn.source) && 
-          flowNodes.some(node => node.id === conn.target)
-        )
-        .map(conn => ({
-          id: `${conn.source}-${conn.target}`,
-          source: conn.source,
-          target: conn.target,
-          type: 'smoothstep',
-          animated: true,
-          style: { stroke: '#555' },
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-            color: '#555',
-          },
-      }));
+  // 按年份排序
+  const sortedNodes = [...filteredNodes].sort((a, b) => a.year - b.year);
 
-      setNodes(flowNodes);
-      setEdges(flowEdges);
+  // 处理鼠标滑动
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setStartX(e.pageX - (containerRef.current?.offsetLeft || 0));
+    setScrollLeft(containerRef.current?.scrollLeft || 0);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const x = e.pageX - (containerRef.current?.offsetLeft || 0);
+    const walk = (x - startX) * 2; // 滚动速度
+    if (containerRef.current) {
+      containerRef.current.scrollLeft = scrollLeft - walk;
     }
-  }, [storeNodes, connections, setNodes, setEdges, searchTerm]);
+  };
 
-  // 处理节点位置变化
-  const onNodeDragStop = (_: React.MouseEvent, node: Node) => {
-    const { id, position } = node;
-    useTimelineStore.getState().updateNodePosition(id, position);
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // 滚动左右按钮
+  const scrollLeft300px = () => {
+    if (containerRef.current) {
+      containerRef.current.scrollBy({ left: -300, behavior: 'smooth' });
+    }
+  };
+
+  const scrollRight300px = () => {
+    if (containerRef.current) {
+      containerRef.current.scrollBy({ left: 300, behavior: 'smooth' });
+    }
   };
 
   return (
@@ -89,7 +70,7 @@ const Timeline: React.FC = () => {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="mb-4"
+        className="mb-6"
       >
         <div className="flex flex-col gap-6">
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent text-center">
@@ -124,34 +105,140 @@ const Timeline: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* ReactFlow 流程图 */}
-      <div className="flex-grow border border-white/10 rounded-lg overflow-hidden bg-[#050505]/50 backdrop-blur-sm h-[70vh]">
-        {nodes.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-lg text-white/50">加载时间线数据...</div>
-          </div>
-        ) : (
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onNodeDragStop={onNodeDragStop}
-            nodeTypes={nodeTypes}
-            fitView
-            minZoom={0.2}
-            maxZoom={1.5}
-            defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
-          >
-            <Background color="#333" gap={16} />
-            <Controls />
-            <MiniMap
-              nodeStrokeColor="#555"
-              nodeColor="#222"
-              maskColor="rgba(0, 0, 0, 0.5)"
-            />
-          </ReactFlow>
-        )}
+      {/* 时间线控制按钮 */}
+      <div className="flex justify-between items-center mb-4">
+        <Button 
+          onClick={scrollLeft300px}
+          variant="ghost" 
+          className="rounded-full h-10 w-10 p-0 bg-white/5 hover:bg-white/10"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
+        <div className="text-sm text-center text-muted-foreground">
+          沿时间轴滑动或使用箭头按钮浏览
+        </div>
+        <Button 
+          onClick={scrollRight300px}
+          variant="ghost" 
+          className="rounded-full h-10 w-10 p-0 bg-white/5 hover:bg-white/10"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {/* 水平时间线容器 */}
+      <div className="relative mb-10">
+        {/* 中轴线 */}
+        <div className="absolute left-0 right-0 top-1/2 h-0.5 bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-blue-500/30"></div>
+        
+        {/* 滚动容器 */}
+        <div 
+          ref={containerRef}
+          className="overflow-x-auto pb-6 pt-6 hide-scrollbar"
+          style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+        >
+          {sortedNodes.length > 0 ? (
+            <div 
+              className="flex items-center" 
+              style={{ width: 'max-content', minWidth: '100%', paddingLeft: '50%', paddingRight: '50%' }}
+            >
+              {sortedNodes.map((node, index) => (
+                <motion.div 
+                  key={node.id}
+                  initial={{ opacity: 0, y: index % 2 === 0 ? 20 : -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: index * 0.1 }}
+                  className={`mx-8 ${index % 2 === 0 ? 'mt-8' : 'mb-8'}`}
+                  style={{ transformOrigin: 'center center' }}
+                >
+                  {/* 连接到中轴线的线 */}
+                  <div 
+                    className={`w-0.5 bg-gradient-to-b from-transparent via-blue-400 to-transparent mx-auto ${
+                      index % 2 === 0 ? 'h-10 -mt-10' : 'h-10 -mb-6'
+                    }`}
+                  ></div>
+                  
+                  {/* 年份标记 */}
+                  <div className="flex justify-center mb-2">
+                    <div className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-sm">
+                      {node.year}
+                    </div>
+                  </div>
+                  
+                  {/* 内容卡片 */}
+                  <div className="p-0.5 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg">
+                    <div className="w-72 max-w-72 rounded-lg bg-[#111] p-4 backdrop-blur-md">
+                      <div className="flex justify-between items-start mb-3">
+                        <h3 className="text-xl font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                          {node.title}
+                        </h3>
+                      </div>
+                      
+                      {node.imageUrl && (
+                        <div className="w-full h-32 mb-3 rounded-md overflow-hidden">
+                          <img
+                            src={node.imageUrl}
+                            alt={node.title}
+                            className="w-full h-full object-cover transition-transform hover:scale-105"
+                          />
+                        </div>
+                      )}
+                      
+                      <p className="text-sm text-gray-300 mb-3 line-clamp-3">
+                        {node.description}
+                      </p>
+                      
+                      <div className="mb-2">
+                        <h4 className="text-xs font-medium text-blue-400 mb-1">艺术家:</h4>
+                        <div className="flex flex-wrap gap-1">
+                          {node.artists.map((artist, artistIndex) => (
+                            <span 
+                              key={artistIndex} 
+                              className="px-2 py-0.5 text-xs rounded-full bg-blue-500/10 text-blue-300"
+                            >
+                              {artist}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {node.tags && node.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {node.tags.map((tag, tagIndex) => (
+                            <span 
+                              key={tagIndex} 
+                              className="px-2 py-0.5 text-xs rounded-full bg-purple-500/10 text-purple-300"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      
+                      <div className="mt-3 pt-2 border-t border-white/10">
+                        <span className="text-xs font-medium text-purple-400">
+                          流派: {node.styleMovement}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="p-5 bg-[rgba(15,15,20,0.7)] backdrop-blur-sm border border-white/10 rounded-lg shadow-glow-sm mb-4">
+                <Search className="h-10 w-10 text-gray-400 mb-2" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-400 mb-2">未找到时间线节点</h3>
+              <p className="text-gray-500">请尝试不同的搜索条件</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

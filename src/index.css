@@ -354,4 +354,13 @@
   );
   background-size: 200% 100%;
   animation: border-flow 3s infinite linear;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
 } 
