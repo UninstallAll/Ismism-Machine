@@ -34,22 +34,33 @@ interface TimelineState {
   updateNodePosition: (id: string, position: { x: number; y: number }) => void;
   addNode: (nodeData: Partial<TimelineNode>) => Promise<void>;
   removeNode: (id: string) => Promise<void>;
+  loadArtStylesWithImages: () => Promise<void>;
 }
 
 // 将本地数据库的格式转换为应用需要的格式
-const mapArtStyleToTimelineNode = (artStyle: any): TimelineNode => ({
-  id: artStyle.id,
-  title: artStyle.title,
-  year: artStyle.year,
-  description: artStyle.description,
-  imageUrl: `/images/${artStyle.id}/main.jpg`, // 默认主图片路径
-  artists: artStyle.artists,
-  styleMovement: artStyle.styleMovement,
-  influences: artStyle.influences || [],
-  influencedBy: artStyle.influencedBy || [],
-  position: { x: 100 + Math.random() * 800, y: 100 + Math.random() * 300 }, // 随机位置
-  tags: artStyle.tags || []
-});
+const mapArtStyleToTimelineNode = (artStyle: any, index: number): TimelineNode => {
+  // 图片URL处理
+  let imageUrl = `/TestData/${10001 + (index % 30)}.jpg`; // 默认图片
+  
+  // 如果artStyle中有images属性，使用第一张图片
+  if (artStyle.images && artStyle.images.length > 0) {
+    imageUrl = artStyle.images[0];
+  }
+  
+  return {
+    id: artStyle.id,
+    title: artStyle.title,
+    year: artStyle.year,
+    description: artStyle.description,
+    imageUrl: imageUrl,
+    artists: artStyle.artists,
+    styleMovement: artStyle.styleMovement,
+    influences: artStyle.influences || [],
+    influencedBy: artStyle.influencedBy || [],
+    position: { x: 100 + Math.random() * 800, y: 100 + Math.random() * 300 }, // 随机位置
+    tags: artStyle.tags || []
+  };
+};
 
 // 使用本地数据库中的数据创建节点
 const localNodes: TimelineNode[] = artStylesData.map(mapArtStyleToTimelineNode);
@@ -61,24 +72,46 @@ const localConnections: Connection[] = connectionsData.map(conn => ({
   type: conn.type
 }));
 
-export const useTimelineStore = create<TimelineState>((set) => ({
+export const useTimelineStore = create<TimelineState>((set, get) => ({
   nodes: localNodes, // 使用本地数据
   connections: localConnections, // 使用本地数据
   loading: false,
   error: null,
   
+  // 尝试加载带图片的艺术风格数据
+  loadArtStylesWithImages: async () => {
+    set({ loading: true, error: null });
+    try {
+      const response = await fetch('/data/artStylesWithImages.json');
+      if (response.ok) {
+        const data = await response.json();
+        
+        // 将带图片的艺术风格数据转换为时间线节点
+        const nodesWithImages = data.map(mapArtStyleToTimelineNode);
+        
+        set({ 
+          nodes: nodesWithImages,
+          loading: false 
+        });
+      } else {
+        // 如果加载失败，保持使用原来的数据
+        console.warn('无法加载带图片的艺术风格数据，使用默认数据');
+      }
+    } catch (error) {
+      console.warn('加载带图片的艺术风格数据出错', error);
+      set({ error: error instanceof Error ? error.message : 'Unknown error', loading: false });
+    }
+  },
+  
   // 加载节点数据
   fetchNodes: async () => {
     set({ loading: true, error: null });
     try {
-      // 使用本地数据，模拟API加载
-      setTimeout(() => {
-        set({ 
-          nodes: localNodes, 
-          connections: localConnections,
-          loading: false 
-        });
-      }, 300); // 模拟加载延迟
+      // 尝试加载带图片的艺术风格数据
+      await get().loadArtStylesWithImages();
+      
+      // 如果上面的加载失败，会自动回退到默认数据，无需再次设置
+      set({ loading: false });
     } catch (error) {
       set({ error: error instanceof Error ? error.message : 'Unknown error', loading: false });
     }

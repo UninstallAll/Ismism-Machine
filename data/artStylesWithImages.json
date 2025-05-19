@@ -1,0 +1,904 @@
+[
+  {
+    "id": "impressionism",
+    "title": "印象派",
+    "year": 1872,
+    "description": "强调光线和色彩的即时视觉印象，笔触松散可见",
+    "artists": [
+      "莫奈",
+      "雷诺阿",
+      "德加"
+    ],
+    "styleMovement": "impressionism",
+    "influences": [
+      "巴比松画派",
+      "日本浮世绘"
+    ],
+    "influencedBy": [],
+    "tags": [
+      "印象派",
+      "法国",
+      "19世纪"
+    ],
+    "images": [
+      "/images/impressionism/1.jpg",
+      "/images/impressionism/2.jpg",
+      "/images/impressionism/3.jpg",
+      "/images/impressionism/4.jpg",
+      "/images/impressionism/5.jpg",
+      "/images/impressionism/6.jpg",
+      "/images/impressionism/7.jpg",
+      "/images/impressionism/8.jpg",
+      "/images/impressionism/9.jpg",
+      "/images/impressionism/10.jpg",
+      "/images/impressionism/11.jpg",
+      "/images/impressionism/12.jpg",
+      "/images/impressionism/13.jpg",
+      "/images/impressionism/14.jpg",
+      "/images/impressionism/15.jpg",
+      "/images/impressionism/16.jpg",
+      "/images/impressionism/17.jpg",
+      "/images/impressionism/18.jpg",
+      "/images/impressionism/19.jpg",
+      "/images/impressionism/20.jpg"
+    ]
+  },
+  {
+    "id": "cubism",
+    "title": "立体主义",
+    "year": 1907,
+    "description": "将对象分解为几何形状，从多个角度同时表现",
+    "artists": [
+      "毕加索",
+      "布拉克"
+    ],
+    "styleMovement": "cubism",
+    "influences": [
+      "塞尚",
+      "非洲艺术"
+    ],
+    "influencedBy": [
+      "印象派"
+    ],
+    "tags": [
+      "立体主义",
+      "法国",
+      "20世纪初"
+    ],
+    "images": [
+      "/images/cubism/1.jpg",
+      "/images/cubism/2.jpg",
+      "/images/cubism/3.jpg",
+      "/images/cubism/4.jpg",
+      "/images/cubism/5.jpg",
+      "/images/cubism/6.jpg",
+      "/images/cubism/7.jpg",
+      "/images/cubism/8.jpg",
+      "/images/cubism/9.jpg",
+      "/images/cubism/10.jpg",
+      "/images/cubism/11.jpg",
+      "/images/cubism/12.jpg",
+      "/images/cubism/13.jpg",
+      "/images/cubism/14.jpg",
+      "/images/cubism/15.jpg",
+      "/images/cubism/16.jpg",
+      "/images/cubism/17.jpg",
+      "/images/cubism/18.jpg",
+      "/images/cubism/19.jpg",
+      "/images/cubism/20.jpg"
+    ]
+  },
+  {
+    "id": "surrealism",
+    "title": "超现实主义",
+    "year": 1924,
+    "description": "结合梦境与现实，创造超越理性的奇特视觉",
+    "artists": [
+      "达利",
+      "马格里特",
+      "米罗"
+    ],
+    "styleMovement": "surrealism",
+    "influences": [
+      "达达主义",
+      "弗洛伊德心理学"
+    ],
+    "influencedBy": [
+      "立体主义"
+    ],
+    "tags": [
+      "超现实主义",
+      "法国",
+      "20世纪"
+    ],
+    "images": [
+      "/images/surrealism/1.jpg",
+      "/images/surrealism/2.jpg",
+      "/images/surrealism/3.jpg",
+      "/images/surrealism/4.jpg",
+      "/images/surrealism/5.jpg",
+      "/images/surrealism/6.jpg",
+      "/images/surrealism/7.jpg",
+      "/images/surrealism/8.jpg",
+      "/images/surrealism/9.jpg",
+      "/images/surrealism/10.jpg",
+      "/images/surrealism/11.jpg",
+      "/images/surrealism/12.jpg",
+      "/images/surrealism/13.jpg",
+      "/images/surrealism/14.jpg",
+      "/images/surrealism/15.jpg",
+      "/images/surrealism/16.jpg",
+      "/images/surrealism/17.jpg",
+      "/images/surrealism/18.jpg",
+      "/images/surrealism/19.jpg",
+      "/images/surrealism/20.jpg"
+    ]
+  },
+  {
+    "id": "neo-impressionism",
+    "title": "新印象主义",
+    "year": 1884,
+    "description": "运用点彩技法，通过小点色彩的并置产生视觉混合",
+    "artists": [
+      "修拉",
+      "西涅克"
+    ],
+    "styleMovement": "neo-impressionism",
+    "influences": [
+      "印象派",
+      "色彩理论"
+    ],
+    "influencedBy": [],
+    "tags": [
+      "新印象主义",
+      "法国",
+      "19世纪末"
+    ],
+    "images": [
+      "/images/neo-impressionism/1.jpg",
+      "/images/neo-impressionism/2.jpg",
+      "/images/neo-impressionism/3.jpg",
+      "/images/neo-impressionism/4.jpg",
+      "/images/neo-impressionism/5.jpg",
+      "/images/neo-impressionism/6.jpg",
+      "/images/neo-impressionism/7.jpg",
+      "/images/neo-impressionism/8.jpg",
+      "/images/neo-impressionism/9.jpg",
+      "/images/neo-impressionism/10.jpg",
+      "/images/neo-impressionism/11.jpg",
+      "/images/neo-impressionism/12.jpg",
+      "/images/neo-impressionism/13.jpg",
+      "/images/neo-impressionism/14.jpg",
+      "/images/neo-impressionism/15.jpg",
+      "/images/neo-impressionism/16.jpg",
+      "/images/neo-impressionism/17.jpg",
+      "/images/neo-impressionism/18.jpg",
+      "/images/neo-impressionism/19.jpg",
+      "/images/neo-impressionism/20.jpg"
+    ]
+  },
+  {
+    "id": "post-impressionism",
+    "title": "后印象派",
+    "year": 1886,
+    "description": "超越印象派的表面印象，强调个人表达和形式结构",
+    "artists": [
+      "梵高",
+      "高更",
+      "塞尚"
+    ],
+    "styleMovement": "post-impressionism",
+    "influences": [
+      "印象派",
+      "日本浮世绘"
+    ],
+    "influencedBy": [
+      "新印象主义"
+    ],
+    "tags": [
+      "后印象派",
+      "法国",
+      "19世纪末"
+    ],
+    "images": [
+      "/images/post-impressionism/1.jpg",
+      "/images/post-impressionism/2.jpg",
+      "/images/post-impressionism/3.jpg",
+      "/images/post-impressionism/4.jpg",
+      "/images/post-impressionism/5.jpg",
+      "/images/post-impressionism/6.jpg",
+      "/images/post-impressionism/7.jpg",
+      "/images/post-impressionism/8.jpg",
+      "/images/post-impressionism/9.jpg",
+      "/images/post-impressionism/10.jpg",
+      "/images/post-impressionism/11.jpg",
+      "/images/post-impressionism/12.jpg",
+      "/images/post-impressionism/13.jpg",
+      "/images/post-impressionism/14.jpg",
+      "/images/post-impressionism/15.jpg",
+      "/images/post-impressionism/16.jpg",
+      "/images/post-impressionism/17.jpg",
+      "/images/post-impressionism/18.jpg",
+      "/images/post-impressionism/19.jpg",
+      "/images/post-impressionism/20.jpg"
+    ]
+  },
+  {
+    "id": "expressionism",
+    "title": "表现主义",
+    "year": 1905,
+    "description": "强调主观情感表达，扭曲现实以增强情感冲击",
+    "artists": [
+      "蒙克",
+      "基尔希纳",
+      "诺尔德"
+    ],
+    "styleMovement": "expressionism",
+    "influences": [
+      "梵高",
+      "高更"
+    ],
+    "influencedBy": [
+      "后印象派"
+    ],
+    "tags": [
+      "表现主义",
+      "德国",
+      "20世纪初"
+    ],
+    "images": [
+      "/images/expressionism/1.jpg",
+      "/images/expressionism/2.jpg",
+      "/images/expressionism/3.jpg",
+      "/images/expressionism/4.jpg",
+      "/images/expressionism/5.jpg",
+      "/images/expressionism/6.jpg",
+      "/images/expressionism/7.jpg",
+      "/images/expressionism/8.jpg",
+      "/images/expressionism/9.jpg",
+      "/images/expressionism/10.jpg",
+      "/images/expressionism/11.jpg",
+      "/images/expressionism/12.jpg",
+      "/images/expressionism/13.jpg",
+      "/images/expressionism/14.jpg",
+      "/images/expressionism/15.jpg",
+      "/images/expressionism/16.jpg",
+      "/images/expressionism/17.jpg",
+      "/images/expressionism/18.jpg",
+      "/images/expressionism/19.jpg",
+      "/images/expressionism/20.jpg"
+    ]
+  },
+  {
+    "id": "fauvism",
+    "title": "野兽派",
+    "year": 1905,
+    "description": "使用强烈、非自然的色彩和大胆的笔触表现情感",
+    "artists": [
+      "马蒂斯",
+      "德兰",
+      "弗拉芒克"
+    ],
+    "styleMovement": "fauvism",
+    "influences": [
+      "后印象派",
+      "非洲艺术"
+    ],
+    "influencedBy": [],
+    "tags": [
+      "野兽派",
+      "法国",
+      "20世纪初"
+    ],
+    "images": [
+      "/images/fauvism/1.jpg",
+      "/images/fauvism/2.jpg",
+      "/images/fauvism/3.jpg",
+      "/images/fauvism/4.jpg",
+      "/images/fauvism/5.jpg",
+      "/images/fauvism/6.jpg",
+      "/images/fauvism/7.jpg",
+      "/images/fauvism/8.jpg",
+      "/images/fauvism/9.jpg",
+      "/images/fauvism/10.jpg",
+      "/images/fauvism/11.jpg",
+      "/images/fauvism/12.jpg",
+      "/images/fauvism/13.jpg",
+      "/images/fauvism/14.jpg",
+      "/images/fauvism/15.jpg",
+      "/images/fauvism/16.jpg",
+      "/images/fauvism/17.jpg",
+      "/images/fauvism/18.jpg",
+      "/images/fauvism/19.jpg",
+      "/images/fauvism/20.jpg"
+    ]
+  },
+  {
+    "id": "dadaism",
+    "title": "达达主义",
+    "year": 1916,
+    "description": "反传统、反艺术的艺术运动，强调荒谬与偶然性",
+    "artists": [
+      "杜尚",
+      "阿尔普",
+      "恩斯特"
+    ],
+    "styleMovement": "dadaism",
+    "influences": [
+      "立体主义",
+      "第一次世界大战"
+    ],
+    "influencedBy": [],
+    "tags": [
+      "达达主义",
+      "欧洲",
+      "20世纪前期"
+    ],
+    "images": [
+      "/images/dadaism/1.jpg",
+      "/images/dadaism/2.jpg",
+      "/images/dadaism/3.jpg",
+      "/images/dadaism/4.jpg",
+      "/images/dadaism/5.jpg",
+      "/images/dadaism/6.jpg",
+      "/images/dadaism/7.jpg",
+      "/images/dadaism/8.jpg",
+      "/images/dadaism/9.jpg",
+      "/images/dadaism/10.jpg",
+      "/images/dadaism/11.jpg",
+      "/images/dadaism/12.jpg",
+      "/images/dadaism/13.jpg",
+      "/images/dadaism/14.jpg",
+      "/images/dadaism/15.jpg",
+      "/images/dadaism/16.jpg",
+      "/images/dadaism/17.jpg",
+      "/images/dadaism/18.jpg",
+      "/images/dadaism/19.jpg",
+      "/images/dadaism/20.jpg"
+    ]
+  },
+  {
+    "id": "constructivism",
+    "title": "构成主义",
+    "year": 1915,
+    "description": "强调几何形式与现代工业材料，服务于社会目的",
+    "artists": [
+      "塔特林",
+      "罗德琴科",
+      "利西茨基"
+    ],
+    "styleMovement": "constructivism",
+    "influences": [
+      "立体主义",
+      "未来主义"
+    ],
+    "influencedBy": [],
+    "tags": [
+      "构成主义",
+      "俄国",
+      "20世纪前期"
+    ],
+    "images": [
+      "/images/constructivism/1.jpg",
+      "/images/constructivism/2.jpg",
+      "/images/constructivism/3.jpg",
+      "/images/constructivism/4.jpg",
+      "/images/constructivism/5.jpg",
+      "/images/constructivism/6.jpg",
+      "/images/constructivism/7.jpg",
+      "/images/constructivism/8.jpg",
+      "/images/constructivism/9.jpg",
+      "/images/constructivism/10.jpg",
+      "/images/constructivism/11.jpg",
+      "/images/constructivism/12.jpg",
+      "/images/constructivism/13.jpg",
+      "/images/constructivism/14.jpg",
+      "/images/constructivism/15.jpg",
+      "/images/constructivism/16.jpg",
+      "/images/constructivism/17.jpg",
+      "/images/constructivism/18.jpg",
+      "/images/constructivism/19.jpg",
+      "/images/constructivism/20.jpg"
+    ]
+  },
+  {
+    "id": "abstract-expressionism",
+    "title": "抽象表现主义",
+    "year": 1943,
+    "description": "强调自发行动和动态绘画过程的抽象绘画",
+    "artists": [
+      "波洛克",
+      "德库宁",
+      "罗斯科"
+    ],
+    "styleMovement": "abstract-expressionism",
+    "influences": [
+      "超现实主义",
+      "表现主义"
+    ],
+    "influencedBy": [
+      "超现实主义"
+    ],
+    "tags": [
+      "抽象表现主义",
+      "美国",
+      "20世纪中期"
+    ],
+    "images": [
+      "/images/abstract-expressionism/1.jpg",
+      "/images/abstract-expressionism/2.jpg",
+      "/images/abstract-expressionism/3.jpg",
+      "/images/abstract-expressionism/4.jpg",
+      "/images/abstract-expressionism/5.jpg",
+      "/images/abstract-expressionism/6.jpg",
+      "/images/abstract-expressionism/7.jpg",
+      "/images/abstract-expressionism/8.jpg",
+      "/images/abstract-expressionism/9.jpg",
+      "/images/abstract-expressionism/10.jpg",
+      "/images/abstract-expressionism/11.jpg",
+      "/images/abstract-expressionism/12.jpg",
+      "/images/abstract-expressionism/13.jpg",
+      "/images/abstract-expressionism/14.jpg",
+      "/images/abstract-expressionism/15.jpg",
+      "/images/abstract-expressionism/16.jpg",
+      "/images/abstract-expressionism/17.jpg",
+      "/images/abstract-expressionism/18.jpg",
+      "/images/abstract-expressionism/19.jpg",
+      "/images/abstract-expressionism/20.jpg"
+    ]
+  },
+  {
+    "id": "pop-art",
+    "title": "波普艺术",
+    "year": 1955,
+    "description": "从大众文化和消费主义中汲取主题和材料",
+    "artists": [
+      "沃霍尔",
+      "利希滕斯坦",
+      "奥尔登堡"
+    ],
+    "styleMovement": "pop-art",
+    "influences": [
+      "达达主义",
+      "商业广告"
+    ],
+    "influencedBy": [
+      "抽象表现主义"
+    ],
+    "tags": [
+      "波普艺术",
+      "美国",
+      "20世纪后期"
+    ],
+    "images": [
+      "/images/pop-art/1.jpg",
+      "/images/pop-art/2.jpg",
+      "/images/pop-art/3.jpg",
+      "/images/pop-art/4.jpg",
+      "/images/pop-art/5.jpg",
+      "/images/pop-art/6.jpg",
+      "/images/pop-art/7.jpg",
+      "/images/pop-art/8.jpg",
+      "/images/pop-art/9.jpg",
+      "/images/pop-art/10.jpg",
+      "/images/pop-art/11.jpg",
+      "/images/pop-art/12.jpg",
+      "/images/pop-art/13.jpg",
+      "/images/pop-art/14.jpg",
+      "/images/pop-art/15.jpg",
+      "/images/pop-art/16.jpg",
+      "/images/pop-art/17.jpg",
+      "/images/pop-art/18.jpg",
+      "/images/pop-art/19.jpg",
+      "/images/pop-art/20.jpg"
+    ]
+  },
+  {
+    "id": "minimalism",
+    "title": "极简主义",
+    "year": 1960,
+    "description": "减少艺术到最基本元素，强调简单和客观性",
+    "artists": [
+      "贾德",
+      "弗拉文",
+      "安德烈"
+    ],
+    "styleMovement": "minimalism",
+    "influences": [
+      "抽象表现主义",
+      "构成主义"
+    ],
+    "influencedBy": [],
+    "tags": [
+      "极简主义",
+      "美国",
+      "20世纪后期"
+    ],
+    "images": [
+      "/images/minimalism/1.jpg",
+      "/images/minimalism/2.jpg",
+      "/images/minimalism/3.jpg",
+      "/images/minimalism/4.jpg",
+      "/images/minimalism/5.jpg",
+      "/images/minimalism/6.jpg",
+      "/images/minimalism/7.jpg",
+      "/images/minimalism/8.jpg",
+      "/images/minimalism/9.jpg",
+      "/images/minimalism/10.jpg",
+      "/images/minimalism/11.jpg",
+      "/images/minimalism/12.jpg",
+      "/images/minimalism/13.jpg",
+      "/images/minimalism/14.jpg",
+      "/images/minimalism/15.jpg",
+      "/images/minimalism/16.jpg",
+      "/images/minimalism/17.jpg",
+      "/images/minimalism/18.jpg",
+      "/images/minimalism/19.jpg",
+      "/images/minimalism/20.jpg"
+    ]
+  },
+  {
+    "id": "conceptual-art",
+    "title": "观念艺术",
+    "year": 1965,
+    "description": "核心是艺术的概念或想法，物理形式次之",
+    "artists": [
+      "科苏斯",
+      "魏纳",
+      "霍尔泽"
+    ],
+    "styleMovement": "conceptual-art",
+    "influences": [
+      "达达主义",
+      "极简主义"
+    ],
+    "influencedBy": [
+      "极简主义"
+    ],
+    "tags": [
+      "观念艺术",
+      "全球",
+      "20世纪后期"
+    ],
+    "images": [
+      "/images/conceptual-art/1.jpg",
+      "/images/conceptual-art/2.jpg",
+      "/images/conceptual-art/3.jpg",
+      "/images/conceptual-art/4.jpg",
+      "/images/conceptual-art/5.jpg",
+      "/images/conceptual-art/6.jpg",
+      "/images/conceptual-art/7.jpg",
+      "/images/conceptual-art/8.jpg",
+      "/images/conceptual-art/9.jpg",
+      "/images/conceptual-art/10.jpg",
+      "/images/conceptual-art/11.jpg",
+      "/images/conceptual-art/12.jpg",
+      "/images/conceptual-art/13.jpg",
+      "/images/conceptual-art/14.jpg",
+      "/images/conceptual-art/15.jpg",
+      "/images/conceptual-art/16.jpg",
+      "/images/conceptual-art/17.jpg",
+      "/images/conceptual-art/18.jpg",
+      "/images/conceptual-art/19.jpg",
+      "/images/conceptual-art/20.jpg"
+    ]
+  },
+  {
+    "id": "neo-expressionism",
+    "title": "新表现主义",
+    "year": 1980,
+    "description": "回归强烈色彩和激情表达的具象绘画",
+    "artists": [
+      "巴斯奎特",
+      "基弗",
+      "克门特"
+    ],
+    "styleMovement": "neo-expressionism",
+    "influences": [
+      "表现主义",
+      "野兽派"
+    ],
+    "influencedBy": [],
+    "tags": [
+      "新表现主义",
+      "国际性",
+      "20世纪末期"
+    ],
+    "images": [
+      "/images/neo-expressionism/1.jpg",
+      "/images/neo-expressionism/2.jpg",
+      "/images/neo-expressionism/3.jpg",
+      "/images/neo-expressionism/4.jpg",
+      "/images/neo-expressionism/5.jpg",
+      "/images/neo-expressionism/6.jpg",
+      "/images/neo-expressionism/7.jpg",
+      "/images/neo-expressionism/8.jpg",
+      "/images/neo-expressionism/9.jpg",
+      "/images/neo-expressionism/10.jpg",
+      "/images/neo-expressionism/11.jpg",
+      "/images/neo-expressionism/12.jpg",
+      "/images/neo-expressionism/13.jpg",
+      "/images/neo-expressionism/14.jpg",
+      "/images/neo-expressionism/15.jpg",
+      "/images/neo-expressionism/16.jpg",
+      "/images/neo-expressionism/17.jpg",
+      "/images/neo-expressionism/18.jpg",
+      "/images/neo-expressionism/19.jpg",
+      "/images/neo-expressionism/20.jpg"
+    ]
+  },
+  {
+    "id": "installation-art",
+    "title": "装置艺术",
+    "year": 1970,
+    "description": "创造三维环境，改变观众对空间的体验",
+    "artists": [
+      "博伊斯",
+      "卡普尔",
+      "艾未未"
+    ],
+    "styleMovement": "installation-art",
+    "influences": [
+      "观念艺术",
+      "极简主义"
+    ],
+    "influencedBy": [
+      "观念艺术"
+    ],
+    "tags": [
+      "装置艺术",
+      "国际性",
+      "20世纪末期"
+    ],
+    "images": [
+      "/images/installation-art/1.jpg",
+      "/images/installation-art/2.jpg",
+      "/images/installation-art/3.jpg",
+      "/images/installation-art/4.jpg",
+      "/images/installation-art/5.jpg",
+      "/images/installation-art/6.jpg",
+      "/images/installation-art/7.jpg",
+      "/images/installation-art/8.jpg",
+      "/images/installation-art/9.jpg",
+      "/images/installation-art/10.jpg",
+      "/images/installation-art/11.jpg",
+      "/images/installation-art/12.jpg",
+      "/images/installation-art/13.jpg",
+      "/images/installation-art/14.jpg",
+      "/images/installation-art/15.jpg",
+      "/images/installation-art/16.jpg",
+      "/images/installation-art/17.jpg",
+      "/images/installation-art/18.jpg",
+      "/images/installation-art/19.jpg",
+      "/images/installation-art/20.jpg"
+    ]
+  },
+  {
+    "id": "video-art",
+    "title": "录像艺术",
+    "year": 1965,
+    "description": "使用录像技术作为艺术表达的主要媒介",
+    "artists": [
+      "派克",
+      "维奥拉",
+      "希尔"
+    ],
+    "styleMovement": "video-art",
+    "influences": [
+      "观念艺术",
+      "电影实验"
+    ],
+    "influencedBy": [],
+    "tags": [
+      "录像艺术",
+      "国际性",
+      "20世纪后期"
+    ],
+    "images": [
+      "/images/video-art/1.jpg",
+      "/images/video-art/2.jpg",
+      "/images/video-art/3.jpg",
+      "/images/video-art/4.jpg",
+      "/images/video-art/5.jpg",
+      "/images/video-art/6.jpg",
+      "/images/video-art/7.jpg",
+      "/images/video-art/8.jpg",
+      "/images/video-art/9.jpg",
+      "/images/video-art/10.jpg",
+      "/images/video-art/11.jpg",
+      "/images/video-art/12.jpg",
+      "/images/video-art/13.jpg",
+      "/images/video-art/14.jpg",
+      "/images/video-art/15.jpg",
+      "/images/video-art/16.jpg",
+      "/images/video-art/17.jpg",
+      "/images/video-art/18.jpg",
+      "/images/video-art/19.jpg",
+      "/images/video-art/20.jpg"
+    ]
+  },
+  {
+    "id": "performance-art",
+    "title": "行为艺术",
+    "year": 1960,
+    "description": "将艺术家的行为和身体作为艺术作品的中心",
+    "artists": [
+      "阿布拉莫维奇",
+      "博伊斯",
+      "伯登"
+    ],
+    "styleMovement": "performance-art",
+    "influences": [
+      "达达主义",
+      "观念艺术"
+    ],
+    "influencedBy": [
+      "观念艺术"
+    ],
+    "tags": [
+      "行为艺术",
+      "国际性",
+      "20世纪后期"
+    ],
+    "images": [
+      "/images/performance-art/1.jpg",
+      "/images/performance-art/2.jpg",
+      "/images/performance-art/3.jpg",
+      "/images/performance-art/4.jpg",
+      "/images/performance-art/5.jpg",
+      "/images/performance-art/6.jpg",
+      "/images/performance-art/7.jpg",
+      "/images/performance-art/8.jpg",
+      "/images/performance-art/9.jpg",
+      "/images/performance-art/10.jpg",
+      "/images/performance-art/11.jpg",
+      "/images/performance-art/12.jpg",
+      "/images/performance-art/13.jpg",
+      "/images/performance-art/14.jpg",
+      "/images/performance-art/15.jpg",
+      "/images/performance-art/16.jpg",
+      "/images/performance-art/17.jpg",
+      "/images/performance-art/18.jpg",
+      "/images/performance-art/19.jpg",
+      "/images/performance-art/20.jpg"
+    ]
+  },
+  {
+    "id": "digital-art",
+    "title": "数字艺术",
+    "year": 1990,
+    "description": "使用数字技术创作或呈现的艺术形式",
+    "artists": [
+      "科修",
+      "艾肯",
+      "穆拉卡米"
+    ],
+    "styleMovement": "digital-art",
+    "influences": [
+      "观念艺术",
+      "录像艺术"
+    ],
+    "influencedBy": [
+      "录像艺术"
+    ],
+    "tags": [
+      "数字艺术",
+      "全球",
+      "21世纪初"
+    ],
+    "images": [
+      "/images/digital-art/1.jpg",
+      "/images/digital-art/2.jpg",
+      "/images/digital-art/3.jpg",
+      "/images/digital-art/4.jpg",
+      "/images/digital-art/5.jpg",
+      "/images/digital-art/6.jpg",
+      "/images/digital-art/7.jpg",
+      "/images/digital-art/8.jpg",
+      "/images/digital-art/9.jpg",
+      "/images/digital-art/10.jpg",
+      "/images/digital-art/11.jpg",
+      "/images/digital-art/12.jpg",
+      "/images/digital-art/13.jpg",
+      "/images/digital-art/14.jpg",
+      "/images/digital-art/15.jpg",
+      "/images/digital-art/16.jpg",
+      "/images/digital-art/17.jpg",
+      "/images/digital-art/18.jpg",
+      "/images/digital-art/19.jpg",
+      "/images/digital-art/20.jpg"
+    ]
+  },
+  {
+    "id": "street-art",
+    "title": "街头艺术",
+    "year": 1980,
+    "description": "在公共空间创作的视觉艺术，源自涂鸦文化",
+    "artists": [
+      "班克斯",
+      "谢巴德",
+      "哈林"
+    ],
+    "styleMovement": "street-art",
+    "influences": [
+      "涂鸦",
+      "波普艺术"
+    ],
+    "influencedBy": [
+      "波普艺术"
+    ],
+    "tags": [
+      "街头艺术",
+      "全球",
+      "20世纪末"
+    ],
+    "images": [
+      "/images/street-art/1.jpg",
+      "/images/street-art/2.jpg",
+      "/images/street-art/3.jpg",
+      "/images/street-art/4.jpg",
+      "/images/street-art/5.jpg",
+      "/images/street-art/6.jpg",
+      "/images/street-art/7.jpg",
+      "/images/street-art/8.jpg",
+      "/images/street-art/9.jpg",
+      "/images/street-art/10.jpg",
+      "/images/street-art/11.jpg",
+      "/images/street-art/12.jpg",
+      "/images/street-art/13.jpg",
+      "/images/street-art/14.jpg",
+      "/images/street-art/15.jpg",
+      "/images/street-art/16.jpg",
+      "/images/street-art/17.jpg",
+      "/images/street-art/18.jpg",
+      "/images/street-art/19.jpg",
+      "/images/street-art/20.jpg"
+    ]
+  },
+  {
+    "id": "nft-art",
+    "title": "NFT艺术",
+    "year": 2017,
+    "description": "以非同质化代币形式存在的数字艺术作品",
+    "artists": [
+      "比普尔",
+      "帕克",
+      "索菲"
+    ],
+    "styleMovement": "nft-art",
+    "influences": [
+      "数字艺术",
+      "加密货币"
+    ],
+    "influencedBy": [
+      "数字艺术"
+    ],
+    "tags": [
+      "NFT艺术",
+      "全球",
+      "21世纪"
+    ],
+    "images": [
+      "/images/nft-art/1.jpg",
+      "/images/nft-art/2.jpg",
+      "/images/nft-art/3.jpg",
+      "/images/nft-art/4.jpg",
+      "/images/nft-art/5.jpg",
+      "/images/nft-art/6.jpg",
+      "/images/nft-art/7.jpg",
+      "/images/nft-art/8.jpg",
+      "/images/nft-art/9.jpg",
+      "/images/nft-art/10.jpg",
+      "/images/nft-art/11.jpg",
+      "/images/nft-art/12.jpg",
+      "/images/nft-art/13.jpg",
+      "/images/nft-art/14.jpg",
+      "/images/nft-art/15.jpg",
+      "/images/nft-art/16.jpg",
+      "/images/nft-art/17.jpg",
+      "/images/nft-art/18.jpg",
+      "/images/nft-art/19.jpg",
+      "/images/nft-art/20.jpg"
+    ]
+  }
+]

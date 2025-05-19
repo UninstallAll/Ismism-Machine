@@ -20,15 +20,30 @@ interface Artwork {
 // 将artStyles数据转换为Gallery组件所需的Artwork格式
 const convertArtStyleToArtwork = (artStyle: any): Artwork[] => {
   // 从每个艺术风格创建艺术品对象，为每个艺术家创建一个作品
-  return artStyle.artists.map((artist: string, index: number) => ({
-    id: `${artStyle.id}-${index}`,
-    title: `${artist}的${artStyle.title}作品`,
-    artist: artist,
-    year: artStyle.year,
-    imageUrl: `/images/${artStyle.id}/main.jpg`, // 使用目录中的主图片
-    style: artStyle.title,
-    description: artStyle.description
-  }));
+  return artStyle.artists.map((artist: string, index: number) => {
+    // 确定图片URL
+    let imageUrl = '';
+    
+    // 如果artStyle有images属性并且有足够的图片，使用对应的图片
+    if (artStyle.images && artStyle.images.length > 0) {
+      // 为每个艺术家选择不同的图片，确保不越界
+      const imageIndex = index % artStyle.images.length;
+      imageUrl = artStyle.images[imageIndex];
+    } else {
+      // 使用TestData中的测试图片作为备份
+      imageUrl = `/TestData/${10001 + (index % 30)}.jpg`;
+    }
+    
+    return {
+      id: `${artStyle.id}-${index}`,
+      title: `${artist}的${artStyle.title}作品`,
+      artist: artist,
+      year: artStyle.year,
+      imageUrl: imageUrl,
+      style: artStyle.title,
+      description: artStyle.description
+    };
+  });
 };
 
 const Gallery = () => {
@@ -37,20 +52,63 @@ const Gallery = () => {
   const [artworks, setArtworks] = useState<Artwork[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredArtworks, setFilteredArtworks] = useState<Artwork[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [artStylesWithImages, setArtStylesWithImages] = useState(artStylesData);
 
-  // 组件加载时，从本地数据库生成艺术品
+  // 尝试加载带图片的艺术风格数据
   useEffect(() => {
-    // 将艺术风格数据转换为艺术品
-    const allArtworks = artStylesData.flatMap(convertArtStyleToArtwork);
+    // 显示加载状态
+    setLoading(true);
     
-    // 为没有图片的艺术品生成一个默认图片URL
-    const artworksWithImages = allArtworks.map(artwork => ({
-      ...artwork,
-      imageUrl: artwork.imageUrl || `/TestData/${Math.floor(Math.random() * 30) + 10001}.jpg` // 使用测试图片
-    }));
+    // 尝试动态导入artStylesWithImages.json
+    const loadArtStylesWithImages = async () => {
+      try {
+        const response = await fetch('/data/artStylesWithImages.json');
+        if (response.ok) {
+          const data = await response.json();
+          setArtStylesWithImages(data);
+        } else {
+          console.warn('无法加载artStylesWithImages.json，使用默认数据');
+          setArtStylesWithImages(artStylesData);
+        }
+      } catch (error) {
+        console.warn('加载artStylesWithImages.json出错，使用默认数据', error);
+        setArtStylesWithImages(artStylesData);
+      } finally {
+        // 加载完成后生成艺术品数据
+        generateArtworks();
+      }
+    };
+    
+    loadArtStylesWithImages();
+  }, []);
+
+  // 生成艺术品数据
+  const generateArtworks = () => {
+    // 将艺术风格数据转换为艺术品
+    const allArtworks = artStylesWithImages.flatMap(convertArtStyleToArtwork);
+    
+    // 确保所有艺术品都有图片URL
+    const artworksWithImages = allArtworks.map((artwork, index) => {
+      // 如果没有设置imageUrl或imageUrl不存在，使用备份
+      if (!artwork.imageUrl) {
+        return {
+          ...artwork,
+          imageUrl: `/TestData/${10001 + (index % 30)}.jpg`
+        };
+      }
+      return artwork;
+    });
     
     setArtworks(artworksWithImages);
-  }, []);
+    setFilteredArtworks(artworksWithImages); // 初始时设置已过滤的作品为所有作品
+    setLoading(false);
+  };
+
+  // 当artStylesWithImages更新时，重新生成艺术品
+  useEffect(() => {
+    generateArtworks();
+  }, [artStylesWithImages]);
 
   // 搜索筛选
   useEffect(() => {
@@ -136,14 +194,29 @@ const Gallery = () => {
         </div>
       </motion.div>
       
+      {/* 加载状态 */}
+      {loading && (
+        <div className="flex justify-center items-center py-20">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      )}
+      
       {/* 内容区域 */}
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-      >
-        <GalleryGrid artworks={filteredArtworks} onSelect={setSelectedArtwork} />
-      </motion.div>
+      {!loading && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          {filteredArtworks.length > 0 ? (
+            <GalleryGrid artworks={filteredArtworks} onSelect={setSelectedArtwork} />
+          ) : (
+            <div className="text-center py-20 text-gray-400">
+              <p className="text-lg">没有找到符合条件的艺术作品</p>
+            </div>
+          )}
+        </motion.div>
+      )}
       
       {/* 作品详情模态框 */}
       <AnimatePresence>
@@ -182,6 +255,13 @@ const Gallery = () => {
                     initial={{ filter: 'blur(10px)', opacity: 0 }}
                     animate={{ filter: 'blur(0px)', opacity: 1 }}
                     transition={{ duration: 0.5 }}
+                    onError={(e) => {
+                      // 图片加载失败时使用备用图片
+                      const target = e.target as HTMLImageElement;
+                      const artworkId = selectedArtwork.id.split('-')[0];
+                      const artworkIndex = parseInt(selectedArtwork.id.split('-')[1] || '0');
+                      target.src = `/TestData/${10001 + (artworkIndex % 30)}.jpg`;
+                    }}
                   />
                 </div>
                 
