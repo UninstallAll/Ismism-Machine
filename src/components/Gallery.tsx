@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Grid, List, Search, X, Zap } from 'lucide-react';
 import GalleryGrid from './GalleryGrid';
-import galleryImages from '../data/galleryImages.json';
 import { Button } from './ui/button';
+
+// 导入本地数据库
+import artStylesData from '../../data/artStyles.json';
 
 interface Artwork {
   id: string;
@@ -15,10 +17,57 @@ interface Artwork {
   description: string;
 }
 
+// 将artStyles数据转换为Gallery组件所需的Artwork格式
+const convertArtStyleToArtwork = (artStyle: any): Artwork[] => {
+  // 从每个艺术风格创建艺术品对象，为每个艺术家创建一个作品
+  return artStyle.artists.map((artist: string, index: number) => ({
+    id: `${artStyle.id}-${index}`,
+    title: `${artist}的${artStyle.title}作品`,
+    artist: artist,
+    year: artStyle.year,
+    imageUrl: `/images/${artStyle.id}/main.jpg`, // 使用目录中的主图片
+    style: artStyle.title,
+    description: artStyle.description
+  }));
+};
+
 const Gallery = () => {
   const [selectedArtwork, setSelectedArtwork] = useState<Artwork | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const artworks = galleryImages as Artwork[];
+  const [artworks, setArtworks] = useState<Artwork[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filteredArtworks, setFilteredArtworks] = useState<Artwork[]>([]);
+
+  // 组件加载时，从本地数据库生成艺术品
+  useEffect(() => {
+    // 将艺术风格数据转换为艺术品
+    const allArtworks = artStylesData.flatMap(convertArtStyleToArtwork);
+    
+    // 为没有图片的艺术品生成一个默认图片URL
+    const artworksWithImages = allArtworks.map(artwork => ({
+      ...artwork,
+      imageUrl: artwork.imageUrl || `/TestData/${Math.floor(Math.random() * 30) + 10001}.jpg` // 使用测试图片
+    }));
+    
+    setArtworks(artworksWithImages);
+  }, []);
+
+  // 搜索筛选
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setFilteredArtworks(artworks);
+      return;
+    }
+    
+    const filtered = artworks.filter(artwork => 
+      artwork.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      artwork.artist.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      artwork.style.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      artwork.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    
+    setFilteredArtworks(filtered);
+  }, [searchTerm, artworks]);
 
   // 关闭详情模态框
   const closeArtworkDetails = () => {
@@ -47,6 +96,8 @@ const Gallery = () => {
                   type="text"
                   placeholder="搜索艺术作品..."
                   className="bg-transparent border-none outline-none text-sm text-muted-foreground w-full"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
             </div>
@@ -91,7 +142,7 @@ const Gallery = () => {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        <GalleryGrid artworks={artworks} onSelect={setSelectedArtwork} />
+        <GalleryGrid artworks={filteredArtworks} onSelect={setSelectedArtwork} />
       </motion.div>
       
       {/* 作品详情模态框 */}
