@@ -1,9 +1,9 @@
 import React from 'react';
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './components/MainLayout';
-import GalleryPage from './pages/GalleryPage';
-import TimelinePage from './pages/TimelinePage';
+import Gallery from './components/Gallery';
+import Timeline from './components/Timeline';
 import { CursorGlow } from './components/ui/cursor-glow';
 import { TechBackground } from './components/ui/tech-background';
 
@@ -129,17 +129,17 @@ function App() {
   return (
     <ThemeProvider theme={modernTheme}>
       <CssBaseline />
-      <BrowserRouter>
+      <Router>
         <TechBackground />
         <CursorGlow />
         <Routes>
           <Route path="/" element={<MainLayout />}>
             <Route index element={<Navigate to="/gallery" replace />} />
-            <Route path="gallery" element={<GalleryPage />} />
-            <Route path="timeline" element={<TimelinePage />} />
+            <Route path="gallery" element={<Gallery />} />
+            <Route path="timeline" element={<Timeline />} />
           </Route>
         </Routes>
-      </BrowserRouter>
+      </Router>
     </ThemeProvider>
   );
 }
