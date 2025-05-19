@@ -1,0 +1,17 @@
+{
+  "impressionism": [
+    "https://example.com/path/to/monet_sunrise.jpg",
+    "https://example.com/path/to/renoir_boating.jpg",
+    "https://example.com/path/to/monet_waterlilies.jpg"
+  ],
+  "cubism": [
+    "https://example.com/path/to/picasso_guitars.jpg",
+    "https://example.com/path/to/braque_violin.jpg",
+    "https://example.com/path/to/picasso_demoiselles.jpg"
+  ],
+  "surrealism": [
+    "https://example.com/path/to/dali_persistence.jpg",
+    "https://example.com/path/to/magritte_pipe.jpg",
+    "https://example.com/path/to/dali_elephants.jpg"
+  ]
+} 
