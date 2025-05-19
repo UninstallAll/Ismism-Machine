@@ -11,30 +11,11 @@ const Timeline: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
-  const [showLeftArrow, setShowLeftArrow] = useState(false);
-  const [showRightArrow, setShowRightArrow] = useState(true);
   
   // 加载时间线节点
   useEffect(() => {
     fetchNodes();
   }, [fetchNodes]);
-
-  // 监听滚动位置，控制箭头显示
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      const position = container.scrollLeft;
-      const maxScroll = container.scrollWidth - container.clientWidth;
-      
-      setShowLeftArrow(position > 20);
-      setShowRightArrow(position < maxScroll - 20);
-    };
-
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, []);
 
   // 筛选节点
   const filteredNodes = timelineNodes.filter(node => 
@@ -91,14 +72,6 @@ const Timeline: React.FC = () => {
     }
   };
 
-  // 计算节点间距
-  const getNodeSpacing = (nodesCount: number) => {
-    if (nodesCount <= 3) return 'mx-16';
-    if (nodesCount <= 6) return 'mx-10';
-    if (nodesCount <= 12) return 'mx-6';
-    return 'mx-3'; // 更紧凑的间距
-  };
-
   return (
     <div className="flex flex-col h-full">
       {/* 标题和搜索栏 */}
@@ -146,9 +119,7 @@ const Timeline: React.FC = () => {
         <Button 
           onClick={scrollLeft500px}
           variant="ghost" 
-          className={`rounded-full h-10 w-10 p-0 transition-opacity duration-300 ${
-            showLeftArrow ? 'bg-white/5 hover:bg-white/10 opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
+          className="rounded-full h-10 w-10 p-0 bg-white/5 hover:bg-white/10"
         >
           <ChevronLeft className="h-5 w-5" />
         </Button>
@@ -158,9 +129,7 @@ const Timeline: React.FC = () => {
         <Button 
           onClick={scrollRight500px}
           variant="ghost" 
-          className={`rounded-full h-10 w-10 p-0 transition-opacity duration-300 ${
-            showRightArrow ? 'bg-white/5 hover:bg-white/10 opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
+          className="rounded-full h-10 w-10 p-0 bg-white/5 hover:bg-white/10"
         >
           <ChevronRight className="h-5 w-5" />
         </Button>
@@ -174,7 +143,7 @@ const Timeline: React.FC = () => {
         {/* 滚动容器 */}
         <div 
           ref={containerRef}
-          className="overflow-x-auto pb-6 pt-6 hide-scrollbar relative"
+          className="overflow-x-auto pb-6 pt-6 hide-scrollbar relative w-full"
           style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
@@ -183,11 +152,12 @@ const Timeline: React.FC = () => {
         >
           {sortedNodes.length > 0 ? (
             <div 
-              className="flex items-center" 
+              className="flex items-center w-full" 
               style={{ 
-                width: 'max-content', 
-                minWidth: '100%', 
-                padding: '0 1rem'
+                width: '100%',
+                minWidth: '100vw',
+                paddingLeft: '0',
+                paddingRight: '0'
               }}
             >
               {/* 开始标记 */}
@@ -197,15 +167,19 @@ const Timeline: React.FC = () => {
               </div>
 
               {/* 节点容器 - 使用flex布局平均分配空间 */}
-              <div className="flex items-center justify-between flex-1 px-4 min-w-[calc(100%-120px)]">
+              <div className="flex items-center justify-between flex-1" style={{ width: 'calc(100vw - 60px)' }}>
                 {sortedNodes.map((node, index) => (
                   <motion.div 
                     key={node.id}
                     initial={{ opacity: 0, y: index % 2 === 0 ? 20 : -20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.05 }}
-                    className={`${index % 2 === 0 ? 'mt-8' : 'mb-8'} ${getNodeSpacing(sortedNodes.length)}`}
-                    style={{ transformOrigin: 'center center' }}
+                    transition={{ duration: 0.4, delay: index * 0.02 }}
+                    className={`${index % 2 === 0 ? 'mt-8' : 'mb-8'} mx-3`}
+                    style={{ 
+                      transformOrigin: 'center center', 
+                      marginLeft: index === 0 ? '0' : '1.5rem',
+                      marginRight: index === sortedNodes.length - 1 ? '0' : '1.5rem',
+                    }}
                   >
                     {/* 连接到中轴线的线 */}
                     <div 
