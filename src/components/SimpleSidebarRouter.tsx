@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Image, Clock, BarChart, Sparkles, Zap } from 'lucide-react';
+import { Image, Clock, Sparkles, Zap } from 'lucide-react';
 
 interface SimpleSidebarRouterProps {
   isOpen: boolean;
@@ -103,31 +103,6 @@ const SimpleSidebarRouter: React.FC<SimpleSidebarRouterProps> = ({ isOpen }) => 
             </motion.li>
             <motion.li
               custom={2}
-              variants={listItemVariants}
-              initial="hidden"
-              animate="visible"
-              whileHover={{ x: 5 }}
-            >
-              <NavLink
-                to="/stats"
-                className={({ isActive }: NavLinkStateProps) => 
-                  `flex items-center p-3 mb-1 rounded-md border border-transparent ${isActive 
-                    ? 'bg-primary/20 text-primary border-primary/30 shadow-[0_0_10px_rgba(var(--primary),0.2)]' 
-                    : 'hover:bg-primary/10 hover:border-primary/20'} transition-all duration-300`
-                }
-              >
-                <BarChart className="mr-3 h-5 w-5" />
-                <span className="font-medium">数据统计分析</span>
-                {/* 活跃状态指示器 */}
-                <NavLink to="/stats">
-                  {({ isActive }: NavLinkStateProps) => isActive ? (
-                    <Zap className="ml-auto h-4 w-4 text-primary animate-pulse" />
-                  ) : null}
-                </NavLink>
-              </NavLink>
-            </motion.li>
-            <motion.li
-              custom={3}
               variants={listItemVariants}
               initial="hidden"
               animate="visible"
