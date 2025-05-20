@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Grid, List, Search, X, Zap } from 'lucide-react';
+import { Grid, List, Search, X, Zap, ArrowRight } from 'lucide-react';
 import GalleryGrid from './GalleryGrid';
 import { Button } from './ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -22,18 +22,9 @@ interface Artwork {
 const convertArtStyleToArtwork = (artStyle: any): Artwork[] => {
   // 从每个艺术风格创建艺术品对象，为每个艺术家创建一个作品
   return artStyle.artists.map((artist: string, index: number) => {
-    // 确定图片URL
-    let imageUrl = '';
-    
-    // 如果artStyle有images属性并且有足够的图片，使用对应的图片
-    if (artStyle.images && artStyle.images.length > 0) {
-      // 为每个艺术家选择不同的图片，确保不越界
-      const imageIndex = index % artStyle.images.length;
-      imageUrl = artStyle.images[imageIndex];
-    } else {
-      // 使用TestData中的测试图片作为备份
-      imageUrl = `/TestData/${10001 + (index % 30)}.jpg`;
-    }
+    // 确定图片URL - 使用固定的索引规则
+    const imageIndex = 10001 + (index % 30);
+    const imageUrl = `/TestData/${imageIndex}.jpg`;
     
     return {
       id: `${artStyle.id}-${index}`,
@@ -90,20 +81,9 @@ const Gallery = () => {
     // 将艺术风格数据转换为艺术品
     const allArtworks = artStylesWithImages.flatMap(convertArtStyleToArtwork);
     
-    // 确保所有艺术品都有图片URL
-    const artworksWithImages = allArtworks.map((artwork, index) => {
-      // 如果没有设置imageUrl或imageUrl不存在，使用备份
-      if (!artwork.imageUrl) {
-        return {
-          ...artwork,
-          imageUrl: `/TestData/${10001 + (index % 30)}.jpg`
-        };
-      }
-      return artwork;
-    });
-    
-    setArtworks(artworksWithImages);
-    setFilteredArtworks(artworksWithImages); // 初始时设置已过滤的作品为所有作品
+    // 不再需要额外处理图片URL，因为convertArtStyleToArtwork已经确保了所有艺术品都有图片URL
+    setArtworks(allArtworks);
+    setFilteredArtworks(allArtworks); // 初始时设置已过滤的作品为所有作品
     setLoading(false);
   };
 
@@ -138,6 +118,46 @@ const Gallery = () => {
   const viewInTimeline = (style: string) => {
     // 跳转到时间线页面，通过URL参数传递艺术主义名称
     navigate(`/timeline?style=${encodeURIComponent(style)}`);
+  };
+
+  // 获取艺术主义的ID
+  const getArtMovementId = (styleName: string): string => {
+    // 根据风格名称找到对应的ID
+    const styleToIdMap: Record<string, string> = {
+      '印象派': 'impressionism',
+      '立体主义': 'cubism',
+      '超现实主义': 'surrealism',
+      '新印象主义': 'neo-impressionism',
+      '后印象派': 'post-impressionism',
+      '表现主义': 'expressionism',
+      '野兽派': 'fauvism',
+      '达达主义': 'dadaism',
+      '构成主义': 'constructivism',
+      '抽象表现主义': 'abstract-expressionism',
+      '波普艺术': 'pop-art',
+      '极简主义': 'minimalism',
+      '观念艺术': 'conceptual-art',
+      '新表现主义': 'neo-expressionism',
+      '装置艺术': 'installation-art',
+      '录像艺术': 'video-art',
+      '行为艺术': 'performance-art',
+      '数字艺术': 'digital-art'
+    };
+    
+    return styleToIdMap[styleName] || styleName.toLowerCase().replace(/\s+/g, '-');
+  };
+
+  // 跳转到艺术主义详情页
+  const navigateToArtMovement = (style: string) => {
+    closeArtworkDetails();
+    const artMovementId = getArtMovementId(style);
+    navigate(`/art-movement/${artMovementId}`);
+  };
+
+  // 跳转到艺术作品详情页
+  const navigateToArtworkDetail = (artwork: Artwork) => {
+    closeArtworkDetails();
+    navigate(`/artwork/${artwork.id}`);
   };
 
   return (
@@ -266,7 +286,6 @@ const Gallery = () => {
                     onError={(e) => {
                       // 图片加载失败时使用备用图片
                       const target = e.target as HTMLImageElement;
-                      const artworkId = selectedArtwork.id.split('-')[0];
                       const artworkIndex = parseInt(selectedArtwork.id.split('-')[1] || '0');
                       target.src = `/TestData/${10001 + (artworkIndex % 30)}.jpg`;
                     }}
@@ -280,8 +299,12 @@ const Gallery = () => {
                     </h2>
                     <div className="flex items-center gap-2 mt-1 text-sm text-gray-400">
                       <span>{selectedArtwork.artist}, {selectedArtwork.year}</span>
-                      <span className="px-2 py-0.5 text-xs font-medium bg-blue-500/10 text-blue-400 rounded-full">
+                      <span 
+                        className="px-2 py-0.5 text-xs font-medium bg-blue-500/10 text-blue-400 rounded-full cursor-pointer hover:bg-blue-500/20 transition-colors flex items-center gap-1"
+                        onClick={() => navigateToArtMovement(selectedArtwork.style)}
+                      >
                         {selectedArtwork.style}
+                        <ArrowRight className="h-3 w-3" />
                       </span>
                     </div>
                   </div>
@@ -293,6 +316,14 @@ const Gallery = () => {
                   <div className="pt-4 border-t border-white/5 flex flex-wrap gap-2">
                     <Button 
                       className="gap-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white border-none"
+                      onClick={() => navigateToArtworkDetail(selectedArtwork)}
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                      查看作品详情
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="border-white/10 hover:bg-white/5 gap-2"
                       onClick={() => viewInTimeline(selectedArtwork.style)}
                     >
                       <Zap className="h-4 w-4" />
@@ -300,9 +331,11 @@ const Gallery = () => {
                     </Button>
                     <Button 
                       variant="outline" 
-                      className="border-white/10 hover:bg-white/5"
+                      className="border-white/10 hover:bg-white/5 gap-2"
+                      onClick={() => navigateToArtMovement(selectedArtwork.style)}
                     >
-                      相关作品
+                      <ArrowRight className="h-4 w-4" />
+                      查看艺术主义详情
                     </Button>
                   </div>
                 </div>

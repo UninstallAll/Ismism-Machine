@@ -1,10 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Filter, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { Button } from './ui/button';
 import { useTimelineStore } from '../store/timelineStore';
-import { useSearchParams, useLocation } from 'react-router-dom';
-import { ArtMovement } from "@/types";
+import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 
 const Timeline: React.FC = () => {
   const { nodes: timelineNodes, fetchNodes } = useTimelineStore();
@@ -12,6 +11,7 @@ const Timeline: React.FC = () => {
   const timelineRef = useRef<HTMLDivElement>(null);
   const [searchParams] = useSearchParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const [highlightedNodeId, setHighlightedNodeId] = useState<string | null>(null);
   const [timelineScroll, setTimelineScroll] = useState(0);
   const timelineYearsRef = useRef<HTMLDivElement>(null);
@@ -209,6 +209,11 @@ const Timeline: React.FC = () => {
     timelineYearsRef.current.scrollLeft = scrollLeft - walk;
   };
 
+  // 跳转到艺术主义详情页
+  const navigateToArtMovement = (artMovementId: string) => {
+    navigate(`/art-movement/${artMovementId}`);
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* 标题和搜索栏 */}
@@ -216,7 +221,7 @@ const Timeline: React.FC = () => {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="mb-6"
+        className="mb-14"
       >
         <div className="flex flex-col gap-6">
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent text-center">
@@ -251,11 +256,11 @@ const Timeline: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* 顶部时间轴 - 固定在页面顶部 */}
-      <div className="sticky top-16 bg-background z-10 pt-4 pb-6 border-b border-white/5 shadow-md">
+      {/* 顶部时间轴 - 固定在页面顶部，紧贴导航栏 */}
+      <div className="sticky top-16 bg-background z-10 border-b border-white/5 shadow-md -mt-8">
         <div className="relative px-8" ref={timelineRef}>
           {/* 时间轴线 */}
-          <div className="h-1 bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-blue-500/30 w-full rounded-full"></div>
+          <div className="h-1 bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-blue-500/30 w-full rounded-full mt-3"></div>
           
           {/* 滑动按钮 */}
           <Button 
@@ -277,7 +282,7 @@ const Timeline: React.FC = () => {
           </Button>
           
           {/* 年份标记容器，提供固定高度 */}
-          <div className="relative h-10">
+          <div className="relative h-10 mb-2">
             {/* 年份标记，支持水平滚动和鼠标拖动 */}
             <div 
               className="absolute left-0 right-0 mt-2 hide-scrollbar cursor-grab active:cursor-grabbing" 
@@ -311,7 +316,7 @@ const Timeline: React.FC = () => {
       </div>
 
       {/* 艺术主义行列表 */}
-      <div className="space-y-6">
+      <div className="space-y-6 mt-4">
         {sortedNodes.length > 0 ? (
           sortedNodes.map((node, index) => (
             <motion.div 
@@ -336,9 +341,14 @@ const Timeline: React.FC = () => {
                     }}
                   ></div>
                   
-                  <h3 className="text-xl font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto text-xl font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent hover:from-blue-300 hover:to-purple-300 flex items-center gap-1"
+                    onClick={() => navigateToArtMovement(node.id)}
+                  >
                     {node.title}
-                  </h3>
+                    <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </Button>
                   
                   <div className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-sm">
                     {node.year}
@@ -376,10 +386,18 @@ const Timeline: React.FC = () => {
                   </div>
                 )}
                 
-                <div className="mt-3 pt-2 border-t border-white/10">
+                <div className="mt-3 pt-2 border-t border-white/10 flex justify-between items-center">
                   <span className="text-sm font-medium text-purple-400">
                     {node.styleMovement}
                   </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 p-1 h-auto"
+                    onClick={() => navigateToArtMovement(node.id)}
+                  >
+                    查看详情 <ArrowRight className="h-3 w-3 ml-1" />
+                  </Button>
                 </div>
               </div>
               
@@ -389,7 +407,11 @@ const Timeline: React.FC = () => {
                 {(node.images && node.images.length > 0 ? node.images.slice(0, 4) : [...Array(4)].map((_, i) => 
                   `/TestData/${10001 + ((index * 4 + i) % 30)}.jpg`
                 )).map((imageUrl, imgIndex) => (
-                  <div key={imgIndex} className="aspect-square rounded-md overflow-hidden">
+                  <div 
+                    key={imgIndex} 
+                    className="aspect-square rounded-md overflow-hidden cursor-pointer"
+                    onClick={() => navigateToArtMovement(node.id)}
+                  >
                     <img
                       src={imageUrl}
                       alt={`${node.title} artwork ${imgIndex + 1}`}
