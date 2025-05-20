@@ -92,20 +92,6 @@ const SimpleNavbar: React.FC<SimpleNavbarProps> = ({ onMenuClick }) => {
                 {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
             </motion.div>
-          
-          <motion.div 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="hidden md:block"
-          >
-            <Button
-              variant="default"
-              size="sm"
-              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white border-none shadow-md hover:shadow-lg"
-            >
-              登录
-            </Button>
-          </motion.div>
         </div>
       </div>
     </header>
@@ -154,16 +140,6 @@ const SimpleNavbar: React.FC<SimpleNavbarProps> = ({ onMenuClick }) => {
                   placeholder="搜索艺术作品..."
                   className="bg-transparent border-none outline-none text-sm text-muted-foreground w-full"
                 />
-              </div>
-              
-              <div className="pt-2 mt-2 border-t border-white/10">
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white border-none"
-                >
-                  登录
-                </Button>
               </div>
             </div>
           </motion.div>
