@@ -5,6 +5,7 @@ import MainLayout from './components/MainLayout';
 import Gallery from './components/Gallery';
 import Timeline from './components/Timeline';
 import ArtMovementPage from './pages/ArtMovementPage';
+import ArtworkDetailPage from './pages/ArtworkDetailPage';
 import { CursorGlow } from './components/ui/cursor-glow';
 import { TechBackground } from './components/ui/tech-background';
 
@@ -139,6 +140,7 @@ function App() {
             <Route path="gallery" element={<Gallery />} />
             <Route path="timeline" element={<Timeline />} />
             <Route path="art-movement/:id" element={<ArtMovementPage />} />
+            <Route path="artwork/:id" element={<ArtworkDetailPage />} />
           </Route>
         </Routes>
       </Router>

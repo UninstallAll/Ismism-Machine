@@ -22,18 +22,9 @@ interface Artwork {
 const convertArtStyleToArtwork = (artStyle: any): Artwork[] => {
   // 从每个艺术风格创建艺术品对象，为每个艺术家创建一个作品
   return artStyle.artists.map((artist: string, index: number) => {
-    // 确定图片URL
-    let imageUrl = '';
-    
-    // 如果artStyle有images属性并且有足够的图片，使用对应的图片
-    if (artStyle.images && artStyle.images.length > 0) {
-      // 为每个艺术家选择不同的图片，确保不越界
-      const imageIndex = index % artStyle.images.length;
-      imageUrl = artStyle.images[imageIndex];
-    } else {
-      // 使用TestData中的测试图片作为备份
-      imageUrl = `/TestData/${10001 + (index % 30)}.jpg`;
-    }
+    // 确定图片URL - 使用固定的索引规则
+    const imageIndex = 10001 + (index % 30);
+    const imageUrl = `/TestData/${imageIndex}.jpg`;
     
     return {
       id: `${artStyle.id}-${index}`,
@@ -90,20 +81,9 @@ const Gallery = () => {
     // 将艺术风格数据转换为艺术品
     const allArtworks = artStylesWithImages.flatMap(convertArtStyleToArtwork);
     
-    // 确保所有艺术品都有图片URL
-    const artworksWithImages = allArtworks.map((artwork, index) => {
-      // 如果没有设置imageUrl或imageUrl不存在，使用备份
-      if (!artwork.imageUrl) {
-        return {
-          ...artwork,
-          imageUrl: `/TestData/${10001 + (index % 30)}.jpg`
-        };
-      }
-      return artwork;
-    });
-    
-    setArtworks(artworksWithImages);
-    setFilteredArtworks(artworksWithImages); // 初始时设置已过滤的作品为所有作品
+    // 不再需要额外处理图片URL，因为convertArtStyleToArtwork已经确保了所有艺术品都有图片URL
+    setArtworks(allArtworks);
+    setFilteredArtworks(allArtworks); // 初始时设置已过滤的作品为所有作品
     setLoading(false);
   };
 
@@ -172,6 +152,12 @@ const Gallery = () => {
     closeArtworkDetails();
     const artMovementId = getArtMovementId(style);
     navigate(`/art-movement/${artMovementId}`);
+  };
+
+  // 跳转到艺术作品详情页
+  const navigateToArtworkDetail = (artwork: Artwork) => {
+    closeArtworkDetails();
+    navigate(`/artwork/${artwork.id}`);
   };
 
   return (
@@ -300,7 +286,6 @@ const Gallery = () => {
                     onError={(e) => {
                       // 图片加载失败时使用备用图片
                       const target = e.target as HTMLImageElement;
-                      const artworkId = selectedArtwork.id.split('-')[0];
                       const artworkIndex = parseInt(selectedArtwork.id.split('-')[1] || '0');
                       target.src = `/TestData/${10001 + (artworkIndex % 30)}.jpg`;
                     }}
@@ -331,6 +316,14 @@ const Gallery = () => {
                   <div className="pt-4 border-t border-white/5 flex flex-wrap gap-2">
                     <Button 
                       className="gap-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white border-none"
+                      onClick={() => navigateToArtworkDetail(selectedArtwork)}
+                    >
+                      <ArrowRight className="h-4 w-4" />
+                      查看作品详情
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="border-white/10 hover:bg-white/5 gap-2"
                       onClick={() => viewInTimeline(selectedArtwork.style)}
                     >
                       <Zap className="h-4 w-4" />

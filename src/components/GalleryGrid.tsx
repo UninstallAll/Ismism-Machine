@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from './ui/button';
 import { Card, CardContent, CardFooter } from './ui/card';
-import { Eye, ArrowRight } from 'lucide-react';
+import { Eye, ArrowRight, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface Artwork {
@@ -65,6 +65,12 @@ const GalleryGrid = ({ artworks, onSelect }: GalleryGridProps) => {
     navigate(`/art-movement/${artMovementId}`);
   };
 
+  // 跳转到艺术作品详情页
+  const navigateToArtworkDetail = (artworkId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/artwork/${artworkId}`);
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
       {artworks.map((artwork, index) => (
@@ -83,7 +89,7 @@ const GalleryGrid = ({ artworks, onSelect }: GalleryGridProps) => {
         >
           <Card 
             className="overflow-hidden h-full cursor-pointer border border-primary/20 bg-card/90 backdrop-blur-sm tech-card"
-            onClick={() => onSelect(artwork)}
+            onClick={(e) => navigateToArtworkDetail(artwork.id, e)}
           >
             <div className="h-52 overflow-hidden relative group">
               <motion.img 
@@ -100,11 +106,15 @@ const GalleryGrid = ({ artworks, onSelect }: GalleryGridProps) => {
                   <h4 className="text-white font-bold truncate">{artwork.title}</h4>
                   <p className="text-white/90 text-sm">{artwork.artist}</p>
                 </div>
-                <div className="absolute top-3 right-3">
+                <div className="absolute top-3 right-3 flex gap-2">
                   <Button
                     size="sm"
                     variant="outline"
                     className="h-8 w-8 p-0 rounded-full bg-black/30 backdrop-blur-sm border border-white/20 hover:bg-primary/20"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelect(artwork);
+                    }}
                   >
                     <Eye className="h-4 w-4 text-white" />
                   </Button>
@@ -128,17 +138,6 @@ const GalleryGrid = ({ artworks, onSelect }: GalleryGridProps) => {
               >
                 <span className="text-xs">{artwork.style}</span>
                 <ArrowRight className="h-3 w-3" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="text-primary hover:text-white hover:bg-primary/50 p-0 h-8 px-2"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelect(artwork);
-                }}
-              >
-                查看详情
               </Button>
             </CardFooter>
           </Card>
