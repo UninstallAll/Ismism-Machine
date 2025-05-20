@@ -15,10 +15,40 @@ import time
 import datetime  # 添加datetime模块引用
 from auto_config import DEFAULT_MONGODB_URI, AUTO_CONNECT, DEFAULT_DATABASE, DEFAULT_GRID_COLUMNS, DEFAULT_PAGE_SIZE, WINDOW_SIZE, RELATIONSHIP_TYPES
 
+# 添加配置文件路径
+CONFIG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "user_config.json")
+
+# 默认配置
+DEFAULT_CONFIG = {
+    "last_db": "",
+    "last_collection": "",
+    "auto_connect": AUTO_CONNECT,
+    "mongodb_uri": DEFAULT_MONGODB_URI,
+    "grid_columns": DEFAULT_GRID_COLUMNS
+}
+
+# 加载用户配置
+def load_user_config():
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error loading config: {e}")
+    return DEFAULT_CONFIG
+
+# 保存用户配置
+def save_user_config(config):
+    try:
+        with open(CONFIG_FILE, 'w') as f:
+            json.dump(config, f, indent=2)
+    except Exception as e:
+        print(f"Error saving config: {e}")
+
 class ImageCard(ttk.Frame):
     """A component to display an image with its metadata"""
     def __init__(self, parent, doc=None, width=200, height=200, on_select_callback=None):
-        super().__init__(parent, borderwidth=1, relief="solid")
+        super().__init__(parent)
         
         self.width = width
         self.height = height
@@ -29,17 +59,28 @@ class ImageCard(ttk.Frame):
         self.is_selected = False
         self.on_select_callback = on_select_callback
         
-        # 创建自定义样式
-        self.style = ttk.Style()
-        self.style.configure("Card.TFrame", borderwidth=1, relief="solid")
-        self.style.configure("Selected.TFrame", borderwidth=2, relief="solid")
-        self.configure(style="Card.TFrame")
+        # 默认背景色
+        default_bg = "#f0f0f0"
+        
+        # 为了保持一致的卡片大小，创建一个额外的固定尺寸容器
+        # 无论内容如何变化，这个容器都会保持固定尺寸
+        self.container = tk.Frame(self, width=width, height=height+80)
+        self.container.pack(fill=tk.BOTH, expand=True)
+        self.container.pack_propagate(False)  # 防止容器大小变化
+        
+        # 创建主框架 - 使用tk.Frame以便能直接设置背景色
+        # 使用恒定的borderwidth=2，但初始时使用相同颜色边框和背景色，这样视觉上不可见
+        self.main_frame = tk.Frame(self.container, borderwidth=2, relief="solid", 
+                                 highlightthickness=2, padx=0, pady=0, 
+                                 background=default_bg, 
+                                 highlightbackground=default_bg)  # 初始时边框颜色和背景色相同
+        self.main_frame.pack(fill=tk.BOTH, expand=True, padx=0, pady=0)
         
         # Extract metadata from document
         self._extract_metadata()
         
-        # Create image display area
-        self.image_frame = ttk.Frame(self, width=width, height=height)
+        # Create image display area - 保持固定大小
+        self.image_frame = tk.Frame(self.main_frame, width=width-10, height=height-10, background=default_bg)
         self.image_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         self.image_frame.pack_propagate(False)  # Prevent frame from shrinking
         
@@ -47,8 +88,8 @@ class ImageCard(ttk.Frame):
         self.image_label.pack(fill=tk.BOTH, expand=True)
         
         # Create metadata display area
-        self.meta_frame = ttk.Frame(self)
-        self.meta_frame.pack(fill=tk.X, padx=5, pady=5)
+        self.meta_frame = tk.Frame(self.main_frame, background=default_bg)
+        self.meta_frame.pack(fill=tk.X, padx=5, pady=2)
         
         # Create selection checkbox
         self.select_var = tk.BooleanVar(value=False)
@@ -62,7 +103,7 @@ class ImageCard(ttk.Frame):
         self.name_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
         
         # Add size info if available (move to a new line for layout)
-        info_frame = ttk.Frame(self)
+        info_frame = tk.Frame(self.main_frame, background=default_bg)
         info_frame.pack(fill=tk.X, padx=5)
         
         if 'size' in self.metadata:
@@ -80,11 +121,10 @@ class ImageCard(ttk.Frame):
         self.bind("<Button-1>", self._on_click)
         self.image_label.bind("<Button-1>", self._on_click)
         self.name_label.bind("<Button-1>", self._on_click)
-        
-        # 创建蓝色选中指示器（初始隐藏）
-        self.selection_frame = tk.Frame(self, background="royal blue", height=5)
-        self.selection_frame.pack(side=tk.TOP, fill=tk.X)
-        self.selection_frame.pack_forget()  # 初始时隐藏
+        self.main_frame.bind("<Button-1>", self._on_click)
+        self.image_frame.bind("<Button-1>", self._on_click)
+        self.meta_frame.bind("<Button-1>", self._on_click)
+        info_frame.bind("<Button-1>", self._on_click)
     
     def _extract_metadata(self):
         """Extract metadata from document"""
@@ -124,13 +164,33 @@ class ImageCard(ttk.Frame):
         self.is_selected = self.select_var.get()
         # 更新视觉显示
         if self.is_selected:
-            # 使用加粗边框和顶部蓝色指示器
-            self.configure(style="Selected.TFrame")
-            self.selection_frame.pack(side=tk.TOP, fill=tk.X)
-        else:
-            self.configure(style="Card.TFrame")
-            self.selection_frame.pack_forget()
+            # 使用更深的蓝色背景
+            selected_color = "#81a8ff"  # 更加明显的蓝色背景
+            border_color = "#0066cc"  # 深蓝色边框
             
+            # 只改变颜色，不改变尺寸
+            self.main_frame.config(background=selected_color, highlightbackground=border_color)
+            self.image_frame.config(background=selected_color)
+            self.meta_frame.config(background=selected_color)
+            
+            # 如果有info_frame也要设置
+            for child in self.main_frame.winfo_children():
+                if isinstance(child, tk.Frame):
+                    child.config(background=selected_color)
+        else:
+            # 恢复默认状态 - 使用系统默认的灰色背景
+            default_bg = "#f0f0f0"  # 标准的Tkinter默认背景色
+            
+            # 恢复颜色，但保持尺寸不变
+            self.main_frame.config(background=default_bg, highlightbackground=default_bg)
+            self.image_frame.config(background=default_bg)
+            self.meta_frame.config(background=default_bg)
+            
+            # 恢复其他子框架的背景色
+            for child in self.main_frame.winfo_children():
+                if isinstance(child, tk.Frame):
+                    child.config(background=default_bg)
+        
         # 调用回调函数通知父组件
         if self.on_select_callback:
             self.on_select_callback(self, self.is_selected)
@@ -956,12 +1016,15 @@ class RelationshipManager(ttk.Frame):
         self.preview_text.delete(1.0, tk.END)
         self.preview_text.insert(tk.END, preview)
 
-# MongoDBViewer类 - 我们需要修改这个类以支持自动连接
+# MongoDBViewer类 - 修改这个类以支持记住上次选择
 class MongoDBViewer(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("MongoDB Art Database Viewer - Auto Connect")
         self.geometry(WINDOW_SIZE)
+        
+        # 加载用户配置
+        self.user_config = load_user_config()
         
         # 设置MongoDB连接
         self.db_client = None
@@ -970,7 +1033,7 @@ class MongoDBViewer(tk.Tk):
         self.current_docs = []
         
         # UI配置
-        self.grid_columns = DEFAULT_GRID_COLUMNS
+        self.grid_columns = self.user_config.get("grid_columns", DEFAULT_GRID_COLUMNS)
         self.image_width = 250
         self.image_height = 200
         
@@ -981,7 +1044,7 @@ class MongoDBViewer(tk.Tk):
         self.protocol("WM_DELETE_WINDOW", self.on_close)
         
         # 如果配置了自动连接，则启动时自动连接MongoDB
-        if AUTO_CONNECT:
+        if self.user_config.get("auto_connect", AUTO_CONNECT):
             self.after(500, self.auto_connect_mongodb)  # 延迟500毫秒执行自动连接
         
     def create_ui(self):
@@ -999,11 +1062,11 @@ class MongoDBViewer(tk.Tk):
         
         ttk.Label(conn_frame, text="MongoDB URI:").pack(anchor=tk.W, padx=5)
         self.uri_entry = ttk.Entry(conn_frame)
-        self.uri_entry.insert(0, DEFAULT_MONGODB_URI)
+        self.uri_entry.insert(0, self.user_config.get("mongodb_uri", DEFAULT_MONGODB_URI))
         self.uri_entry.pack(fill=tk.X, padx=5, pady=2)
         
         # 添加自动连接选项
-        self.auto_connect_var = tk.BooleanVar(value=AUTO_CONNECT)
+        self.auto_connect_var = tk.BooleanVar(value=self.user_config.get("auto_connect", AUTO_CONNECT))
         self.auto_connect_checkbox = ttk.Checkbutton(
             conn_frame, 
             text="Auto-connect on startup",
@@ -1071,14 +1134,32 @@ class MongoDBViewer(tk.Tk):
             self.update_status("Connected to MongoDB successfully")
             self.populate_db_tree()
             
-            # 如果指定了默认数据库，自动选择该数据库
-            if DEFAULT_DATABASE:
-                for item_id in self.db_tree.get_children():
-                    item_text = self.db_tree.item(item_id, "text")
-                    if item_text == DEFAULT_DATABASE:
-                        self.db_tree.selection_set(item_id)
-                        self.db_tree.see(item_id)
-                        self.on_tree_select(None)  # 手动触发选择事件
+            # 记住上次选择的数据库和集合
+            last_db = self.user_config.get("last_db", "")
+            last_collection = self.user_config.get("last_collection", "")
+            
+            if last_db:
+                # 首先寻找并选择数据库节点
+                for db_id in self.db_tree.get_children():
+                    if self.db_tree.item(db_id, "text") == last_db:
+                        self.db_tree.selection_set(db_id)
+                        self.db_tree.see(db_id)
+                        self.db_tree.item(db_id, open=True)  # 展开数据库节点
+                        
+                        # 如果有上次选择的集合，寻找并选择集合节点
+                        if last_collection:
+                            for coll_id in self.db_tree.get_children(db_id):
+                                if self.db_tree.item(coll_id, "text") == last_collection:
+                                    self.db_tree.selection_set(coll_id)
+                                    self.db_tree.see(coll_id)
+                                    self.on_tree_select(None)  # 手动触发选择事件
+                                    break
+                            else:
+                                # 如果找不到上次的集合但找到了数据库，仍然触发数据库的选择
+                                self.on_tree_select(None)
+                        else:
+                            # 如果没有上次选择的集合，只触发数据库的选择
+                            self.on_tree_select(None)
                         break
                 
         except Exception as e:
@@ -1098,6 +1179,31 @@ class MongoDBViewer(tk.Tk):
             self.update_status("Connected to MongoDB successfully")
             messagebox.showinfo("Connection", "Successfully connected to MongoDB")
             self.populate_db_tree()
+            
+            # 记住上次选择的数据库和集合
+            last_db = self.user_config.get("last_db", "")
+            last_collection = self.user_config.get("last_collection", "")
+            
+            if last_db:
+                # 与auto_connect_mongodb中相同的代码，寻找并选择上次的数据库和集合
+                for db_id in self.db_tree.get_children():
+                    if self.db_tree.item(db_id, "text") == last_db:
+                        self.db_tree.selection_set(db_id)
+                        self.db_tree.see(db_id)
+                        self.db_tree.item(db_id, open=True)
+                        
+                        if last_collection:
+                            for coll_id in self.db_tree.get_children(db_id):
+                                if self.db_tree.item(coll_id, "text") == last_collection:
+                                    self.db_tree.selection_set(coll_id)
+                                    self.db_tree.see(coll_id)
+                                    self.on_tree_select(None)
+                                    break
+                            else:
+                                self.on_tree_select(None)
+                        else:
+                            self.on_tree_select(None)
+                        break
             
         except Exception as e:
             self.update_status(f"Connection failed: {str(e)}")
@@ -1146,6 +1252,11 @@ class MongoDBViewer(tk.Tk):
             self.current_db = parent_text
             self.current_collection = item_text
             
+            # 保存选择到配置
+            self.user_config["last_db"] = parent_text
+            self.user_config["last_collection"] = item_text
+            save_user_config(self.user_config)
+            
             self.update_status(f"Selected collection: {parent_text}.{item_text}")
             
             # 加载集合数据
@@ -1153,6 +1264,11 @@ class MongoDBViewer(tk.Tk):
         else:  # 这是一个数据库
             self.current_db = item_text
             self.current_collection = None
+            
+            # 保存选择到配置
+            self.user_config["last_db"] = item_text
+            self.user_config["last_collection"] = ""
+            save_user_config(self.user_config)
             
             # 如果未展开，则展开数据库节点
             if not self.db_tree.item(item_id, "open"):
@@ -1213,6 +1329,10 @@ class MongoDBViewer(tk.Tk):
                 
             self.grid_columns = cols
             self.paginated_grid.set_columns(cols)
+            
+            # 保存列数到配置
+            self.user_config["grid_columns"] = cols
+            save_user_config(self.user_config)
             
             # 更新显示
             self.paginated_grid.refresh_grid()
@@ -1564,9 +1684,10 @@ class MongoDBViewer(tk.Tk):
     
     def on_close(self):
         """处理窗口关闭事件"""
-        # 保存自动连接设置
-        global AUTO_CONNECT
-        AUTO_CONNECT = self.auto_connect_var.get()
+        # 保存当前配置
+        self.user_config["auto_connect"] = self.auto_connect_var.get()
+        self.user_config["mongodb_uri"] = self.uri_entry.get()
+        save_user_config(self.user_config)
         
         if hasattr(self, 'paginated_grid') and hasattr(self.paginated_grid, 'image_loader'):
             # 停止图像加载线程
