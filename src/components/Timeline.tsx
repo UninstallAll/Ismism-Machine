@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Filter, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { Button } from './ui/button';
 import { useTimelineStore } from '../store/timelineStore';
 import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
@@ -229,28 +229,17 @@ const Timeline: React.FC = () => {
           </h1>
           
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="relative w-full max-w-md">
-              <div className="flex items-center p-2 px-4 rounded-full bg-white/5 hover:bg-white/10 transition-colors border border-white/10">
-                <Search className="h-4 w-4 text-muted-foreground mr-2" />
-                <input
-                  type="text"
-                  placeholder="搜索时间线节点..."
-                  className="bg-transparent border-none outline-none text-sm text-muted-foreground w-full"
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                <input 
+                  type="text" 
+                  placeholder="搜索艺术主义..." 
+                  className="pl-10 pr-4 py-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors border border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Button 
-                variant="outline"
-                size="sm"
-                className="border border-white/10 hover:bg-white/5 gap-2"
-              >
-                <Filter className="h-4 w-4" />
-                筛选艺术流派
-              </Button>
             </div>
           </div>
         </div>
