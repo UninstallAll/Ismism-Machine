@@ -66,7 +66,7 @@ const SimpleNavbar: React.FC<SimpleNavbarProps> = ({ onMenuClick }) => {
         
         <div className="flex items-center gap-4">
           {/* 移动端菜单按钮 */}
-          <motion.div
+          <motion.div 
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="md:hidden"
