@@ -186,21 +186,21 @@ class ImageCard(ttk.Frame):
         
         if self.is_selected:
             # ====== 选中状态样式 ======
-            # 使用深蓝色系 - 更鲜明的颜色区分
-            selected_bg = "#0000CD"  # 深蓝色
-            selected_border = "#000080"  # 海军蓝
+            # 使用高对比度的配色方案
+            selected_bg = "#1E90FF"  # 道奇蓝，亮一些
+            selected_border = "#0078D7"  # 微软蓝
             selected_text = "white"  # 白色文本
             
             # 主框架设置
             self.main_frame.configure(
-                background=selected_bg,  # 背景为深蓝色
-                highlightbackground=selected_border,  # 边框为海军蓝
+                background=selected_bg,  # 背景为亮蓝色
+                highlightbackground=selected_border,  # 边框为微软蓝
                 highlightthickness=5,  # 加粗的边框
                 borderwidth=3,  # 内边框也加粗
                 relief="raised"  # 凸起效果增强立体感
             )
             
-            # 所有子框架设置为相同的深蓝色背景，保持一致性
+            # 所有子框架设置为相同的背景色，保持一致性
             for widget in self.main_frame.winfo_children():
                 if isinstance(widget, tk.Frame):
                     widget.configure(background=selected_bg)  # 统一背景色
@@ -517,6 +517,12 @@ class PaginatedGrid(ttk.Frame):
                                             command=self._toggle_select_all)
         self.select_all_check.pack(side=tk.LEFT, padx=5)
         
+        # 添加持续选择模式
+        self.continuous_select_var = tk.BooleanVar(value=False)
+        self.continuous_select_check = ttk.Checkbutton(self.toolbar_frame, text="持续选择模式",
+                                               variable=self.continuous_select_var)
+        self.continuous_select_check.pack(side=tk.LEFT, padx=5)
+        
         # 批量操作按钮
         ttk.Button(self.toolbar_frame, text="批量导出", 
                 command=self._bulk_export).pack(side=tk.LEFT, padx=5)
@@ -628,17 +634,141 @@ class PaginatedGrid(ttk.Frame):
         """切换视图模式"""
         mode = self.view_mode_var.get()
         if mode == "grid" and self.view_mode != "grid":
+            # 切换到网格视图之前先解绑列表视图的鼠标滚轮事件
+            self.canvas.unbind_all("<MouseWheel>")
+            
             # 切换到网格视图
             self.view_mode = "grid"
             self.list_container.pack_forget()
             self.grid_container.pack(fill=tk.BOTH, expand=True)
-            self.refresh_grid()  # 刷新网格视图
+            
+            # 重新绑定网格视图的鼠标滚轮事件
+            self.bind_mousewheel()
+            
+            # 刷新网格视图 - 使用try-except防止出错时界面卡死
+            try:
+                self.refresh_grid()
+            except Exception as e:
+                print(f"刷新网格视图出错: {e}")
+                messagebox.showerror("视图刷新错误", f"刷新网格视图时出错: {e}")
+                
         elif mode == "list" and self.view_mode != "list":
+            # 切换到列表视图之前先解绑网格视图的鼠标滚轮事件
+            self.unbind_mousewheel()
+            
             # 切换到列表视图
             self.view_mode = "list"
             self.grid_container.pack_forget()
             self.list_container.pack(fill=tk.BOTH, expand=True)
-            self.refresh_list()  # 刷新列表视图
+            
+            # 刷新列表视图 - 使用try-except防止出错时界面卡死
+            try:
+                self.refresh_list()
+            except Exception as e:
+                print(f"刷新列表视图出错: {e}")
+                messagebox.showerror("视图刷新错误", f"刷新列表视图时出错: {e}")
+                
+    def _on_list_selection_changed(self, event):
+        """处理列表视图选择变化事件"""
+        # 防止无限循环
+        if hasattr(self, '_list_updating') and self._list_updating:
+            return
+            
+        self._list_updating = True
+        try:
+            # 获取所有选中的列表项
+            selected_items = self.list_tree.selection()
+            
+            # 清除当前卡片选择
+            for card in self.cards:
+                card.set_selected(False)
+            self.selected_cards = []
+            
+            # 为每个选中的列表项找到对应的卡片并选中
+            selected_docs = []
+            for item_id, doc in self.list_items:
+                if item_id in selected_items:
+                    selected_docs.append(doc)
+                    
+            # 只遍历一次卡片列表，提高效率
+            for card in self.cards:
+                if card.doc in selected_docs:
+                    card.set_selected(True)
+                    self.selected_cards.append(card)
+            
+            # 更新UI
+            self._update_selection_ui()
+        finally:
+            # 确保标志被清除
+            self._list_updating = False
+    
+    def _sync_list_selection(self):
+        """同步选中状态到列表视图"""
+        # 防止无限循环
+        if hasattr(self, '_list_updating') and self._list_updating:
+            return
+            
+        self._list_updating = True
+        try:
+            # 清除现有选择
+            self.list_tree.selection_remove(self.list_tree.selection())
+            
+            # 如果有选中的卡片，找到对应的列表项并选中
+            if self.selected_cards:
+                selected_docs = [card.doc for card in self.selected_cards]
+                
+                for item_id, doc in self.list_items:
+                    if doc in selected_docs:
+                        self.list_tree.selection_add(item_id)
+        finally:
+            # 确保标志被清除
+            self._list_updating = False
+    
+    def _on_list_click(self, event):
+        """处理列表视图的点击事件，支持Shift和Ctrl多选以及持续选择模式"""
+        # 防止无限循环
+        if hasattr(self, '_list_updating') and self._list_updating:
+            return
+            
+        # 获取点击的项
+        item = self.list_tree.identify_row(event.y)
+        if not item:
+            return
+            
+        # 检查是否按下了控制键或者启用了持续选择模式
+        if self.selecting_with_ctrl or self.continuous_select_var.get():
+            # Ctrl+点击或持续选择模式：切换选中状态
+            if item in self.list_tree.selection():
+                self.list_tree.selection_remove(item)
+            else:
+                self.list_tree.selection_add(item)
+            return "break"  # 阻止默认行为
+            
+        if self.selecting_with_shift and self.list_tree.selection():
+            # Shift+点击：选择范围
+            last_selected = self.list_tree.selection()[-1]  # 最后选中的项
+            all_items = self.list_tree.get_children()
+            
+            # 计算范围
+            try:
+                current_idx = all_items.index(item)
+                last_idx = all_items.index(last_selected)
+                
+                # 决定范围的开始和结束
+                start_idx = min(current_idx, last_idx)
+                end_idx = max(current_idx, last_idx)
+                
+                # 选择范围内的所有项
+                for i in range(start_idx, end_idx + 1):
+                    self.list_tree.selection_add(all_items[i])
+                
+                return "break"  # 阻止默认行为
+            except ValueError:
+                pass  # 项不在列表中，忽略
+        
+        # 默认行为：如果没有按修饰键也没有启用持续选择模式，清除现有选择并选中当前项
+        if not (self.selecting_with_ctrl or self.selecting_with_shift or self.continuous_select_var.get()):
+            self.list_tree.selection_set(item)
     
     def refresh_list(self):
         """刷新列表视图"""
@@ -748,89 +878,13 @@ class PaginatedGrid(ttk.Frame):
         # 更新选择UI
         self._update_selection_ui()
     
-    def _sync_list_selection(self):
-        """同步选中状态到列表视图"""
-        # 清除现有选择
-        self.list_tree.selection_remove(self.list_tree.selection())
-        
-        # 如果有选中的卡片，找到对应的列表项并选中
-        if self.selected_cards:
-            selected_docs = [card.doc for card in self.selected_cards]
-            
-            for item_id, doc in self.list_items:
-                if doc in selected_docs:
-                    self.list_tree.selection_add(item_id)
-    
-    def _on_list_click(self, event):
-        """处理列表视图的点击事件，支持Shift和Ctrl多选"""
-        # 获取点击的项
-        item = self.list_tree.identify_row(event.y)
-        if not item:
-            return
-            
-        # 检查是否按下了控制键
-        if self.selecting_with_ctrl:
-            # Ctrl+点击：切换选中状态
-            if item in self.list_tree.selection():
-                self.list_tree.selection_remove(item)
-            else:
-                self.list_tree.selection_add(item)
-            return "break"  # 阻止默认行为
-            
-        if self.selecting_with_shift and self.list_tree.selection():
-            # Shift+点击：选择范围
-            last_selected = self.list_tree.selection()[-1]  # 最后选中的项
-            all_items = self.list_tree.get_children()
-            
-            # 计算范围
-            try:
-                current_idx = all_items.index(item)
-                last_idx = all_items.index(last_selected)
-                
-                # 决定范围的开始和结束
-                start_idx = min(current_idx, last_idx)
-                end_idx = max(current_idx, last_idx)
-                
-                # 选择范围内的所有项
-                for i in range(start_idx, end_idx + 1):
-                    self.list_tree.selection_add(all_items[i])
-                
-                return "break"  # 阻止默认行为
-            except ValueError:
-                pass  # 项不在列表中，忽略
-        
-        # 默认行为：如果没有按修饰键，清除现有选择并选中当前项
-        if not (self.selecting_with_ctrl or self.selecting_with_shift):
-            self.list_tree.selection_set(item)
-    
-    def _on_list_selection_changed(self, event):
-        """处理列表视图选择变化事件"""
-        # 获取所有选中的列表项
-        selected_items = self.list_tree.selection()
-        
-        # 清除当前卡片选择
-        for card in self.cards:
-            card.set_selected(False)
-        self.selected_cards = []
-        
-        # 为每个选中的列表项找到对应的卡片并选中
-        for item_id, doc in self.list_items:
-            if item_id in selected_items:
-                # 找到对应的卡片
-                for card in self.cards:
-                    if card.doc == doc and card not in self.selected_cards:
-                        card.set_selected(True)
-                        break
-        
-        # 更新UI
-        self._update_selection_ui()
-    
     def _on_card_selected(self, card, is_selected):
-        """处理卡片选择事件，支持Shift和Ctrl多选"""
+        """处理卡片选择事件，支持Shift和Ctrl多选以及持续选择模式"""
         current_index = self.cards.index(card) if card in self.cards else -1
         
-        # 如果单击时没有按下Ctrl键，且不是使用Shift键，则清除其他选择
-        if not (self.selecting_with_ctrl or self.selecting_with_shift) and is_selected and len(self.selected_cards) > 0:
+        # 1. 如果开启了持续选择模式，则不清除现有选择
+        # 2. 或者如果按下了Ctrl或Shift键，也不清除现有选择
+        if not (self.continuous_select_var.get() or self.selecting_with_ctrl or self.selecting_with_shift) and is_selected and len(self.selected_cards) > 0:
             # 清除除当前卡片外的所有选择
             for other_card in self.selected_cards[:]:
                 if other_card != card:
