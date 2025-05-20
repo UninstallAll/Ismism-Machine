@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Grid, List, Search, X, Zap } from 'lucide-react';
+import { Grid, List, Search, X, Zap, ArrowRight } from 'lucide-react';
 import GalleryGrid from './GalleryGrid';
 import { Button } from './ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -138,6 +138,40 @@ const Gallery = () => {
   const viewInTimeline = (style: string) => {
     // 跳转到时间线页面，通过URL参数传递艺术主义名称
     navigate(`/timeline?style=${encodeURIComponent(style)}`);
+  };
+
+  // 获取艺术主义的ID
+  const getArtMovementId = (styleName: string): string => {
+    // 根据风格名称找到对应的ID
+    const styleToIdMap: Record<string, string> = {
+      '印象派': 'impressionism',
+      '立体主义': 'cubism',
+      '超现实主义': 'surrealism',
+      '新印象主义': 'neo-impressionism',
+      '后印象派': 'post-impressionism',
+      '表现主义': 'expressionism',
+      '野兽派': 'fauvism',
+      '达达主义': 'dadaism',
+      '构成主义': 'constructivism',
+      '抽象表现主义': 'abstract-expressionism',
+      '波普艺术': 'pop-art',
+      '极简主义': 'minimalism',
+      '观念艺术': 'conceptual-art',
+      '新表现主义': 'neo-expressionism',
+      '装置艺术': 'installation-art',
+      '录像艺术': 'video-art',
+      '行为艺术': 'performance-art',
+      '数字艺术': 'digital-art'
+    };
+    
+    return styleToIdMap[styleName] || styleName.toLowerCase().replace(/\s+/g, '-');
+  };
+
+  // 跳转到艺术主义详情页
+  const navigateToArtMovement = (style: string) => {
+    closeArtworkDetails();
+    const artMovementId = getArtMovementId(style);
+    navigate(`/art-movement/${artMovementId}`);
   };
 
   return (
@@ -280,8 +314,12 @@ const Gallery = () => {
                     </h2>
                     <div className="flex items-center gap-2 mt-1 text-sm text-gray-400">
                       <span>{selectedArtwork.artist}, {selectedArtwork.year}</span>
-                      <span className="px-2 py-0.5 text-xs font-medium bg-blue-500/10 text-blue-400 rounded-full">
+                      <span 
+                        className="px-2 py-0.5 text-xs font-medium bg-blue-500/10 text-blue-400 rounded-full cursor-pointer hover:bg-blue-500/20 transition-colors flex items-center gap-1"
+                        onClick={() => navigateToArtMovement(selectedArtwork.style)}
+                      >
                         {selectedArtwork.style}
+                        <ArrowRight className="h-3 w-3" />
                       </span>
                     </div>
                   </div>
@@ -300,9 +338,11 @@ const Gallery = () => {
                     </Button>
                     <Button 
                       variant="outline" 
-                      className="border-white/10 hover:bg-white/5"
+                      className="border-white/10 hover:bg-white/5 gap-2"
+                      onClick={() => navigateToArtMovement(selectedArtwork.style)}
                     >
-                      相关作品
+                      <ArrowRight className="h-4 w-4" />
+                      查看艺术主义详情
                     </Button>
                   </div>
                 </div>
