@@ -65,33 +65,22 @@ const SimpleNavbar: React.FC<SimpleNavbarProps> = ({ onMenuClick }) => {
         </div>
         
         <div className="flex items-center gap-4">
-          <div className="relative hidden md:flex">
-            <div className="flex items-center p-1 px-3 rounded-full bg-white/5 hover:bg-white/10 transition-colors">
-              <Search className="h-4 w-4 text-muted-foreground mr-2" />
-              <input
-                type="text"
-                placeholder="搜索艺术作品..."
-                className="bg-transparent border-none outline-none text-sm text-muted-foreground w-48"
-              />
-            </div>
-          </div>
-            
-            {/* 移动端菜单按钮 */}
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="md:hidden"
+          {/* 移动端菜单按钮 */}
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="md:hidden"
+          >
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-primary hover:bg-primary/10"
+              onClick={toggleMobileMenu}
+              aria-label="Toggle mobile menu"
             >
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-primary hover:bg-primary/10"
-                onClick={toggleMobileMenu}
-                aria-label="Toggle mobile menu"
-              >
-                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </Button>
-            </motion.div>
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
+          </motion.div>
         </div>
       </div>
     </header>
@@ -132,15 +121,6 @@ const SimpleNavbar: React.FC<SimpleNavbarProps> = ({ onMenuClick }) => {
                 <Clock className="h-4 w-4 mr-2" />
                 <span>时间线视图</span>
               </NavLink>
-              
-              <div className="flex items-center p-2 px-4 mt-2 rounded-lg bg-white/5">
-                <Search className="h-4 w-4 text-muted-foreground mr-2" />
-                <input
-                  type="text"
-                  placeholder="搜索艺术作品..."
-                  className="bg-transparent border-none outline-none text-sm text-muted-foreground w-full"
-                />
-              </div>
             </div>
           </motion.div>
         )}
