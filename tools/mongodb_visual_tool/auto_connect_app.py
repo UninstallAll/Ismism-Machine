@@ -29,6 +29,12 @@ class ImageCard(ttk.Frame):
         self.is_selected = False
         self.on_select_callback = on_select_callback
         
+        # 创建自定义样式
+        self.style = ttk.Style()
+        self.style.configure("Card.TFrame", borderwidth=1, relief="solid")
+        self.style.configure("Selected.TFrame", borderwidth=2, relief="solid")
+        self.configure(style="Card.TFrame")
+        
         # Extract metadata from document
         self._extract_metadata()
         
@@ -74,6 +80,11 @@ class ImageCard(ttk.Frame):
         self.bind("<Button-1>", self._on_click)
         self.image_label.bind("<Button-1>", self._on_click)
         self.name_label.bind("<Button-1>", self._on_click)
+        
+        # 创建蓝色选中指示器（初始隐藏）
+        self.selection_frame = tk.Frame(self, background="royal blue", height=5)
+        self.selection_frame.pack(side=tk.TOP, fill=tk.X)
+        self.selection_frame.pack_forget()  # 初始时隐藏
     
     def _extract_metadata(self):
         """Extract metadata from document"""
@@ -113,11 +124,12 @@ class ImageCard(ttk.Frame):
         self.is_selected = self.select_var.get()
         # 更新视觉显示
         if self.is_selected:
+            # 使用加粗边框和顶部蓝色指示器
             self.configure(style="Selected.TFrame")
-            self.configure(borderwidth=2, relief="solid")
+            self.selection_frame.pack(side=tk.TOP, fill=tk.X)
         else:
-            self.configure(style="")
-            self.configure(borderwidth=1, relief="solid")
+            self.configure(style="Card.TFrame")
+            self.selection_frame.pack_forget()
             
         # 调用回调函数通知父组件
         if self.on_select_callback:
@@ -247,6 +259,8 @@ class PaginatedGrid(ttk.Frame):
         self.page_size = page_size
         self.current_page = 0
         self.items = []
+        self.filtered_items = []  # 添加过滤后的项目列表
+        self.search_query = ""  # 搜索查询
         self.card_width = 250
         self.card_height = 200
         self.columns = DEFAULT_GRID_COLUMNS
@@ -261,6 +275,26 @@ class PaginatedGrid(ttk.Frame):
         self._create_ui()
     
     def _create_ui(self):
+        # 添加搜索框
+        self.search_frame = ttk.Frame(self)
+        self.search_frame.pack(fill=tk.X, pady=(0, 5))
+        
+        ttk.Label(self.search_frame, text="搜索:").pack(side=tk.LEFT, padx=(0, 5))
+        self.search_var = tk.StringVar()
+        self.search_entry = ttk.Entry(self.search_frame, textvariable=self.search_var, width=30)
+        self.search_entry.pack(side=tk.LEFT, padx=(0, 5))
+        self.search_entry.bind("<Return>", self._on_search)
+        
+        ttk.Button(self.search_frame, text="搜索", 
+                 command=self._on_search).pack(side=tk.LEFT)
+        
+        ttk.Button(self.search_frame, text="清除", 
+                 command=self._clear_search).pack(side=tk.LEFT, padx=5)
+        
+        # 搜索结果标签
+        self.search_result_var = tk.StringVar()
+        ttk.Label(self.search_frame, textvariable=self.search_result_var).pack(side=tk.RIGHT, padx=10)
+        
         # 添加多选操作工具栏
         self.toolbar_frame = ttk.Frame(self)
         self.toolbar_frame.pack(fill=tk.X, pady=(0, 5))
@@ -363,6 +397,10 @@ class PaginatedGrid(ttk.Frame):
     def set_items(self, items):
         """Set the items to display in the grid"""
         self.items = items
+        self.filtered_items = items  # 重置过滤结果
+        self.search_query = ""  # 重置搜索查询
+        self.search_var.set("")  # 清空搜索框
+        self.search_result_var.set("")  # 清空结果信息
         self.current_page = 0
         # 清空选中记录
         self.selected_cards = []
@@ -445,7 +483,7 @@ class PaginatedGrid(ttk.Frame):
         # 清空卡片列表
         self.cards = []
             
-        if not self.items:
+        if not self.filtered_items:  # 使用过滤后的列表
             # No items to display
             no_items_label = ttk.Label(self.grid_frame, text="No items to display")
             no_items_label.pack(pady=50)
@@ -454,14 +492,14 @@ class PaginatedGrid(ttk.Frame):
             return
             
         # Calculate pagination
-        total_pages = max(1, math.ceil(len(self.items) / self.page_size))
+        total_pages = max(1, math.ceil(len(self.filtered_items) / self.page_size))
         if self.current_page >= total_pages:
             self.current_page = total_pages - 1
             
         # Get current page items
         start_idx = self.current_page * self.page_size
-        end_idx = min(start_idx + self.page_size, len(self.items))
-        current_items = self.items[start_idx:end_idx]
+        end_idx = min(start_idx + self.page_size, len(self.filtered_items))
+        current_items = self.filtered_items[start_idx:end_idx]  # 使用过滤后的列表
         
         # Create grid
         row = 0
@@ -504,7 +542,7 @@ class PaginatedGrid(ttk.Frame):
         
     def next_page(self):
         """Go to next page"""
-        total_pages = math.ceil(len(self.items) / self.page_size)
+        total_pages = math.ceil(len(self.filtered_items) / self.page_size)  # 使用过滤后的列表
         if self.current_page < total_pages - 1:
             self.current_page += 1
             # 清空选中列表，因为页面变了
@@ -523,10 +561,10 @@ class PaginatedGrid(ttk.Frame):
             
     def _update_pagination_controls(self):
         """Update pagination controls state"""
-        total_pages = max(1, math.ceil(len(self.items) / self.page_size))
+        total_pages = max(1, math.ceil(len(self.filtered_items) / self.page_size))  # 使用过滤后的列表
         
         # Update page label
-        if self.items:
+        if self.filtered_items:
             self.page_label.config(text=f"Page {self.current_page + 1} of {total_pages}")
         else:
             self.page_label.config(text="No items")
@@ -560,6 +598,70 @@ class PaginatedGrid(ttk.Frame):
         if hasattr(self, 'image_loader'):
             self.image_loader.stop()
         super().destroy()
+
+    def _on_search(self, event=None):
+        """处理搜索操作"""
+        query = self.search_var.get().lower().strip()
+        if query == self.search_query:
+            return  # 搜索条件未变，不执行搜索
+            
+        self.search_query = query
+        
+        if not query:
+            # 空查询，恢复所有项目
+            self.filtered_items = self.items
+            self.search_result_var.set("")
+        else:
+            # 执行搜索
+            self.filtered_items = self._filter_items(query)
+            result_count = len(self.filtered_items)
+            self.search_result_var.set(f"找到 {result_count} 项结果")
+            
+        # 重置页码并刷新显示
+        self.current_page = 0
+        self.selected_cards = []
+        self.select_all_var.set(False)
+        self.refresh_grid()
+    
+    def _clear_search(self):
+        """清除搜索结果"""
+        self.search_var.set("")
+        self.search_query = ""
+        self.filtered_items = self.items
+        self.search_result_var.set("")
+        
+        # 重置页码并刷新显示
+        self.current_page = 0
+        self.selected_cards = []
+        self.select_all_var.set(False)
+        self.refresh_grid()
+    
+    def _filter_items(self, query):
+        """根据查询过滤项目"""
+        filtered = []
+        
+        for item in self.items:
+            # 搜索的关键字段
+            search_fields = [
+                item.get('filename', ''),
+                item.get('title', ''),
+                str(item.get('_id', '')),
+                item.get('artMovement', ''),
+                item.get('description', '')
+            ]
+            
+            # 扩展搜索 - 检查metadata字段
+            if 'metadata' in item and isinstance(item['metadata'], dict):
+                for key, value in item['metadata'].items():
+                    search_fields.append(str(value))
+            
+            # 任何字段匹配即可
+            for field in search_fields:
+                if query in str(field).lower():
+                    filtered.append(item)
+                    break
+                    
+        return filtered
 
 # RelationshipManager类 - 与optimized_app.py中相同
 class RelationshipManager(ttk.Frame):
