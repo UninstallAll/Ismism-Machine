@@ -126,6 +126,11 @@ const ArtMovementPage = () => {
     navigate('/gallery');
   };
 
+  // 返回上一页
+  const goBack = () => {
+    navigate(-1);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-20">
@@ -142,9 +147,9 @@ const ArtMovementPage = () => {
         <Button 
           variant="outline" 
           className="mt-6"
-          onClick={goBackToGallery}
+          onClick={goBack}
         >
-          返回画廊
+          返回
         </Button>
       </div>
     );
@@ -163,10 +168,10 @@ const ArtMovementPage = () => {
           variant="ghost" 
           size="sm" 
           className="mr-4"
-          onClick={goBackToGallery}
+          onClick={goBack}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          返回画廊
+          返回
         </Button>
         <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
           {artStyle.title}
