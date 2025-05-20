@@ -94,6 +94,7 @@ module.exports = {
         '72': '18rem',
         '84': '21rem',
         '96': '24rem',
+        '18': '4.5rem',
       },
       boxShadow: {
         'soft': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',

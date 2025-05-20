@@ -221,7 +221,7 @@ const Timeline: React.FC = () => {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="mb-6"
+        className="mb-14"
       >
         <div className="flex flex-col gap-6">
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent text-center">
@@ -256,11 +256,11 @@ const Timeline: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* 顶部时间轴 - 固定在页面顶部 */}
-      <div className="sticky top-16 bg-background z-10 pt-4 pb-6 border-b border-white/5 shadow-md">
+      {/* 顶部时间轴 - 固定在页面顶部，紧贴导航栏 */}
+      <div className="sticky top-16 bg-background z-10 border-b border-white/5 shadow-md -mt-8">
         <div className="relative px-8" ref={timelineRef}>
           {/* 时间轴线 */}
-          <div className="h-1 bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-blue-500/30 w-full rounded-full"></div>
+          <div className="h-1 bg-gradient-to-r from-blue-500/30 via-purple-500/30 to-blue-500/30 w-full rounded-full mt-3"></div>
           
           {/* 滑动按钮 */}
           <Button 
@@ -282,7 +282,7 @@ const Timeline: React.FC = () => {
           </Button>
           
           {/* 年份标记容器，提供固定高度 */}
-          <div className="relative h-10">
+          <div className="relative h-10 mb-2">
             {/* 年份标记，支持水平滚动和鼠标拖动 */}
             <div 
               className="absolute left-0 right-0 mt-2 hide-scrollbar cursor-grab active:cursor-grabbing" 
@@ -316,7 +316,7 @@ const Timeline: React.FC = () => {
       </div>
 
       {/* 艺术主义行列表 */}
-      <div className="space-y-6">
+      <div className="space-y-6 mt-4">
         {sortedNodes.length > 0 ? (
           sortedNodes.map((node, index) => (
             <motion.div 
