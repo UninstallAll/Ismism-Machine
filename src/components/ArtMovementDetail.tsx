@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Tab } from '@headlessui/react';
 import { X, Info, Users, Lightbulb } from 'lucide-react';
-import { IArtStyle } from '@/types/art';
+import { IArtStyle } from '../types/art';
 
 interface ArtMovementDetailProps {
   artStyle: IArtStyle;

@@ -5,8 +5,8 @@ import { Button } from './ui/button';
 import { useTimelineStore } from '../store/timelineStore';
 import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import ArtMovementDetail from './ArtMovementDetail';
-import { useToast } from "@/components/ui/use-toast";
-import { IArtStyle } from '@/types/art';
+import { useToast } from "../components/ui/use-toast";
+import { IArtStyle } from '../types/art';
 
 // 开发模式下启用性能分析
 const isDev = import.meta.env.DEV;
