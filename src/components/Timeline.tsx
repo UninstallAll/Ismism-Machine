@@ -452,16 +452,16 @@ const Timeline: React.FC = () => {
       
       // 等待位置调整和详情渲染后滚动到详情区域
       setTimeout(() => {
-        // 通过ID找到对应的时间点元素
-        const timePointElement = document.getElementById(`year-${node.year}`);
+        // 查找时间轴元素，获取其顶部位置
+        const timelineElement = timelineRef.current;
         
-        if (timePointElement) {
-          // 计算时间点相对于视口的位置
-          const rect = timePointElement.getBoundingClientRect();
-          const viewportHeight = window.innerHeight;
-          
-          // 计算滚动位置，将时间点放在时间轴下方的适当位置（考虑到详情框的展示）
-          const scrollPosition = window.pageYOffset + rect.top - 120; // 120px是时间轴下方的合适位置
+        if (timelineElement && nodeRefs.current[node.id]) {
+          const timelineRect = timelineElement.getBoundingClientRect();
+          // 计算滚动位置，使节点内容位于时间轴下方合适位置
+          const scrollPosition = 
+            window.pageYOffset + // 当前滚动位置
+            timelineRect.bottom + // 时间轴底部位置
+            20; // 稍微的间距
           
           // 平滑滚动到计算出的位置
           window.scrollTo({
@@ -511,15 +511,16 @@ const Timeline: React.FC = () => {
       
       // 等待位置调整和详情渲染后滚动到详情区域
       setTimeout(() => {
-        // 通过ID找到对应的时间点元素
-        const timePointElement = document.getElementById(`year-${node.year}`);
+        // 查找时间轴元素，获取其顶部位置
+        const timelineElement = timelineRef.current;
         
-        if (timePointElement) {
-          // 计算时间点相对于视口的位置
-          const rect = timePointElement.getBoundingClientRect();
-          
-          // 计算滚动位置，将时间点放在时间轴下方的适当位置（考虑到详情框的展示）
-          const scrollPosition = window.pageYOffset + rect.top - 120; // 120px是时间轴下方的合适位置
+        if (timelineElement && nodeRefs.current[node.id]) {
+          const timelineRect = timelineElement.getBoundingClientRect();
+          // 计算滚动位置，使节点内容位于时间轴下方合适位置
+          const scrollPosition = 
+            window.pageYOffset + // 当前滚动位置
+            timelineRect.bottom + // 时间轴底部位置
+            20; // 稍微的间距
           
           // 平滑滚动到计算出的位置
           window.scrollTo({
@@ -692,7 +693,9 @@ const Timeline: React.FC = () => {
                   className="text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 hover:scale-110 transition-all cursor-pointer px-2 py-1 rounded-full absolute bg-transparent"
                   style={{ 
                     left: `${getPositionPercentage(year)}%`,
-                    transform: 'translateX(-50%)'
+                    transform: 'translateX(-50%)',
+                    top: '50%',
+                    marginTop: '-12px'
                   }}
                   onClick={() => handleYearClick(year)}
                 >
@@ -738,12 +741,13 @@ const Timeline: React.FC = () => {
                     <div 
                       id={`year-${node.year}`}
                       className="absolute top-1/2 w-3 h-3 bg-blue-500 rounded-full z-10 cursor-pointer hover:bg-blue-400 hover:scale-125 transition-all"
-                    style={{ 
-                      left: `${getPositionPercentage(node.year)}%`,
+                      style={{ 
+                        left: `${getPositionPercentage(node.year)}%`,
                         transform: 'translate(-50%, -50%)',
-                    }}
+                        marginTop: '0' // 确保与时间轴线对齐
+                      }}
                       onClick={(e) => handleTimePointClick(node, e)}
-                  ></div>
+                    ></div>
                   
                     {/* 时间点之后的缩略图容器 */}
                     <div 
