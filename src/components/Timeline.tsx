@@ -450,44 +450,65 @@ const Timeline: React.FC = () => {
       const centerOffset = 50 - yearPosition;
       setTimelinePosition(centerOffset);
       
-      // 找到时间点的引用元素和节点详情元素
-      const timePointElement = document.getElementById(`year-${node.year}`);
-      
-      // 等待时间轴位置调整和详情渲染完成
+      // 使用两阶段滚动：先滚动到时间点位置，再滚动到详情中心位置
       setTimeout(() => {
-        if (timePointElement && nodeRefs.current[node.id]) {
-          // 获取详情节点元素
-          const detailElement = nodeRefs.current[node.id];
+        // 找到时间点的引用元素
+        const timePointElement = document.getElementById(`year-${node.year}`);
+        
+        // 找到时间轴线元素
+        const timelineTrack = document.querySelector('.absolute.top-1\\/2.left-0.right-0.h-0\\.5.bg-white\\/5');
+        
+        // 第一阶段：立即滚动到时间点与时间轴线对齐的位置
+        if (timePointElement && timelineTrack) {
+          const timePointRect = timePointElement.getBoundingClientRect();
+          const trackRect = timelineTrack.getBoundingClientRect();
           
-          // 获取时间轴线元素
-          const timelineTrack = document.querySelector('.absolute.top-1\\/2.left-0.right-0.h-0\\.5.bg-white\\/5');
+          // 计算让时间点完全对齐到时间轴线所需的滚动位置
+          const alignScrollPosition = window.pageYOffset + trackRect.top - timePointRect.height/2;
           
-          if (timelineTrack && detailElement) {
-            // 首先获取各元素位置
-            const timePointRect = timePointElement.getBoundingClientRect();
-            const trackRect = timelineTrack.getBoundingClientRect();
-            const detailRect = detailElement.getBoundingClientRect();
-            const viewportHeight = window.innerHeight;
+          // 立即滚动到对齐位置（不使用平滑滚动）
+          window.scrollTo({
+            top: alignScrollPosition,
+            behavior: 'auto'
+          });
+          
+          // 第二阶段：等待详情元素渲染后，滚动到视觉最佳位置
+          setTimeout(() => {
+            const detailElement = nodeRefs.current[node.id]?.querySelector('.bg-black\\/30.rounded-lg');
             
-            // 计算时间点需要的滚动位置（对齐到时间轴线）
-            const timelineAlignPosition = window.pageYOffset + trackRect.top - timePointRect.height/2;
-            
-            // 计算详情页居中的位置（视觉中心）
-            const detailCenterPosition = window.pageYOffset + detailRect.top - (viewportHeight - detailRect.height) / 2;
-            
-            // 使用详情页视觉中心位置，但会被修正以确保时间点也对齐到时间轴
-            // 计算两个位置的加权平均值，确保时间点与时间轴对齐的同时，详情页尽量居中
-            // 这里给予详情页中心位置更高的权重
-            const finalPosition = timelineAlignPosition * 0.3 + detailCenterPosition * 0.7;
-            
-            // 平滑滚动到计算出的位置
-            window.scrollTo({
-              top: finalPosition,
-              behavior: 'smooth'
-            });
-          }
+            if (detailElement) {
+              const detailRect = detailElement.getBoundingClientRect();
+              const viewportHeight = window.innerHeight;
+              
+              // 重新获取时间轴线和时间点位置（因为页面已经滚动）
+              const updatedTrackRect = timelineTrack.getBoundingClientRect();
+              const updatedTimePointRect = timePointElement.getBoundingClientRect();
+              
+              // 首先确保时间点仍然与时间轴对齐
+              const updatedAlignPosition = window.pageYOffset + updatedTrackRect.top - updatedTimePointRect.height/2;
+              
+              // 计算详情页的垂直中心点
+              const detailVerticalCenter = detailRect.top + detailRect.height/2;
+              // 计算视口垂直中心点
+              const viewportVerticalCenter = viewportHeight/2;
+              
+              // 计算需要滚动的距离，让详情页尽量居中但不影响时间点与线的对齐
+              // 使用一个偏移量，优先保证时间轴对齐，然后尽量让详情页居中
+              const offsetY = detailVerticalCenter - viewportVerticalCenter;
+              
+              // 计算最终滚动位置（时间点对齐位置 + 适当的调整量）
+              // 使用较小的调整系数(0.4)，确保主要保持时间点与线对齐
+              const finalScrollPosition = updatedAlignPosition + offsetY * 0.4;
+              
+              // 平滑滚动到最终位置
+              window.scrollTo({
+                top: finalScrollPosition,
+                behavior: 'smooth'
+              });
+            }
+          }, 100); // 等待详情渲染
         }
-      }, 150); // 等待时间略长，确保位置调整和详情渲染已完成
+      }, 50); // 等待时间轴位置调整
     }
   };
   
@@ -527,44 +548,65 @@ const Timeline: React.FC = () => {
       const centerOffset = 50 - yearPosition;
       setTimelinePosition(centerOffset);
       
-      // 找到时间点的引用元素和节点详情元素
-      const timePointElement = document.getElementById(`year-${node.year}`);
-      
-      // 等待时间轴位置调整和详情渲染完成
+      // 使用两阶段滚动：先滚动到时间点位置，再滚动到详情中心位置
       setTimeout(() => {
-        if (timePointElement && nodeRefs.current[node.id]) {
-          // 获取详情节点元素
-          const detailElement = nodeRefs.current[node.id];
+        // 找到时间点的引用元素
+        const timePointElement = document.getElementById(`year-${node.year}`);
+        
+        // 找到时间轴线元素
+        const timelineTrack = document.querySelector('.absolute.top-1\\/2.left-0.right-0.h-0\\.5.bg-white\\/5');
+        
+        // 第一阶段：立即滚动到时间点与时间轴线对齐的位置
+        if (timePointElement && timelineTrack) {
+          const timePointRect = timePointElement.getBoundingClientRect();
+          const trackRect = timelineTrack.getBoundingClientRect();
           
-          // 获取时间轴线元素
-          const timelineTrack = document.querySelector('.absolute.top-1\\/2.left-0.right-0.h-0\\.5.bg-white\\/5');
+          // 计算让时间点完全对齐到时间轴线所需的滚动位置
+          const alignScrollPosition = window.pageYOffset + trackRect.top - timePointRect.height/2;
           
-          if (timelineTrack && detailElement) {
-            // 首先获取各元素位置
-            const timePointRect = timePointElement.getBoundingClientRect();
-            const trackRect = timelineTrack.getBoundingClientRect();
-            const detailRect = detailElement.getBoundingClientRect();
-            const viewportHeight = window.innerHeight;
+          // 立即滚动到对齐位置（不使用平滑滚动）
+          window.scrollTo({
+            top: alignScrollPosition,
+            behavior: 'auto'
+          });
+          
+          // 第二阶段：等待详情元素渲染后，滚动到视觉最佳位置
+          setTimeout(() => {
+            const detailElement = nodeRefs.current[node.id]?.querySelector('.bg-black\\/30.rounded-lg');
             
-            // 计算时间点需要的滚动位置（对齐到时间轴线）
-            const timelineAlignPosition = window.pageYOffset + trackRect.top - timePointRect.height/2;
-            
-            // 计算详情页居中的位置（视觉中心）
-            const detailCenterPosition = window.pageYOffset + detailRect.top - (viewportHeight - detailRect.height) / 2;
-            
-            // 使用详情页视觉中心位置，但会被修正以确保时间点也对齐到时间轴
-            // 计算两个位置的加权平均值，确保时间点与时间轴对齐的同时，详情页尽量居中
-            // 这里给予详情页中心位置更高的权重
-            const finalPosition = timelineAlignPosition * 0.3 + detailCenterPosition * 0.7;
-            
-            // 平滑滚动到计算出的位置
-            window.scrollTo({
-              top: finalPosition,
-              behavior: 'smooth'
-            });
-          }
+            if (detailElement) {
+              const detailRect = detailElement.getBoundingClientRect();
+              const viewportHeight = window.innerHeight;
+              
+              // 重新获取时间轴线和时间点位置（因为页面已经滚动）
+              const updatedTrackRect = timelineTrack.getBoundingClientRect();
+              const updatedTimePointRect = timePointElement.getBoundingClientRect();
+              
+              // 首先确保时间点仍然与时间轴对齐
+              const updatedAlignPosition = window.pageYOffset + updatedTrackRect.top - updatedTimePointRect.height/2;
+              
+              // 计算详情页的垂直中心点
+              const detailVerticalCenter = detailRect.top + detailRect.height/2;
+              // 计算视口垂直中心点
+              const viewportVerticalCenter = viewportHeight/2;
+              
+              // 计算需要滚动的距离，让详情页尽量居中但不影响时间点与线的对齐
+              // 使用一个偏移量，优先保证时间轴对齐，然后尽量让详情页居中
+              const offsetY = detailVerticalCenter - viewportVerticalCenter;
+              
+              // 计算最终滚动位置（时间点对齐位置 + 适当的调整量）
+              // 使用较小的调整系数(0.4)，确保主要保持时间点与线对齐
+              const finalScrollPosition = updatedAlignPosition + offsetY * 0.4;
+              
+              // 平滑滚动到最终位置
+              window.scrollTo({
+                top: finalScrollPosition,
+                behavior: 'smooth'
+              });
+            }
+          }, 100); // 等待详情渲染
         }
-      }, 150); // 等待时间略长，确保位置调整和详情渲染已完成
+      }, 50); // 等待时间轴位置调整
     }
   };
   
