@@ -1,46 +1,50 @@
 @echo off
-echo =====================================
-echo MongoDB Visual Tool Launcher
-echo =====================================
+REM MongoDB Visual Tool 启动脚本
+REM 此脚本用于启动MongoDB可视化工具
 
-REM Check Python environment
-echo [1/3] Checking Python installation...
+REM 设置命令行字符编码为UTF-8
+chcp 65001 >nul
+
+echo ===================================
+echo    启动 MongoDB Visual Tool
+echo ===================================
+echo.
+
+REM 探测 Python 环境
 where python >nul 2>nul
-if %errorlevel% neq 0 (
-    echo ERROR: Python not found. Please install Python 3.6 or higher.
+if %ERRORLEVEL% neq 0 (
+    echo [错误] 未找到Python! 请确保Python已安装并添加到PATH环境变量中。
+    echo.
     pause
     exit /b
 )
 
-REM Create virtual environment if not exists
-echo [2/3] Setting up virtual environment...
+REM 确定脚本所在目录
+set SCRIPT_DIR=%~dp0
+cd /d "%SCRIPT_DIR%"
+
+REM 创建虚拟环境（如果不存在）
 if not exist venv (
-    echo Creating virtual environment...
+    echo [信息] 创建虚拟环境...
     python -m venv venv
+    if %ERRORLEVEL% neq 0 (
+        echo [错误] 创建虚拟环境失败!
+        pause
+        exit /b
+    )
 )
 
-REM Activate virtual environment
-echo Activating virtual environment...
-call venv\Scripts\activate.bat
-if %errorlevel% neq 0 (
-    echo ERROR: Failed to activate virtual environment.
-    pause
-    exit /b
-)
+REM 激活虚拟环境
+call venv\Scripts\activate
 
-REM Install dependencies
-echo [3/3] Installing dependencies...
-python -m pip install --upgrade pip
+REM 安装依赖（如果需要）
+echo [信息] 检查依赖...
+pip install -r requirements.txt >nul 2>nul
 
-echo Installing required packages...
-python -m pip install pymongo==4.6.0 PyQt6==6.6.0 Pillow==10.0.0 python-dotenv==1.0.0 rapidfuzz==3.13.0
+REM 启动程序
+echo [信息] 正在启动应用程序...
+echo.
+python launcher.py
 
-REM Launch application
-echo Launching MongoDB Visual Tool...
-python auto_connect_app.py
-
-REM Deactivate virtual environment after exit
-call venv\Scripts\deactivate.bat
-
-echo Application closed.
-pause 
+REM 脚本结束
+REM 虚拟环境会在cmd窗口关闭时自动停用 

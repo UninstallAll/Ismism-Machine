@@ -3,5 +3,5 @@
   "last_collection": "image_metadata",
   "auto_connect": true,
   "mongodb_uri": "mongodb://localhost:27017/",
-  "grid_columns": 6
+  "grid_columns": 4
 }
