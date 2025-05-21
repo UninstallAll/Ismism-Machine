@@ -645,9 +645,7 @@ const Timeline: React.FC = () => {
             transition={{ duration: 0.4 }}
             className="mx-4 mb-4 mt-2 art-movement-detail-container"
           >
-            <div className="bg-black/40 backdrop-blur-sm w-full rounded-lg border border-white/10 shadow-lg overflow-hidden
-                          border-l-2 border-l-blue-500 ml-10 pl-2"
-            >
+            <div className="bg-black/30 w-full rounded-lg overflow-hidden">
               <ArtMovementDetail artStyle={selectedNode} onClose={handleCloseDetail} />
             </div>
           </motion.div>

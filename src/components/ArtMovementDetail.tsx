@@ -34,41 +34,36 @@ export default function ArtMovementDetail({ artStyle, onClose }: ArtMovementDeta
   return (
     <div className="flex flex-col">
       {/* 标题栏 */}
-      <div className="flex justify-between items-center p-4 border-b border-white/10">
-        <div className="flex items-center gap-3">
-          <div className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-sm">
-            {artStyle.year}
-          </div>
-          <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+      <div className="flex justify-between items-center p-3 border-b border-white/10">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-white/70">{artStyle.year}</span>
+          <h2 className="text-xl font-semibold text-white">
             {artStyle.title}
           </h2>
-          <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">
-            {artStyle.styleMovement}
-          </span>
         </div>
         {onClose && (
           <button 
             onClick={onClose}
-            className="p-1 rounded-full hover:bg-white/10 transition-colors"
+            className="text-white/70 hover:text-white"
           >
-            <X className="w-5 h-5 text-white/70" />
+            <X className="w-5 h-5" />
           </button>
         )}
       </div>
 
       {/* 内容区域 */}
-      <div className="flex overflow-hidden p-2">
-        {/* 左侧内容区 - 不再允许独立滚动 */}
-        <div className="w-3/5 p-2 flex flex-col">
+      <div className="flex overflow-hidden">
+        {/* 左侧内容区 */}
+        <div className="w-3/5 p-3 flex flex-col">
           <Tab.Group onChange={setActiveTab}>
-            <Tab.List className="flex space-x-1 border-b border-white/10 mb-4">
+            <Tab.List className="flex space-x-1 border-b border-white/10 mb-3">
               {tabs.map((tab) => (
                 <Tab
                   key={tab.key}
                   className={({ selected }: { selected: boolean }) =>
-                    `flex items-center gap-1 px-4 py-2 text-sm font-medium border-b-2 transition-colors outline-none ${
+                    `flex items-center gap-1 px-3 py-2 text-sm border-b-2 outline-none ${
                       selected 
-                        ? 'border-blue-500 text-blue-400' 
+                        ? 'border-blue-500 text-white' 
                         : 'border-transparent text-white/60 hover:text-white/80'
                     }`
                   }
@@ -79,49 +74,35 @@ export default function ArtMovementDetail({ artStyle, onClose }: ArtMovementDeta
               ))}
             </Tab.List>
             <Tab.Panels className="mt-2 flex-1 overflow-auto max-h-[400px]">
-              <Tab.Panel className="prose prose-invert max-w-none h-full">
+              <Tab.Panel className="max-w-none h-full">
                 <p className="text-white/80 leading-relaxed">{artStyle.description}</p>
-                
-                {/* 添加标签展示，与时间轴条目悬停卡片风格一致 */}
-                {artStyle.tags && artStyle.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-3">
-                    {artStyle.tags.map((tag, index) => (
-                      <span key={index} className="px-2 py-0.5 text-xs rounded-full bg-purple-500/10 text-purple-300">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
               </Tab.Panel>
               <Tab.Panel className="h-full overflow-auto">
                 <ul className="space-y-2">
                   {artStyle.artists.map((artist, index) => (
-                    <li key={index} className="flex items-center gap-2 p-2 hover:bg-white/5 rounded-lg">
-                      <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white">
-                        {artist.charAt(0)}
-                      </div>
+                    <li key={index} className="flex items-center gap-2 p-1">
                       <span>{artist}</span>
                     </li>
                   ))}
                 </ul>
               </Tab.Panel>
               <Tab.Panel className="h-full overflow-auto">
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <div>
-                    <h3 className="text-sm font-medium text-white/60 mb-2">受影响自</h3>
-                    <div className="flex flex-wrap gap-2">
+                    <h3 className="text-sm text-white/60 mb-1">受影响自</h3>
+                    <div className="flex flex-wrap gap-1">
                       {artStyle.influencedBy.map((style, index) => (
-                        <span key={index} className="px-2 py-1 bg-white/5 text-white/80 text-xs rounded-full">
+                        <span key={index} className="text-sm text-white/80">
                           {style}
                         </span>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <h3 className="text-sm font-medium text-white/60 mb-2">影响了</h3>
-                    <div className="flex flex-wrap gap-2">
+                    <h3 className="text-sm text-white/60 mb-1">影响了</h3>
+                    <div className="flex flex-wrap gap-1">
                       {artStyle.influences.map((style, index) => (
-                        <span key={index} className="px-2 py-1 bg-white/5 text-white/80 text-xs rounded-full">
+                        <span key={index} className="text-sm text-white/80">
                           {style}
                         </span>
                       ))}
@@ -133,24 +114,21 @@ export default function ArtMovementDetail({ artStyle, onClose }: ArtMovementDeta
           </Tab.Group>
         </div>
         
-        {/* 右侧艺术作品展示 - 允许独立滚动 */}
-        <div className="w-2/5 bg-black/10 rounded-lg p-4 overflow-y-auto max-h-[400px]">
-          <h3 className="text-sm font-medium text-white/60 mb-3 sticky top-0 bg-black/60 py-2 backdrop-blur-sm z-10">代表作品</h3>
-          <div className="grid grid-cols-2 gap-3">
+        {/* 右侧艺术作品展示 */}
+        <div className="w-2/5 p-3 overflow-y-auto max-h-[400px]">
+          <h3 className="text-sm text-white/60 mb-2">代表作品</h3>
+          <div className="grid grid-cols-2 gap-2">
             {getArtworkImages().map((image, index) => (
-              <motion.div 
+              <div 
                 key={index}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
-                className="aspect-square bg-black/30 rounded-lg overflow-hidden group"
+                className="aspect-square bg-black/30 rounded overflow-hidden"
               >
                 <img 
                   src={image} 
                   alt={`${artStyle.title}作品${index + 1}`}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                  className="w-full h-full object-cover" 
                 />
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
