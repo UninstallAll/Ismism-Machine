@@ -1,0 +1,920 @@
+ÿş#!/usr/bin/env python3
+"""
+Ru˜Q<hÄ~öN - (uNRu˜>f:yşVÏPaSGr
+"""
+import tkinter as tk
+from tkinter import ttk, Menu
+import math
+
+from ..config.settings import DEFAULT_PAGE_SIZE
+from .image_card import ImageCard
+from ..utils.image_loader import ImageLoader
+
+class PaginatedGrid(ttk.Frame):
+    """Ru˜Q<hÄ~öNÿ/ecşVÏPaSGr„vRu˜>f:y"""
+    
+    def __init__(self, parent, page_size=DEFAULT_PAGE_SIZE):
+        """RËYSRu˜Q<h
+        
+        Args:
+            parent: 6r§~Ä~öN
+            page_size (int, optional): Ïku˜>f:y„vy˜îvpeÏ‘
+        """
+        super().__init__(parent)
+        
+        # úW,g^\'`
+        self.parent = parent
+        self.page_size = page_size
+        self.columns = 3  # Ø¤‹Rpe
+        self.current_page = 1
+        self.total_pages = 1
+        self.all_items = []  # @b	gy˜îv
+        self.filtered_items = []  # ÇänT„vy˜îv
+        self.displayed_cards = []  # S_MR>f:y„vaSGr
+        self.selected_docs = []  # 	-N„v‡ech
+        self.context_menu_callback = None
+        self.current_view = "grid"  # Ø¤‹Æ‰şV!j_ (grid b list)
+        
+        # §c6R.•¶r`
+        self.ctrl_pressed = False
+        self.shift_pressed = False
+        
+        #  ŸhÖb¨R	éb
+        self.drag_start_x = 0
+        self.drag_start_y = 0
+        self.is_dragging = False
+        self.selection_rect = None
+        
+        # d"}†SòS
+        self.search_history = []
+        
+        # Rú^UI
+        self._create_ui()
+        
+        # Rú^şVÏP R}hV
+        self.image_loader = ImageLoader(self._on_image_loaded)
+        
+        # Ñ~š[.•Øvë_wc.•
+        self._bind_keyboard_shortcuts()
+        
+    def _bind_keyboard_shortcuts(self):
+        """Ñ~š[.•Øvë_wc.•"""
+        # Ñ~š[Ctrl.•	cNŒTÊ‘>e‹NöN
+        self.bind_all("<Control-KeyPress>", self._on_ctrl_key_press)
+        self.bind_all("<Control-KeyRelease>", self._on_ctrl_key_release)
+        
+        # Ñ~š[Shift.•	cNŒTÊ‘>e‹NöN
+        self.bind_all("<Shift-KeyPress>", self._on_shift_key_press)
+        self.bind_all("<Shift-KeyRelease>", self._on_shift_key_release)
+        
+        # Ñ~š[Ä~T.•
+        self.bind_all("<Control-a>", self._select_all_shortcut)
+        self.bind_all("<Control-d>", self._deselect_all_shortcut)
+        self.bind_all("<Control-i>", self._invert_selection_shortcut)
+    
+    def _on_ctrl_key_press(self, event):
+        """YtCtrl.•	cN‹NöN"""
+        self.ctrl_pressed = True
+    
+    def _on_ctrl_key_release(self, event):
+        """YtCtrl.•Ê‘>e‹NöN"""
+        self.ctrl_pressed = False
+    
+    def _on_shift_key_press(self, event):
+        """YtShift.•	cN‹NöN"""
+        self.shift_pressed = True
+    
+    def _on_shift_key_release(self, event):
+        """YtShift.•Ê‘>e‹NöN"""
+        self.shift_pressed = False
+    
+    def _select_all_shortcut(self, event):
+        """hQ	ë_wc.•Yt"""
+        for card in self.displayed_cards:
+            card.set_selected(True)
+        self._update_selection_ui()
+        return "break"  # ;–bk‹NöNç~í~ O­d
+    
+    def _deselect_all_shortcut(self, event):
+        """ÖSˆmhQ	ë_wc.•Yt"""
+        for card in self.displayed_cards:
+            card.set_selected(False)
+        self._update_selection_ui()
+        return "break"
+    
+    def _invert_selection_shortcut(self, event):
+        """ÍS	ë_wc.•Yt"""
+        for card in self.displayed_cards:
+            card.set_selected(not card.is_selected)
+        self._update_selection_ui()
+        return "break"
+        
+    def _create_ui(self):
+        """Rú^UIÄ~öN"""
+        # ;NFh¶g
+        self.main_frame = ttk.Frame(self)
+        self.main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # v˜èå]wQh
+        self.toolbar = ttk.Frame(self.main_frame)
+        self.toolbar.pack(fill=tk.X, padx=5, pady=5)
+        
+        # ûm Rd"}Fh
+        ttk.Label(self.toolbar, text="d"}:").pack(side=tk.LEFT, padx=(0, 5))
+        
+        self.search_var = tk.StringVar()
+        self.search_var.trace("w", self._on_search_text_changed)
+        
+        self.search_entry = ttk.Entry(self.toolbar, width=30, textvariable=self.search_var)
+        self.search_entry.pack(side=tk.LEFT, padx=5)
+        self.search_entry.bind("<Return>", self._on_search)
+        
+        # d"}	c®”
+        self.search_button = ttk.Button(self.toolbar, text="d"}", command=self._on_search)
+        self.search_button.pack(side=tk.LEFT, padx=5)
+        
+        # nd–d"}	c®”
+        self.clear_button = ttk.Button(self.toolbar, text="nd–", command=self._clear_search)
+        self.clear_button.pack(side=tk.LEFT, padx=5)
+        
+        # d"}†SòS	c®”
+        self.history_button = ttk.Button(self.toolbar, text="†SòS", command=self._show_search_history)
+        self.history_button.pack(side=tk.LEFT, padx=5)
+        
+        # Æ‰şVRbc	c®”
+        self.view_button = ttk.Button(self.toolbar, text="RbcÆ‰şV", command=self._switch_view_mode)
+        self.view_button.pack(side=tk.LEFT, padx=5)
+        
+        # ybÏ‘Íd\O	c®”
+        self.operations_frame = ttk.Frame(self.toolbar)
+        self.operations_frame.pack(side=tk.RIGHT)
+        
+        ttk.Button(self.operations_frame, text="hQ	", command=self._toggle_select_all).pack(side=tk.LEFT, padx=2)
+        ttk.Button(self.operations_frame, text="ybÏ‘ü[úQ", command=self._bulk_export).pack(side=tk.LEFT, padx=2)
+        ttk.Button(self.operations_frame, text="Rú^sQû|", command=self._bulk_create_relation).pack(side=tk.LEFT, padx=2)
+        
+        # Rú^RhˆŒTQ<hÆ‰şV„v¹[hV
+        self.view_container = ttk.Frame(self.main_frame)
+        self.view_container.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        # RhˆÆ‰şV - Treeview
+        self.list_frame = ttk.Frame(self.view_container)
+        
+        columns = ("‡eöNT", "{|‹W", "'Y\")
+        self.list_view = ttk.Treeview(self.list_frame, columns=columns, show="headings", selectmode="extended")
+        
+        for col in columns:
+            self.list_view.heading(col, text=col)
+            self.list_view.column(col, width=100)
+        
+        vsb = ttk.Scrollbar(self.list_frame, orient="vertical", command=self.list_view.yview)
+        hsb = ttk.Scrollbar(self.list_frame, orient="horizontal", command=self.list_view.xview)
+        self.list_view.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+        
+        vsb.pack(side=tk.RIGHT, fill=tk.Y)
+        hsb.pack(side=tk.BOTTOM, fill=tk.X)
+        self.list_view.pack(fill=tk.BOTH, expand=True)
+        
+        # Ñ~š[RhˆÆ‰şV‹NöN
+        self.list_view.bind("<<TreeviewSelect>>", self._on_list_selection_changed)
+        self.list_view.bind("<Button-1>", self._on_list_click)
+        self.list_view.bind("<Button-3>", self._on_list_context_menu)
+        
+        # Q<hÆ‰şV - Canvas + Frame
+        self.grid_frame = ttk.Frame(self.view_container)
+        
+        # O(uCanvas/ecÚn¨R
+        self.canvas = tk.Canvas(self.grid_frame, borderwidth=0, highlightthickness=0)
+        self.scrollbar = ttk.Scrollbar(self.grid_frame, orient=tk.VERTICAL, command=self.canvas.yview)
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+        
+        self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # …QèFh¶g(uN>enaSGr
+        self.cards_frame = ttk.Frame(self.canvas)
+        self.canvas_window = self.canvas.create_window((0, 0), window=self.cards_frame, anchor=tk.NW)
+        
+        # Ñ~š[‹NöN(uNŒte'Y\
+        self.cards_frame.bind("<Configure>", self._on_frame_configure)
+        self.canvas.bind("<Configure>", self._on_canvas_configure)
+        
+        #  ŸhÚnn/ec
+        self.bind_mousewheel()
+        
+        # /ec ŸhFh	
+        self.canvas.bind("<ButtonPress-1>", self._on_mouse_down)
+        self.canvas.bind("<B1-Motion>", self._on_mouse_drag)
+        self.canvas.bind("<ButtonRelease-1>", self._on_mouse_release)
+        
+        # Ø¤‹>f:yQ<hÆ‰şV
+        self.grid_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # •^èRu˜§cöN
+        self.pagination_frame = ttk.Frame(self.main_frame)
+        self.pagination_frame.pack(fill=tk.X, padx=5, pady=5)
+        
+        ttk.Button(self.pagination_frame, text="
+NNu˜", command=self.prev_page).pack(side=tk.LEFT, padx=5)
+        
+        self.page_label = ttk.Label(self.pagination_frame, text=",{ 1 u˜ / qQ 1 u˜")
+        self.page_label.pack(side=tk.LEFT, padx=5)
+        
+        ttk.Button(self.pagination_frame, text="NNu˜", command=self.next_page).pack(side=tk.LEFT, padx=5)
+        
+        # Ïku˜peÏ‘	éb
+        ttk.Label(self.pagination_frame, text="Ïku˜>f:y:").pack(side=tk.LEFT, padx=(20, 5))
+        
+        self.page_size_var = tk.StringVar(value=str(self.page_size))
+        page_size_combo = ttk.Combobox(self.pagination_frame, 
+                                      textvariable=self.page_size_var,
+                                      values=["12", "24", "48", "96"],
+                                      width=5)
+        page_size_combo.pack(side=tk.LEFT)
+        page_size_combo.bind("<<ComboboxSelected>>", self._on_page_size_changed)
+        
+        # 	éb¡‹peh~{
+        self.selection_label = ttk.Label(self.pagination_frame, text="ò]	éb: 0 y˜")
+        self.selection_label.pack(side=tk.RIGHT, padx=5)
+        
+    def _switch_view_mode(self):
+        """RbcÆ‰şV!j_ÿQ<h/Rhˆ	ÿ"""
+        if self.current_view == "grid":
+            # Rbc0RRhˆÆ‰şV
+            self.grid_frame.pack_forget()
+            self.list_frame.pack(fill=tk.BOTH, expand=True)
+            self.current_view = "list"
+            self.view_button.configure(text="Rbc0RQ<hÆ‰şV")
+            self.refresh_list()
+        else:
+            # Rbc0RQ<hÆ‰şV
+            self.list_frame.pack_forget()
+            self.grid_frame.pack(fill=tk.BOTH, expand=True)
+            self.current_view = "grid"
+            self.view_button.configure(text="Rbc0RRhˆÆ‰şV")
+            self.refresh_grid()
+            
+    def _on_list_selection_changed(self, event):
+        """YtRhˆÆ‰şV	ébØSôf"""
+        # ôf°e	-N„v‡ech
+        self.selected_docs = []
+        selected_ids = self.list_view.selection()
+        
+        for item_id in selected_ids:
+            doc_index = int(self.list_view.item(item_id, "values")[-1])  # gTNRX[¨P"}_
+            if 0 <= doc_index < len(self.filtered_items):
+                self.selected_docs.append(self.filtered_items[doc_index])
+        
+        # ôf°e	ébh~{
+        self.selection_label.configure(text=f"ò]	éb: {len(self.selected_docs)} y˜")
+        
+    def _on_list_click(self, event):
+        """YtRhˆ¹pûQ‹NöNÿ/ecCtrlŒTShiftY	"""
+        if not (self.ctrl_pressed or self.shift_pressed):
+            # ‚Yœg¡l	g	cNCtrlbShiftÿO(uØ¤‹Yt
+            return
+        
+        # ·ƒÖS¹pûQ„vy˜
+        item = self.list_view.identify_row(event.y)
+        if not item:
+            return
+            
+        if self.ctrl_pressed:
+            # Ctrl+¹pûQRbc	éb¶r`
+            if item in self.list_view.selection():
+                self.list_view.selection_remove(item)
+            else:
+                self.list_view.selection_add(item)
+            return "break"  # ;–bkØ¤‹Yt
+        
+        elif self.shift_pressed:
+            # Shift+¹pûQ	ébƒôV
+            current_selection = self.list_view.selection()
+            if not current_selection:
+                self.list_view.selection_add(item)
+                return "break"
+                
+            # @b	gy˜îv
+            all_items = self.list_view.get_children()
+            
+            # ~b0R,{N*N	-Ny˜ŒTS_MR¹pûQy˜„v"}_
+            try:
+                first_idx = all_items.index(current_selection[0])
+                current_idx = all_items.index(item)
+                
+                # nxš[ƒôV
+                start_idx = min(first_idx, current_idx)
+                end_idx = max(first_idx, current_idx)
+                
+                # 	ébƒôV…Q„v@b	gy˜
+                to_select = all_items[start_idx:end_idx+1]
+                self.list_view.selection_set(to_select)
+            except ValueError:
+                pass
+                
+            return "break"
+    
+    def refresh_list(self):
+        """7R°eRhˆÆ‰şV"""
+        # nzz°s	gy˜
+        for item in self.list_view.get_children():
+            self.list_view.delete(item)
+        
+        # ¡‹—{S_MRu˜„vy˜
+        start_idx = (self.current_page - 1) * self.page_size
+        end_idx = min(start_idx + self.page_size, len(self.filtered_items))
+        
+        # ûm Ry˜îv0RRhˆ
+        for i in range(start_idx, end_idx):
+            doc = self.filtered_items[i]
+            
+            # ĞcÖS>f:yáOo`
+            filename = doc.get('filename', doc.get('title', 'unknown'))
+            file_type = doc.get('fileType', doc.get('contentType', 'unknown'))
+            
+            if 'size' in doc and isinstance(doc['size'], (int, float)):
+                size = f"{int(doc['size'] / 1024)} KB"
+            else:
+                size = "*gåw"
+                
+            # ûm R0RRhˆÿgTNRX[¨P‡ech"}_ÿN>f:y	ÿ
+            values = (filename, file_type, size, i)
+            item_id = self.list_view.insert('', 'end', values=values)
+            
+            # ‚Yœg‡eöN"N1Yÿ¾‹nh~{œ˜r‚
+            if doc.get('_file_missing'):
+                self.list_view.item(item_id, tags=('missing',))
+                
+        # ¾‹n"N1Y‡eöN„vh~{œ˜r‚
+        self.list_view.tag_configure('missing', foreground='red')
+        
+        # Tek	éb¶r`
+        self._sync_list_selection()
+    
+    def _sync_list_selection(self):
+        """TekQ<hÆ‰şV„v	éb¶r`0RRhˆÆ‰şV"""
+        # nd–S_MR	éb
+        self.list_view.selection_set()
+        
+        # ‚Yœg¡l	g	éb„v‡echÿôv¥cÔŞV
+        if not self.selected_docs:
+            return
+            
+        # ·ƒÖS@b	gRhˆy˜
+        all_items = self.list_view.get_children()
+        
+        # M†SRhˆy˜ÿåg~b9SM‘„v‡ech
+        for item_id in all_items:
+            # ·ƒÖS‡ech"}_
+            idx_str = self.list_view.item(item_id, "values")[-1]
+            if not idx_str:
+                continue
+                
+            doc_index = int(idx_str)
+            if 0 <= doc_index < len(self.filtered_items):
+                doc = self.filtered_items[doc_index]
+                
+                # Àhåg/f&T(W	-N„v‡ech-N
+                if any(self._compare_docs(doc, selected_doc) for selected_doc in self.selected_docs):
+                    self.list_view.selection_add(item_id)
+    
+    def _compare_docs(self, doc1, doc2):
+        """Ôkƒ$N*N‡ech/f&TøvT"""
+        # ‚Yœg	g_idW[µkÿO(u_idÔkƒ
+        if '_id' in doc1 and '_id' in doc2:
+            return str(doc1['_id']) == str(doc2['_id'])
+            
+        # &TRÔkƒ‡eöNTŒT'Y\ÿ€{USÔkƒ	ÿ
+        if 'filename' in doc1 and 'filename' in doc2:
+            return doc1['filename'] == doc2['filename']
+            
+        # àeÕlnxš[ÿ¤‹:NNT
+        return False
+
+    def set_items(self, items):
+        """¾‹n‰>f:y„vy˜îv
+        
+        Args:
+            items (list): ‰>f:y„v‡echRhˆ
+        """
+        self.all_items = items
+        self.filtered_items = items
+        self.current_page = 1
+        self.total_pages = math.ceil(len(self.filtered_items) / self.page_size)
+        
+        # ôf°eUI
+        if self.current_view == "grid":
+            self.refresh_grid()
+        else:
+            self.refresh_list()
+        
+        # ôf°eRu˜§cöN
+        self._update_pagination_controls()
+        
+    def set_context_menu_callback(self, callback):
+        """¾‹n
+NN‡eÜƒUSŞVŒ
+        
+        Args:
+            callback (callable): ÜƒUS¨R\OŞVŒıQpe
+        """
+        self.context_menu_callback = callback
+        
+    def _on_image_loaded(self, card, success):
+        """şVÏP R}Œ[bŞVŒ"""
+        # ÙÌ‘ïSåNûm RşVÏP R}Œ[bT„vYt
+        pass
+
+    def _on_list_context_menu(self, event):
+        """YtRhˆÆ‰şV„vóS.•ÜƒUS"""
+        if not hasattr(self, 'list_context_menu'):
+            self.list_context_menu = Menu(self, tearoff=0)
+            self.list_context_menu.add_command(label="ågwæ‹Å`", command=lambda: self._handle_list_context_action("view"))
+            self.list_context_menu.add_command(label="Rú^sQû|", command=lambda: self._handle_list_context_action("relate"))
+            self.list_context_menu.add_command(label="ü[úQ:NJSON", command=lambda: self._handle_list_context_action("export"))
+            self.list_context_menu.add_separator()
+            self.list_context_menu.add_command(label=" Rd–", command=lambda: self._handle_list_context_action("delete"), 
+                                            foreground="red")
+        
+        # ·ƒÖS ŸhMOn„vy˜
+        item = self.list_view.identify_row(event.y)
+        if item:
+            # ‚Yœg¹pûQ„vy˜N(WS_MR	éb-NÿR	ébå‹y˜
+            if item not in self.list_view.selection():
+                self.list_view.selection_set(item)
+            
+            # >f:y
+NN‡eÜƒUS
+            self.list_context_menu.tk_popup(event.x_root, event.y_root)
+    
+    def _handle_list_context_action(self, action):
+        """YtRhˆÆ‰şV
+NN‡eÜƒUS¨R\O"""
+        if not self.context_menu_callback:
+            return
+            
+        # ·ƒÖS	-N„v‡ech
+        selected_ids = self.list_view.selection()
+        if not selected_ids:
+            return
+            
+        # ù[Ïk*N	-N„v‡echgbLˆÍd\O
+        for item_id in selected_ids:
+            idx_str = self.list_view.item(item_id, "values")[-1]
+            if not idx_str:
+                continue
+                
+            doc_index = int(idx_str)
+            if 0 <= doc_index < len(self.filtered_items):
+                doc = self.filtered_items[doc_index]
+                self.context_menu_callback(action, doc)
+    
+    def refresh_grid(self):
+        """7R°eQ<hÆ‰şV"""
+        # nzz°s	gaSGr
+        for widget in self.cards_frame.winfo_children():
+            widget.destroy()
+        
+        self.displayed_cards = []
+        self.selected_docs = []
+        
+        # ‚Yœg¡l	gy˜îvÿ>f:yĞc:y
+        if not self.filtered_items:
+            empty_label = ttk.Label(self.cards_frame, text="¡l	g&{TagöN„vy˜îv")
+            empty_label.pack(pady=50)
+            return
+            
+        # ¡‹—{S_MRu˜„vy˜
+        start_idx = (self.current_page - 1) * self.page_size
+        end_idx = min(start_idx + self.page_size, len(self.filtered_items))
+        
+        # ÏkLˆ„vRpe
+        cols = self.columns
+        
+        # Rú^Q<h^@\
+        for i in range(start_idx, end_idx):
+            # ¡‹—{LˆRMOn
+            row = (i - start_idx) // cols
+            col = (i - start_idx) % cols
+            
+            # Rú^şVÏPaSGr
+            doc = self.filtered_items[i]
+            card = ImageCard(self.cards_frame, doc=doc, on_select_callback=self._on_card_selected)
+            
+            # >enaSGr
+            card.grid(row=row, column=col, padx=5, pady=5, sticky="nsew")
+            
+            # ¾‹n
+NN‡eÜƒUS
+            if self.context_menu_callback:
+                card.setup_context_menu(self.context_menu_callback)
+            
+            # İOX[aSGr_(u
+            self.displayed_cards.append(card)
+            
+            # ûm R0R R}–R
+            self.image_loader.add_task(card)
+        
+        # Í‘°eÑ~š[‹NöNôf°eCanvasÚn¨R:SßW
+        self.cards_frame.update_idletasks()
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        
+        # ôf°eRu˜§cöN
+        self._update_pagination_controls()
+    
+    def _on_card_selected(self, card, is_selected):
+        """aSGr	éb¶r`9eØSŞVŒ"""
+        if is_selected:
+            # ûm R0R	-NRhˆ
+            if card.doc not in self.selected_docs:
+                self.selected_docs.append(card.doc)
+        else:
+            # ÎN	-NRhˆûyd–
+            doc_ids = [str(d.get('_id', '')) for d in self.selected_docs]
+            card_id = str(card.doc.get('_id', ''))
+            
+            if card_id in doc_ids:
+                idx = doc_ids.index(card_id)
+                if 0 <= idx < len(self.selected_docs):
+                    self.selected_docs.pop(idx)
+        
+        # ôf°e	éb¡‹pe
+        self.selection_label.configure(text=f"ò]	éb: {len(self.selected_docs)} y˜")
+        
+        # ‚Yœg/fRhˆÆ‰şVÿTek	éb¶r`
+        if self.current_view == "list":
+            self._sync_list_selection()
+    
+    def _on_frame_configure(self, event):
+        """…QèFh¶g'Y\9eØS‹NöN"""
+        # ôf°eCanvas„vÚn¨R:SßW
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+    
+    def _on_canvas_configure(self, event):
+        """Canvas'Y\9eØS‹NöN"""
+        # Œte…Qè—zãS½[¦^åN9SM‘Canvas
+        self.canvas.itemconfig(self.canvas_window, width=event.width)
+    
+    def _on_mousewheel(self, event):
+        """Yt ŸhÚnn‹NöN"""
+        # 9hncs^ğSnxš[Ún¨R¹eTŒTİ»y
+        if event.delta:
+            self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+        elif event.num == 4:  # Linux
+NÚnnT
+N
+            self.canvas.yview_scroll(-1, "units")
+        elif event.num == 5:  # Linux
+NÚnnTN
+            self.canvas.yview_scroll(1, "units")
+    
+    def bind_mousewheel(self):
+        """Ñ~š[ ŸhÚnn‹NöN"""
+        # Windows
+        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
+        # Linux
+        self.canvas.bind_all("<Button-4>", self._on_mousewheel)
+        self.canvas.bind_all("<Button-5>", self._on_mousewheel)
+    
+    def unbind_mousewheel(self):
+        """ã‰Ñ~ ŸhÚnn‹NöN"""
+        # Windows
+        self.canvas.unbind_all("<MouseWheel>")
+        # Linux
+        self.canvas.unbind_all("<Button-4>")
+        self.canvas.unbind_all("<Button-5>")
+    
+    def _on_mouse_down(self, event):
+        """ Ÿh	cN‹NöNÿ_ËYÖb¨R	éb"""
+        # °‹U__ËYMOn
+        self.drag_start_x = self.canvas.canvasx(event.x)
+        self.drag_start_y = self.canvas.canvasy(event.y)
+        self.is_dragging = True
+        
+        # ‚Yœg¡l	g	cNCtrlbShiftÿnd–°s	g	éb
+        if not (self.ctrl_pressed or self.shift_pressed):
+            for card in self.displayed_cards:
+                card.set_selected(False)
+            self.selected_docs = []
+            self._update_selection_ui()
+    
+    def _on_mouse_drag(self, event):
+        """ ŸhÖb¨R‹NöNÿôf°e	ébéwb_"""
+        if not self.is_dragging:
+            return
+            
+        # S_MRMOn
+        x = self.canvas.canvasx(event.x)
+        y = self.canvas.canvasy(event.y)
+        
+        #  Rd–çe„v	ébéwb_
+        if self.selection_rect:
+            self.canvas.delete(self.selection_rect)
+            
+        # Rú^°e„v	ébéwb_
+        self.selection_rect = self.canvas.create_rectangle(
+            self.drag_start_x, self.drag_start_y, x, y,
+            outline="blue", width=2, dash=(4, 4)
+        )
+    
+    def _on_mouse_release(self, event):
+        """ ŸhÊ‘>e‹NöNÿŒ[b	éb"""
+        if not self.is_dragging:
+            return
+            
+        # S_MRMOn
+        x = self.canvas.canvasx(event.x)
+        y = self.canvas.canvasy(event.y)
+        
+        # 	ébéwb_ƒôV…Q„vaSGr
+        self._select_cards_in_rectangle(self.drag_start_x, self.drag_start_y, x, y)
+        
+        # nt
+        if self.selection_rect:
+            self.canvas.delete(self.selection_rect)
+            self.selection_rect = None
+            
+        self.is_dragging = False
+    
+    def _select_cards_in_rectangle(self, x1, y1, x2, y2):
+        """	ébéwb_ƒôV…Q„vaSGr"""
+        # nxİOéwb_PWhz˜^cknx
+        left = min(x1, x2)
+        top = min(y1, y2)
+        right = max(x1, x2)
+        bottom = max(y1, y2)
+        
+        # M†S@b	gaSGr
+        for card in self.displayed_cards:
+            # ·ƒÖSaSGr„vMOnŒT'Y\
+            card_x = card.winfo_x()
+            card_y = card.winfo_y()
+            card_width = card.winfo_width()
+            card_height = card.winfo_height()
+            
+            # ÀhågaSGr/f&T(W	ébéwb_…Q
+            if (card_x < right and card_x + card_width > left and
+                card_y < bottom and card_y + card_height > top):
+                # ¾‹n	-N¶r`
+                if self.ctrl_pressed:
+                    # Ctrl	cNöeÍSl	éb¶r`
+                    card.set_selected(not card.is_selected)
+                else:
+                    # &TRôv¥c	-N
+                    card.set_selected(True)
+        
+        # ôf°e	ébUI
+        self._update_selection_ui()
+    
+    def _update_selection_ui(self):
+        """ôf°e	ébUIÿ‚Y	éb¡‹peI{"""
+        # ôf°e	-N„v‡echRhˆ
+        self.selected_docs = []
+        for card in self.displayed_cards:
+            if card.is_selected and card.doc not in self.selected_docs:
+                self.selected_docs.append(card.doc)
+                
+        # ôf°e	éb¡‹pe
+        self.selection_label.configure(text=f"ò]	éb: {len(self.selected_docs)} y˜")
+        
+        # ‚Yœg/fRhˆÆ‰şVÿTek	éb¶r`
+        if self.current_view == "list":
+            self._sync_list_selection()
+    
+    def _toggle_select_all(self):
+        """RbchQ	/ÖSˆmhQ	"""
+        # ÀhågS_MR/f&Tò]hQ	
+        all_selected = all(card.is_selected for card in self.displayed_cards)
+        
+        # Rbc	éb¶r`
+        for card in self.displayed_cards:
+            card.set_selected(not all_selected)
+            
+        # ôf°eUI
+        self._update_selection_ui()
+    
+    def _bulk_export(self):
+        """ybÏ‘ü[úQ	-N„v‡ech"""
+        if self.context_menu_callback and self.selected_docs:
+            self.context_menu_callback("bulk_export", self.selected_docs)
+    
+    def _bulk_create_relation(self):
+        """ybÏ‘Rú^sQû|"""
+        if self.context_menu_callback and self.selected_docs:
+            self.context_menu_callback("bulk_relate", self.selected_docs)
+    
+    def next_page(self):
+        """ól0RNNu˜"""
+        if self.current_page < self.total_pages:
+            self.current_page += 1
+            
+            # 7R°eÆ‰şV
+            if self.current_view == "grid":
+                self.refresh_grid()
+            else:
+                self.refresh_list()
+                
+            # ôf°eRu˜§cöN
+            self._update_pagination_controls()
+    
+    def prev_page(self):
+        """ól0R
+NNu˜"""
+        if self.current_page > 1:
+            self.current_page -= 1
+            
+            # 7R°eÆ‰şV
+            if self.current_view == "grid":
+                self.refresh_grid()
+            else:
+                self.refresh_list()
+                
+            # ôf°eRu˜§cöN
+            self._update_pagination_controls()
+    
+    def _update_pagination_controls(self):
+        """ôf°eRu˜§cöN¶r`"""
+        # ôf°eu˜xh~{
+        self.page_label.configure(text=f",{ {self.current_page} u˜ / qQ {self.total_pages} u˜")
+        
+        # ôf°e[{	Ó~œg¡‹peÿ‚Yœg	g	ÿ
+        if len(self.filtered_items) != len(self.all_items):
+            self.page_label.configure(text=f",{ {self.current_page} u˜ / qQ {self.total_pages} u˜ ([{	: {len(self.filtered_items)}/{len(self.all_items)})")
+    
+    def _on_page_size_changed(self, event):
+        """u˜b—'Y\9eØS‹NöN"""
+        try:
+            # ·ƒÖS°e„vu˜b—'Y\
+            new_size = int(self.page_size_var.get())
+            
+            # ‚Yœg'Y\øvTÿNYt
+            if new_size == self.page_size:
+                return
+                
+            # ôf°eu˜b—'Y\
+            self.page_size = new_size
+            
+            # Í‘°e¡‹—{;`u˜pe
+            self.total_pages = math.ceil(len(self.filtered_items) / self.page_size)
+            
+            # nxİOS_MRu˜	gHe
+            if self.current_page > self.total_pages:
+                self.current_page = self.total_pages
+            if self.current_page < 1:
+                self.current_page = 1
+                
+            # 7R°eÆ‰şV
+            if self.current_view == "grid":
+                self.refresh_grid()
+            else:
+                self.refresh_list()
+                
+            # ôf°eRu˜§cöN
+            self._update_pagination_controls()
+        except ValueError:
+            # “eQàeHeÿb`YŸS<P
+            self.page_size_var.set(str(self.page_size))
+    
+    def _on_search(self, event=None):
+        """gbLˆd"}"""
+        query = self.search_var.get().strip()
+        if not query:
+            # ‚Yœgågâ‹:Nzzÿnd–[{	
+            self._clear_search()
+            return
+            
+        # ûm R0Rd"}†SòS
+        if query not in self.search_history:
+            self.search_history.append(query)
+            # P–6R†SòS°‹U_peÏ‘
+            if len(self.search_history) > 10:
+                self.search_history.pop(0)
+        
+        # gbLˆ[{	
+        self._filter_items(query)
+        
+        # 7R°eÆ‰şV
+        if self.current_view == "grid":
+            self.refresh_grid()
+        else:
+            self.refresh_list()
+    
+    def _clear_search(self):
+        """nd–d"}[{	"""
+        # nzzd"}Fh
+        self.search_var.set("")
+        
+        # b`YŸSËYy˜îvRhˆ
+        self.filtered_items = self.all_items
+        
+        # Í‘nu˜x
+        self.current_page = 1
+        self.total_pages = math.ceil(len(self.filtered_items) / self.page_size)
+        
+        # 7R°eÆ‰şV
+        if self.current_view == "grid":
+            self.refresh_grid()
+        else:
+            self.refresh_list()
+            
+        # ôf°eRu˜§cöN
+        self._update_pagination_controls()
+    
+    def _filter_items(self, query):
+        """9hncågâ‹[{	y˜îv
+        
+        Args:
+            query (str): d"}ågâ‹
+        """
+        if not query:
+            self.filtered_items = self.all_items
+            return
+            
+        # l:N\™QåNı_eu'Y\™Q
+        query = query.lower()
+        
+        # [{	y˜îv
+        self.filtered_items = []
+        
+        for doc in self.all_items:
+            # Àhåg‡ech^\'`/f&T9SM‘ågâ‹
+            matched = False
+            
+            # Àhåg8^(uW[µk
+            for field in ['filename', 'title', 'artist', 'description', 'artMovement', 'tags']:
+                if field in doc and isinstance(doc[field], str) and query in doc[field].lower():
+                    matched = True
+                    break
+            
+            # ÀhågCQpenc-N„vW[µk
+            if 'metadata' in doc and isinstance(doc['metadata'], dict):
+                for key, value in doc['metadata'].items():
+                    if isinstance(value, str) and query in value.lower():
+                        matched = True
+                        break
+            
+            # ‚Yœg9SM‘ÿûm R0RÓ~œg
+            if matched:
+                self.filtered_items.append(doc)
+        
+        # Í‘nu˜x
+        self.current_page = 1
+        self.total_pages = math.ceil(len(self.filtered_items) / self.page_size) if self.filtered_items else 1
+    
+    def _show_search_history(self):
+        """>f:yd"}†SòSÜƒUS"""
+        if not self.search_history:
+            return
+            
+        # Rú^ÜƒUS
+        history_menu = Menu(self, tearoff=0)
+        
+        # ûm R†SòSy˜îv
+        for query in reversed(self.search_history):
+            history_menu.add_command(
+                label=query,
+                command=lambda q=query: self._use_history_item(q)
+            )
+            
+        # ûm Rnd–†SòS	y˜
+        history_menu.add_separator()
+        history_menu.add_command(label="nd–†SòS°‹U_", command=self._clear_search_history)
+        
+        # (W	c®”N¹e>f:yÜƒUS
+        x = self.history_button.winfo_rootx()
+        y = self.history_button.winfo_rooty() + self.history_button.winfo_height()
+        history_menu.tk_popup(x, y)
+    
+    def _clear_search_history(self):
+        """nd–d"}†SòS"""
+        self.search_history = []
+    
+    def _use_history_item(self, query):
+        """O(u†SòSd"}y˜"""
+        self.search_var.set(query)
+        self._on_search()
+    
+    def _on_search_text_changed(self, *args):
+        """d"}‡e,g9eØS‹NöN"""
+        # ‚Yœg‡e,gFh:Nzzÿnd–[{	
+        if not self.search_var.get().strip():
+            self._clear_search()
+    
+    def destroy(self):
+        """•ÁkÄ~öNÿntDn"""
+        # \PbkşVÏP R}hV
+        if hasattr(self, 'image_loader'):
+            self.image_loader.stop()
+            
+        # ã‰Ñ~hQ@\‹NöN
+        self.unbind_mousewheel()
+        self.unbind_all("<Control-KeyPress>")
+        self.unbind_all("<Control-KeyRelease>")
+        self.unbind_all("<Shift-KeyPress>")
+        self.unbind_all("<Shift-KeyRelease>")
+        self.unbind_all("<Control-a>")
+        self.unbind_all("<Control-d>")
+        self.unbind_all("<Control-i>")
+        
+        # Œ(u6r{|„vdestroy¹eÕl
+        super().destroy()

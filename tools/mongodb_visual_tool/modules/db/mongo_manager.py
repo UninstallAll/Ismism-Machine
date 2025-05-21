@@ -1,0 +1,244 @@
+#!/usr/bin/env python3
+"""
+MongoDB连接管理器 - 处理数据库连接和操作
+"""
+import os
+import pymongo
+from bson.objectid import ObjectId
+import datetime
+from ..config.settings import DEFAULT_MONGODB_URI
+
+class MongoDBManager:
+    """MongoDB connection and operation management class"""
+    
+    def __init__(self, uri=DEFAULT_MONGODB_URI):
+        """初始化
+        
+        Args:
+            uri (str): MongoDB连接URI
+        """
+        self.uri = uri
+        self.client = None
+        self.db = None
+        self.collection = None
+    
+    def connect(self, uri=None, timeout_ms=5000):
+        """连接到MongoDB服务器
+        
+        Args:
+            uri (str, optional): MongoDB连接URI，如果不指定则使用实例中保存的URI
+            timeout_ms (int, optional): 连接超时时间（毫秒）
+            
+        Returns:
+            bool: 连接是否成功
+            
+        Raises:
+            Exception: 连接失败时抛出的异常
+        """
+        if uri:
+            self.uri = uri
+            
+        try:
+            self.client = pymongo.MongoClient(self.uri, serverSelectionTimeoutMS=timeout_ms)
+            # 测试连接
+            self.client.admin.command('ping')
+            return True
+        except Exception as e:
+            raise Exception(f"Failed to connect to MongoDB: {str(e)}")
+    
+    def list_databases(self):
+        """获取所有数据库列表
+        
+        Returns:
+            list: 数据库名称列表
+        """
+        if self.client is None:
+            raise Exception("Not connected to MongoDB")
+            
+        return [db for db in self.client.list_database_names() 
+                if db not in ['admin', 'local', 'config']]
+    
+    def list_collections(self, db_name):
+        """获取指定数据库中的所有集合
+        
+        Args:
+            db_name (str): 数据库名称
+            
+        Returns:
+            list: 集合名称列表
+        """
+        if self.client is None:
+            raise Exception("Not connected to MongoDB")
+            
+        self.db = self.client[db_name]
+        return self.db.list_collection_names()
+    
+    def set_database(self, db_name):
+        """设置当前使用的数据库
+        
+        Args:
+            db_name (str): 数据库名称
+            
+        Returns:
+            bool: 操作是否成功
+        """
+        if self.client is None:
+            raise Exception("Not connected to MongoDB")
+            
+        self.db = self.client[db_name]
+        return True
+    
+    def set_collection(self, collection_name):
+        """设置当前使用的集合
+        
+        Args:
+            collection_name (str): 集合名称
+            
+        Returns:
+            bool: 操作是否成功
+        """
+        if self.db is None:
+            raise Exception("Database not selected")
+            
+        self.collection = self.db[collection_name]
+        return True
+    
+    def get_documents(self, query=None, limit=0, skip=0, sort=None):
+        """获取当前集合中的文档
+        
+        Args:
+            query (dict, optional): 查询条件
+            limit (int, optional): 结果数量限制
+            skip (int, optional): 跳过的结果数量
+            sort (list or tuple, optional): 排序条件
+            
+        Returns:
+            list: 文档列表
+        """
+        if self.collection is None:
+            raise Exception("Collection not selected")
+            
+        query = query or {}
+        cursor = self.collection.find(query)
+        
+        if skip:
+            cursor = cursor.skip(skip)
+        if limit:
+            cursor = cursor.limit(limit)
+        if sort:
+            cursor = cursor.sort(sort)
+            
+        return list(cursor)
+    
+    def get_document_by_id(self, doc_id):
+        """根据ID获取文档
+        
+        Args:
+            doc_id (str): 文档ID
+            
+        Returns:
+            dict: 文档数据
+        """
+        if self.collection is None:
+            raise Exception("Collection not selected")
+            
+        if isinstance(doc_id, str):
+            doc_id = ObjectId(doc_id)
+            
+        return self.collection.find_one({"_id": doc_id})
+    
+    def update_document(self, doc_id, update_data):
+        """更新文档
+        
+        Args:
+            doc_id (str): 文档ID
+            update_data (dict): 更新数据
+            
+        Returns:
+            dict: 更新结果
+        """
+        if self.collection is None:
+            raise Exception("Collection not selected")
+            
+        if isinstance(doc_id, str):
+            doc_id = ObjectId(doc_id)
+            
+        result = self.collection.update_one({"_id": doc_id}, {"$set": update_data})
+        return {
+            "matched": result.matched_count,
+            "modified": result.modified_count,
+            "success": result.modified_count > 0
+        }
+    
+    def delete_document(self, doc_id):
+        """删除文档
+        
+        Args:
+            doc_id (str): 文档ID
+            
+        Returns:
+            bool: 删除是否成功
+        """
+        if self.collection is None:
+            raise Exception("Collection not selected")
+            
+        if isinstance(doc_id, str):
+            doc_id = ObjectId(doc_id)
+            
+        result = self.collection.delete_one({"_id": doc_id})
+        return result.deleted_count > 0
+    
+    def create_document(self, document):
+        """创建新文档
+        
+        Args:
+            document (dict): 文档数据
+            
+        Returns:
+            str: 新文档的ID
+        """
+        if self.collection is None:
+            raise Exception("Collection not selected")
+            
+        result = self.collection.insert_one(document)
+        return str(result.inserted_id)
+    
+    def create_relationship(self, source_id, target_id, relationship_type, metadata=None):
+        """创建文档间的关系
+        
+        Args:
+            source_id (str): 源文档ID
+            target_id (str): 目标文档ID
+            relationship_type (str): 关系类型
+            metadata (dict, optional): 关系元数据
+            
+        Returns:
+            str: 关系文档的ID
+        """
+        if self.db is None:
+            raise Exception("Database not selected")
+            
+        # 使用特定的关系集合
+        rel_collection = self.db["relationships"]
+        
+        # 创建关系文档
+        relationship = {
+            "source": ObjectId(source_id) if isinstance(source_id, str) else source_id,
+            "target": ObjectId(target_id) if isinstance(target_id, str) else target_id,
+            "type": relationship_type,
+            "created": datetime.datetime.utcnow()
+        }
+        
+        if metadata:
+            relationship["metadata"] = metadata
+            
+        result = rel_collection.insert_one(relationship)
+        return str(result.inserted_id)
+    
+    def close(self):
+        """关闭数据库连接"""
+        if self.client is not None:
+            self.client.close()
+            self.client = None
+            self.db = None
+            self.collection = None 
