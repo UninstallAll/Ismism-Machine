@@ -636,21 +636,6 @@ const Timeline: React.FC = () => {
 
       {/* 选中的艺术主义详情或艺术主义行列表 */}
       <AnimatePresence mode="wait">
-        {selectedNode && (
-          <motion.div 
-            key="detail"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.4 }}
-            className="mx-4 mb-4 mt-2 art-movement-detail-container"
-          >
-            <div className="bg-black/30 w-full rounded-lg overflow-hidden">
-              <ArtMovementDetail artStyle={selectedNode} onClose={handleCloseDetail} />
-            </div>
-          </motion.div>
-        )}
-
         {!selectedNode && (
           <motion.div 
             key="timeline"
@@ -776,64 +761,21 @@ const Timeline: React.FC = () => {
                         </div>
                       </div>
                       
-                      {/* 悬停时显示的详情 */}
-                      <div 
-                        className="hidden mt-2 bg-black/60 backdrop-blur-md rounded-lg p-4 border border-white/10 shadow-lg z-30 absolute w-[500px] max-w-[90vw] left-4 hover-target"
-                      >
-                        {/* 描述 */}
-                        <p className="text-sm text-gray-300 mb-3 leading-relaxed">
-                          {node.description}
-                        </p>
-                        
-                        {/* 艺术家列表 */}
-                        <div className="mb-3">
-                          <h4 className="text-xs font-medium text-blue-400 mb-1">艺术家:</h4>
-                          <div className="flex flex-wrap gap-1">
-                            {node.artists.map((artist, artistIndex) => (
-                              <span 
-                                key={artistIndex} 
-                                className="px-2 py-0.5 text-xs rounded-full bg-blue-500/10 text-blue-300"
-                              >
-                                {artist}
-                              </span>
-                            ))}
+                      {/* 艺术主义详情展开区 - 仅当选中时显示 */}
+                      {selectedNode && selectedNode.id && node && node.id && selectedNode.id === node.id && (
+                        <motion.div 
+                          key={`detail-inline`}
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="mt-2 mb-4 w-full"
+                        >
+                          <div className="bg-black/30 w-full rounded-lg overflow-hidden">
+                            <ArtMovementDetail artStyle={selectedNode} onClose={handleCloseDetail} />
                           </div>
-                        </div>
-                        
-                        {/* 标签 */}
-                        {node.tags && node.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            {node.tags.map((tag, tagIndex) => (
-                              <span 
-                                key={tagIndex} 
-                                className="px-2 py-0.5 text-xs rounded-full bg-purple-500/10 text-purple-300"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                        
-                        {/* 底部操作栏 */}
-                        <div className="mt-3 pt-2 border-t border-white/10 flex justify-between items-center">
-                          <span className="text-sm font-medium text-purple-400">
-                            {node.styleMovement}
-                          </span>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-xs text-white hover:text-blue-300 hover:bg-blue-500/20 p-2 h-auto rounded-full"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleArtMovementLineClick(node, e);
-                              }}
-                            >
-                              查看详情
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
+                        </motion.div>
+                      )}
                     </div>
                   </motion.div>
                 ))}
