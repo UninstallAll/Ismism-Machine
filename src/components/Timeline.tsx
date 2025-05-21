@@ -1,9 +1,17 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Search, ChevronLeft, ChevronRight, ArrowRight, GripHorizontal, Calendar } from 'lucide-react';
 import { Button } from './ui/button';
 import { useTimelineStore } from '../store/timelineStore';
 import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
+
+// 开发模式下启用性能分析
+const isDev = import.meta.env.DEV;
+const logPerformance = (label: string, startTime: number) => {
+  if (isDev) {
+    console.log(`[Performance] ${label}: ${performance.now() - startTime}ms`);
+  }
+};
 
 // 添加隐藏滚动条的CSS样式
 const hideScrollbarStyle = {
@@ -12,6 +20,24 @@ const hideScrollbarStyle = {
   },
   'scrollbarWidth': 'none',
   '-ms-overflow-style': 'none',
+};
+
+// 添加CSS样式到文档头部，控制悬停效果
+const addHoverStyles = () => {
+  // 检查是否已经存在该样式
+  if (!document.getElementById('timeline-hover-styles')) {
+    const styleElement = document.createElement('style');
+    styleElement.id = 'timeline-hover-styles';
+    styleElement.textContent = `
+      .hover-trigger:hover + .hover-target {
+        display: block !important;
+      }
+      .hover-target:hover {
+        display: block !important;
+      }
+    `;
+    document.head.appendChild(styleElement);
+  }
 };
 
 // 创建一个会话存储键
@@ -46,28 +72,67 @@ const Timeline: React.FC = () => {
   const [thumbnailStartX, setThumbnailStartX] = useState(0);
   const [thumbnailScrollLeft, setThumbnailScrollLeft] = useState(0);
   
+  // 艺术主义名称行拖动状态
+  // const [isNameRowDragging, setIsNameRowDragging] = useState(false);
+  // const [nameRowStartX, setNameRowStartX] = useState(0);
+  // const [nameRowStartPosition, setNameRowStartPosition] = useState(0);
+  // const nameRowRef = useRef<HTMLDivElement>(null);
+
+  // 图片缓存映射，减少重复请求
+  const imgCache = useRef<Map<string, string>>(new Map());
+
+  // 使用记忆化优化筛选和排序后的节点列表
+  const sortedNodes = React.useMemo(() => {
+    // 筛选节点
+    const filteredNodes = timelineNodes.filter(node => 
+      searchTerm === '' || 
+      node.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      node.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      node.artists.some(artist => artist.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      node.styleMovement.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // 排序节点
+    return [...filteredNodes].sort((a, b) => a.year - b.year);
+  }, [timelineNodes, searchTerm]);
+
+  // 计算时间轴的最小和最大年份
+  const { minYear, maxYear, timeRange } = React.useMemo(() => {
+    const min = sortedNodes.length > 0 ? sortedNodes[0].year : 1800;
+    const max = sortedNodes.length > 0 ? sortedNodes[sortedNodes.length - 1].year : 2023;
+    return { 
+      minYear: min, 
+      maxYear: max, 
+      timeRange: max - min 
+    };
+  }, [sortedNodes]);
+
   // 加载时间线节点
   useEffect(() => {
     fetchNodes();
+    
+    // 添加悬停样式
+    addHoverStyles();
+    
+    // 预加载常用的图片资源
+    const preloadImages = () => {
+      const imagesToPreload = Array.from({ length: 10 }).map((_, i) => `/TestData/1004${i}.jpg`);
+      imagesToPreload.forEach(src => {
+        const img = new Image();
+        img.src = src;
+      });
+    };
+    preloadImages();
+    
+    // 组件卸载时清理样式
+    return () => {
+      const styleElement = document.getElementById('timeline-hover-styles');
+      if (styleElement) {
+        styleElement.remove();
+      }
+    };
   }, [fetchNodes]);
 
-  // 筛选节点
-  const filteredNodes = timelineNodes.filter(node => 
-    searchTerm === '' || 
-    node.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    node.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    node.artists.some(artist => artist.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    node.styleMovement.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  // 按年份排序
-  const sortedNodes = [...filteredNodes].sort((a, b) => a.year - b.year);
-
-  // 计算时间轴的最小和最大年份
-  const minYear = sortedNodes.length > 0 ? sortedNodes[0].year : 1800;
-  const maxYear = sortedNodes.length > 0 ? sortedNodes[sortedNodes.length - 1].year : 2023;
-  const timeRange = maxYear - minYear;
-  
   // 加载时恢复时间轴位置和滚动位置
   useEffect(() => {
     const savedPosition = sessionStorage.getItem(TIMELINE_POSITION_KEY);
@@ -197,12 +262,27 @@ const Timeline: React.FC = () => {
   }, [searchParams, timelineNodes]);
 
   // 计算每个节点在时间轴上的位置百分比（考虑时间轴位置）
-  const getPositionPercentage = (year: number) => {
-    // 基础位置百分比
-    const basePercentage = ((year - minYear) / timeRange) * 100;
-    // 应用时间轴位置偏移
-    return basePercentage + timelinePosition;
-  };
+  const getPositionPercentage = useCallback((year: number) => {
+    if (isDev) {
+      const startTime = performance.now();
+      // 基础位置百分比
+      const basePercentage = ((year - minYear) / timeRange) * 100;
+      // 应用时间轴位置偏移
+      const result = basePercentage + timelinePosition;
+      
+      // 仅在大量调用时记录性能数据（避免日志过多）
+      if (Math.random() < 0.01) { 
+        logPerformance("getPositionPercentage", startTime);
+      }
+      
+      return result;
+    } else {
+      // 基础位置百分比
+      const basePercentage = ((year - minYear) / timeRange) * 100;
+      // 应用时间轴位置偏移
+      return basePercentage + timelinePosition;
+    }
+  }, [minYear, timeRange, timelinePosition]);
   
   // 生成时间轴上的年份标记
   const generateYearMarks = () => {
@@ -324,7 +404,7 @@ const Timeline: React.FC = () => {
     document.body.style.userSelect = '';
   };
   
-  const handleThumbnailMouseLeave = () => {
+  const handleThumbnailMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
     if (isThumbnailDragging) {
       setIsThumbnailDragging(false);
       document.body.style.userSelect = '';
@@ -353,17 +433,45 @@ const Timeline: React.FC = () => {
   // 处理图片加载错误，使用备用图片
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>, index: number) => {
     const target = e.target as HTMLImageElement;
-    target.src = `/TestData/1004${index % 10}.jpg`;
+    const fallbackSrc = `/TestData/1004${index % 10}.jpg`;
+    
+    // 如果缓存中已有此图片的替代路径，直接使用
+    const originalSrc = target.getAttribute('data-original-src') || '';
+    if (originalSrc && imgCache.current.has(originalSrc)) {
+      target.src = imgCache.current.get(originalSrc) || fallbackSrc;
+    } else {
+      // 否则设置为默认备用图片
+      target.src = fallbackSrc;
+      
+      // 记录原图路径到备用图片路径的映射
+      if (originalSrc) {
+        imgCache.current.set(originalSrc, fallbackSrc);
+      }
+    }
+    
     // 避免无限循环加载
     target.onerror = null;
   };
 
   // 获取缩略图路径，优先使用节点自带图片，否则使用备用图片
   const getThumbnailUrl = (node: any, imgIndex: number) => {
-    if (node.images && node.images.length > 0 && node.images[imgIndex]) {
-      return node.images[imgIndex];
+    // 检查是否已经有缓存的路径
+    const nodeImgKey = `${node.id}-${imgIndex}`;
+    if (imgCache.current.has(nodeImgKey)) {
+      return imgCache.current.get(nodeImgKey) as string;
     }
-    return `/TestData/1004${imgIndex % 10}.jpg`;
+    
+    // 没有缓存，尝试使用节点的图片
+    if (node.images && node.images.length > 0 && node.images[imgIndex]) {
+      const imgUrl = node.images[imgIndex];
+      imgCache.current.set(nodeImgKey, imgUrl);
+      return imgUrl;
+    }
+    
+    // 使用备用图片
+    const fallbackSrc = `/TestData/1004${imgIndex % 10}.jpg`;
+    imgCache.current.set(nodeImgKey, fallbackSrc);
+    return fallbackSrc;
   };
 
   return (
@@ -493,7 +601,7 @@ const Timeline: React.FC = () => {
                     
                     {/* 时间点之后的缩略图容器 */}
                     <div 
-                      className="absolute top-0 h-full overflow-x-auto cursor-grab active:cursor-grabbing hide-scrollbar bg-transparent"
+                      className="absolute top-0 h-full overflow-x-auto cursor-grab active:cursor-grabbing hide-scrollbar bg-transparent group hover:bg-blue-500/5 transition-colors rounded-md"
                       style={{ 
                         left: `${getPositionPercentage(node.year)}%`,
                         right: '0',
@@ -503,11 +611,11 @@ const Timeline: React.FC = () => {
                       ref={el => thumbnailsRef.current[node.id] = el}
                       onMouseDown={(e) => handleThumbnailMouseDown(e, node.id)}
                       onMouseUp={handleThumbnailMouseUp}
-                      onMouseLeave={handleThumbnailMouseLeave}
+                      onMouseLeave={(e) => handleThumbnailMouseLeave(e)}
                       onMouseMove={(e) => handleThumbnailMouseMove(e, node.id)}
                     >
                       <div className="flex items-center h-full gap-2 pr-4 pl-2" style={{ width: 'max-content', paddingRight: '200px' }}>
-                        <GripHorizontal className="h-4 w-4 text-white/30 flex-shrink-0" />
+                        <GripHorizontal className="h-4 w-4 text-white/30 group-hover:text-white/60 flex-shrink-0 transition-colors" />
                         {/* 缩略图 - 限制数量为5个，提高性能 */}
                         {Array.from({ length: Math.min(5, node.images?.length || 5) }).map((_, imgIndex) => (
                           <div 
@@ -522,6 +630,8 @@ const Timeline: React.FC = () => {
                               src={getThumbnailUrl(node, imgIndex)}
                               alt={`${node.title} artwork ${imgIndex + 1}`}
                               className="w-full h-full object-cover"
+                              loading="lazy"
+                              data-original-src={node.images?.[imgIndex] || ''}
                               onError={(e) => handleImageError(e, imgIndex)}
                             />
                           </div>
@@ -532,32 +642,34 @@ const Timeline: React.FC = () => {
                 </div>
                 
                 {/* 艺术主义名称和信息 - 仅显示名称和年份，位置不变 */}
-                <div className="w-full pl-4">
+                <div className="w-full pl-4 relative">
+                  {/* 名称和年份行 */}
                   <div 
-                    className="flex items-center gap-2 relative group cursor-pointer"
-                    onMouseEnter={(e) => {
-                      // 悬停时显示详情
-                      const target = e.currentTarget.nextElementSibling as HTMLElement;
-                      if (target) target.style.display = 'block';
-                    }}
-                    onMouseLeave={(e) => {
-                      // 离开时隐藏详情
-                      const target = e.currentTarget.nextElementSibling as HTMLElement;
-                      if (target) target.style.display = 'none';
+                    className="flex items-center gap-3 relative group px-3 py-2 hover:bg-blue-500/10 rounded-md transition-colors cursor-pointer hover-trigger"
+                    onClick={(e) => {
+                      // 点击整行时导航到详情页
+                      // 除非点击的是年份按钮
+                      if (!(e.target as HTMLElement).closest('.year-btn')) {
+                        navigateToArtMovement(node.id);
+                      }
                     }}
                   >
                     <Button 
                       variant="link" 
                       className="p-0 h-auto text-lg font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent hover:from-blue-300 hover:to-purple-300 flex items-center gap-1"
-                      onClick={() => navigateToArtMovement(node.id)}
+                      onClick={(e) => {
+                        e.stopPropagation(); // 防止触发父元素的点击事件
+                        navigateToArtMovement(node.id);
+                      }}
                     >
                       {node.title}
                       <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </Button>
                     
                     <div 
-                      className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-sm cursor-pointer"
-                      onClick={() => {
+                      className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-sm cursor-pointer year-btn"
+                      onClick={(e) => {
+                        e.stopPropagation(); // 防止触发父元素的点击事件
                         // 点击年份，同步调整时间轴位置
                         if (timelineContainerRef.current) {
                           const containerWidth = timelineContainerRef.current.clientWidth;
@@ -574,12 +686,14 @@ const Timeline: React.FC = () => {
                   
                   {/* 悬停时显示的详情 */}
                   <div 
-                    className="hidden mt-2 bg-black/50 backdrop-blur-sm rounded-lg p-4 border border-white/10 shadow-lg z-20 absolute w-[500px] max-w-[90vw]"
+                    className="hidden mt-2 bg-black/60 backdrop-blur-md rounded-lg p-4 border border-white/10 shadow-lg z-30 absolute w-[500px] max-w-[90vw] left-4 hover-target"
                   >
-                    <p className="text-sm text-gray-300 mb-3">
+                    {/* 描述 */}
+                    <p className="text-sm text-gray-300 mb-3 leading-relaxed">
                       {node.description}
                     </p>
                     
+                    {/* 艺术家列表 */}
                     <div className="mb-3">
                       <h4 className="text-xs font-medium text-blue-400 mb-1">艺术家:</h4>
                       <div className="flex flex-wrap gap-1">
@@ -594,6 +708,7 @@ const Timeline: React.FC = () => {
                       </div>
                     </div>
                     
+                    {/* 标签 */}
                     {node.tags && node.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
                         {node.tags.map((tag, tagIndex) => (
@@ -607,6 +722,7 @@ const Timeline: React.FC = () => {
                       </div>
                     )}
                     
+                    {/* 底部操作栏 */}
                     <div className="mt-3 pt-2 border-t border-white/10 flex justify-between items-center">
                       <span className="text-sm font-medium text-purple-400">
                         {node.styleMovement}
@@ -614,7 +730,7 @@ const Timeline: React.FC = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 p-1 h-auto"
+                        className="text-xs text-white hover:text-blue-300 hover:bg-blue-500/20 p-2 h-auto rounded-full"
                         onClick={() => navigateToArtMovement(node.id)}
                       >
                         查看详情 <ArrowRight className="h-3 w-3 ml-1" />
