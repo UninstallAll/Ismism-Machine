@@ -663,10 +663,10 @@ const Timeline: React.FC = () => {
                     {/* 时间点标记 - 可点击显示详情 */}
                     <div 
                       id={`year-${node.year}`}
-                      className="absolute top-1/2 w-0.5 h-6 bg-blue-500 z-10 cursor-pointer hover:bg-blue-400 hover:h-8 transition-all"
+                      className="absolute top-1/2 w-3 h-3 bg-blue-500 rounded-full z-10 cursor-pointer hover:bg-blue-400 hover:scale-125 transition-all"
                       style={{ 
                         left: `${getPositionPercentage(node.year)}%`,
-                        transform: 'translateX(-50%)',
+                        transform: 'translate(-50%, -50%)',
                       }}
                       onClick={(e) => handleArtMovementLineClick(node, e)}
                     ></div>
