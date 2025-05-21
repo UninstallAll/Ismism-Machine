@@ -437,10 +437,24 @@ const Timeline: React.FC = () => {
     }
     
     // 设置当前选中节点
-    setSelectedNode(node.id === selectedNode?.id ? null : node);
+    const isSelecting = node.id !== selectedNode?.id;
+    setSelectedNode(isSelecting ? node : null);
     
     // 保存当前位置
     savePositions();
+    
+    // 如果是选中了节点，等待详情渲染后滚动到可见位置
+    if (isSelecting) {
+      setTimeout(() => {
+        if (nodeRefs.current[node.id]) {
+          // 确保详情框在视觉中心
+          nodeRefs.current[node.id]?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          });
+        }
+      }, 100); // 给予足够时间让详情框渲染
+    }
   };
   
   // 单独处理时间点标记的点击
@@ -453,7 +467,8 @@ const Timeline: React.FC = () => {
     }
     
     // 设置当前选中节点
-    setSelectedNode(node.id === selectedNode?.id ? null : node);
+    const isSelecting = node.id !== selectedNode?.id;
+    setSelectedNode(isSelecting ? node : null);
     
     // 如果该艺术主义有图片，显示第一张图片的大图预览
     if (node.images && node.images.length > 0) {
@@ -466,11 +481,23 @@ const Timeline: React.FC = () => {
         artist: node.artists[artistIndex] || '未知艺术家',
         year: node.year
       });
-      return;
     }
     
     // 保存当前位置
     savePositions();
+    
+    // 如果是选中了节点，等待详情渲染后滚动到可见位置
+    if (isSelecting) {
+      setTimeout(() => {
+        if (nodeRefs.current[node.id]) {
+          // 确保详情框在视觉中心
+          nodeRefs.current[node.id]?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          });
+        }
+      }, 100); // 给予足够时间让详情框渲染
+    }
   };
   
   // 关闭艺术主义详情
