@@ -5,6 +5,8 @@ import { Button } from './ui/button';
 import { useTimelineStore } from '../store/timelineStore';
 import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import ArtMovementDetail from './ArtMovementDetail';
+import { useToast } from "@/components/ui/use-toast";
+import { IArtStyle } from '@/types/art';
 
 // 开发模式下启用性能分析
 const isDev = import.meta.env.DEV;
@@ -56,7 +58,7 @@ const Timeline: React.FC = () => {
   const timelineListRef = useRef<HTMLDivElement>(null);
   
   // 当前选中的艺术主义节点
-  const [selectedNode, setSelectedNode] = useState<any | null>(null);
+  const [selectedNode, setSelectedNode] = useState<IArtStyle | null>(null);
   
   // 改为直接使用时间轴位置状态
   const [timelinePosition, setTimelinePosition] = useState(0); // 0 表示中间位置，正负表示向左右偏移
@@ -426,7 +428,7 @@ const Timeline: React.FC = () => {
   };
 
   // 点击艺术主义时间线，在页面内显示详情
-  const handleArtMovementLineClick = (node: any, e: React.MouseEvent) => {
+  const handleArtMovementLineClick = (node: IArtStyle, e: React.MouseEvent) => {
     e.stopPropagation(); // 防止冒泡触发父元素事件
     setSelectedNode(node);
     setHighlightedNodeId(node.id);
@@ -472,7 +474,7 @@ const Timeline: React.FC = () => {
   };
 
   // 获取缩略图路径，优先使用节点自带图片，否则使用备用图片
-  const getThumbnailUrl = (node: any, imgIndex: number) => {
+  const getThumbnailUrl = (node: IArtStyle, imgIndex: number) => {
     // 检查是否已经有缓存的路径
     const nodeImgKey = `${node.id}-${imgIndex}`;
     if (imgCache.current.has(nodeImgKey)) {
@@ -490,6 +492,13 @@ const Timeline: React.FC = () => {
     const fallbackSrc = `/TestData/1004${imgIndex % 10}.jpg`;
     imgCache.current.set(nodeImgKey, fallbackSrc);
     return fallbackSrc;
+  };
+
+  const { toast } = useToast();
+
+  // 处理"现在"按钮点击
+  const handleNowClick = () => {
+    // ... existing code ...
   };
 
   return (
@@ -600,20 +609,22 @@ const Timeline: React.FC = () => {
 
       {/* 选中的艺术主义详情或艺术主义行列表 */}
       <AnimatePresence mode="wait">
-        {selectedNode ? (
+        {selectedNode && (
           <motion.div 
             key="detail"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="flex-1 overflow-hidden"
+            className="flex-1 overflow-hidden mx-4 mb-4"
           >
             <div className="bg-black h-full rounded-lg border border-white/10 shadow-lg overflow-hidden">
               <ArtMovementDetail artStyle={selectedNode} onClose={handleCloseDetail} />
             </div>
           </motion.div>
-        ) : (
+        )}
+
+        {!selectedNode && (
           <motion.div 
             key="timeline"
             initial={{ opacity: 0 }}
@@ -701,10 +712,10 @@ const Timeline: React.FC = () => {
                       <div 
                         className="flex items-center gap-3 relative group px-3 py-2 hover:bg-blue-500/10 rounded-md transition-colors cursor-pointer hover-trigger"
                         onClick={(e) => {
-                          // 点击整行时导航到详情页
+                          // 点击整行时也在页面内显示详情
                           // 除非点击的是年份按钮
                           if (!(e.target as HTMLElement).closest('.year-btn')) {
-                            navigateToArtMovement(node.id);
+                            handleArtMovementLineClick(node, e);
                           }
                         }}
                       >
@@ -713,7 +724,7 @@ const Timeline: React.FC = () => {
                           className="p-0 h-auto text-lg font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent hover:from-blue-300 hover:to-purple-300 flex items-center gap-1"
                           onClick={(e) => {
                             e.stopPropagation(); // 防止触发父元素的点击事件
-                            navigateToArtMovement(node.id);
+                            handleArtMovementLineClick(node, e);
                           }}
                         >
                           {node.title}
@@ -791,15 +802,7 @@ const Timeline: React.FC = () => {
                                 handleArtMovementLineClick(node, e);
                               }}
                             >
-                              在页面内查看
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-xs text-white hover:text-blue-300 hover:bg-blue-500/20 p-2 h-auto rounded-full"
-                              onClick={() => navigateToArtMovement(node.id)}
-                            >
-                              查看详情页 <ArrowRight className="h-3 w-3 ml-1" />
+                              查看详情
                             </Button>
                           </div>
                         </div>
