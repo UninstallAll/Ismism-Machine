@@ -445,31 +445,40 @@ const Timeline: React.FC = () => {
     
     // 如果是选中了节点，调整时间轴位置使得节点的年份点位于时间轴上
     if (isSelecting) {
-      // 计算需要的偏移量使该艺术主义的年份点位于时间轴上可见位置
+      // 计算需要的偏移量使该艺术主义的年份点位于时间轴可见位置
       const yearPosition = ((node.year - minYear) / timeRange) * 100;
       const centerOffset = 50 - yearPosition;
       setTimelinePosition(centerOffset);
       
-      // 等待位置调整和详情渲染后滚动到详情区域
-      setTimeout(() => {
-        // 查找时间轴元素，获取其顶部位置
-        const timelineElement = timelineRef.current;
-        
-        if (timelineElement && nodeRefs.current[node.id]) {
-          const timelineRect = timelineElement.getBoundingClientRect();
-          // 计算滚动位置，使节点内容位于时间轴下方合适位置
-          const scrollPosition = 
-            window.pageYOffset + // 当前滚动位置
-            timelineRect.bottom + // 时间轴底部位置
-            20; // 稍微的间距
+      // 找到时间点的引用元素
+      const timePointElement = document.getElementById(`year-${node.year}`);
+      
+      if (timePointElement) {
+        // 等待时间轴位置调整完成
+        setTimeout(() => {
+          // 再次获取时间点位置，因为可能已经移动到中心
+          const rect = timePointElement.getBoundingClientRect();
           
-          // 平滑滚动到计算出的位置
-          window.scrollTo({
-            top: scrollPosition,
-            behavior: 'smooth'
-          });
-        }
-      }, 100);
+          // 获取时间轴线元素
+          const timelineTrack = document.querySelector('.absolute.top-1\\/2.left-0.right-0.h-0\\.5.bg-white\\/5');
+          
+          if (timelineTrack) {
+            const trackRect = timelineTrack.getBoundingClientRect();
+            
+            // 计算滚动位置，让时间点与时间轴线对齐
+            const scrollPosition = 
+              window.pageYOffset + // 当前滚动位置
+              trackRect.top - // 时间轴线顶部位置
+              rect.height/2; // 减去时间点高度的一半以保证中心对齐
+            
+            // 平滑滚动到计算出的位置
+            window.scrollTo({
+              top: scrollPosition,
+              behavior: 'smooth'
+            });
+          }
+        }, 150); // 等待时间略长，确保位置调整已完成
+      }
     }
   };
   
@@ -504,31 +513,40 @@ const Timeline: React.FC = () => {
     
     // 如果是选中了节点，调整时间轴位置使得节点的年份点位于时间轴上
     if (isSelecting) {
-      // 计算需要的偏移量使该艺术主义的年份点位于时间轴上可见位置
+      // 计算需要的偏移量使该艺术主义的年份点位于时间轴可见位置
       const yearPosition = ((node.year - minYear) / timeRange) * 100;
       const centerOffset = 50 - yearPosition;
       setTimelinePosition(centerOffset);
       
-      // 等待位置调整和详情渲染后滚动到详情区域
-      setTimeout(() => {
-        // 查找时间轴元素，获取其顶部位置
-        const timelineElement = timelineRef.current;
-        
-        if (timelineElement && nodeRefs.current[node.id]) {
-          const timelineRect = timelineElement.getBoundingClientRect();
-          // 计算滚动位置，使节点内容位于时间轴下方合适位置
-          const scrollPosition = 
-            window.pageYOffset + // 当前滚动位置
-            timelineRect.bottom + // 时间轴底部位置
-            20; // 稍微的间距
+      // 找到时间点的引用元素
+      const timePointElement = document.getElementById(`year-${node.year}`);
+      
+      if (timePointElement) {
+        // 等待时间轴位置调整完成
+        setTimeout(() => {
+          // 再次获取时间点位置，因为可能已经移动到中心
+          const rect = timePointElement.getBoundingClientRect();
           
-          // 平滑滚动到计算出的位置
-          window.scrollTo({
-            top: scrollPosition,
-            behavior: 'smooth'
-          });
-        }
-      }, 100);
+          // 获取时间轴线元素
+          const timelineTrack = document.querySelector('.absolute.top-1\\/2.left-0.right-0.h-0\\.5.bg-white\\/5');
+          
+          if (timelineTrack) {
+            const trackRect = timelineTrack.getBoundingClientRect();
+            
+            // 计算滚动位置，让时间点与时间轴线对齐
+            const scrollPosition = 
+              window.pageYOffset + // 当前滚动位置
+              trackRect.top - // 时间轴线顶部位置
+              rect.height/2; // 减去时间点高度的一半以保证中心对齐
+            
+            // 平滑滚动到计算出的位置
+            window.scrollTo({
+              top: scrollPosition,
+              behavior: 'smooth'
+            });
+          }
+        }, 150); // 等待时间略长，确保位置调整已完成
+      }
     }
   };
   
