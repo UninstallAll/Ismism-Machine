@@ -427,28 +427,34 @@ const Timeline: React.FC = () => {
     e.stopPropagation();
   };
 
-  // 点击艺术主义时间线，在页面内显示详情
+  // 处理艺术主义时间线点击
   const handleArtMovementLineClick = (node: IArtStyle, e: React.MouseEvent) => {
-    e.stopPropagation(); // 防止冒泡触发父元素事件
-    setSelectedNode(node);
-    setHighlightedNodeId(node.id);
-    savePositions(); // 保存当前位置
+    e.stopPropagation();
     
-    // 自动滚动，确保展开的详情视图居中
-    setTimeout(() => {
-      const nodeElement = nodeRefs.current[node.id];
-      if (nodeElement) {
-        // 计算需要滚动的位置，使节点在屏幕中间偏上的位置
-        const rect = nodeElement.getBoundingClientRect();
-        const scrollTop = rect.top + window.scrollY - (window.innerHeight / 4);
-        
-        // 平滑滚动到计算的位置
-        window.scrollTo({
-          top: scrollTop,
-          behavior: 'smooth'
-        });
-      }
-    }, 100); // 短暂延迟，确保DOM已更新
+    // 拖动过程中不触发点击
+    if (isDragging || isThumbnailDragging) {
+      return;
+    }
+    
+    // 设置当前选中节点
+    setSelectedNode(node.id === selectedNode?.id ? null : node);
+    
+    // 如果该艺术主义有图片，显示第一张图片的大图预览
+    if (node.images && node.images.length > 0) {
+      const imgIndex = 0; // 默认显示第一张图片
+      const image = getThumbnailUrl(node, imgIndex);
+      const artistIndex = imgIndex % node.artists.length;
+      setPreviewImage({
+        src: image,
+        title: node.title,
+        artist: node.artists[artistIndex] || '未知艺术家',
+        year: node.year
+      });
+      return;
+    }
+    
+    // 保存当前位置
+    savePositions();
   };
   
   // 关闭艺术主义详情
@@ -516,6 +522,8 @@ const Timeline: React.FC = () => {
   const handleNowClick = () => {
     // ... existing code ...
   };
+
+  const [previewImage, setPreviewImage] = useState<{src: string, title: string, artist: string, year: number} | null>(null);
 
   return (
     <div className="flex flex-col h-full">
@@ -684,10 +692,19 @@ const Timeline: React.FC = () => {
                         {Array.from({ length: Math.min(5, node.images?.length || 5) }).map((_, imgIndex) => (
                           <div 
                             key={imgIndex} 
-                            className="h-10 w-10 rounded-md overflow-hidden flex-shrink-0 border border-white/10 hover:border-blue-400 transition-colors bg-black/20"
+                            className="h-10 w-10 rounded-md overflow-hidden flex-shrink-0 border border-white/10 hover:border-blue-400 transition-colors bg-black/20 cursor-pointer"
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigateToArtMovement(node.id);
+                              
+                              // 打开图片预览而不是导航
+                              const image = getThumbnailUrl(node, imgIndex);
+                              const artistIndex = imgIndex % node.artists.length;
+                              setPreviewImage({
+                                src: image,
+                                title: node.title,
+                                artist: node.artists[artistIndex] || '未知艺术家',
+                                year: node.year + (imgIndex % 10)
+                              });
                             }}
                           >
                             <img
@@ -777,6 +794,47 @@ const Timeline: React.FC = () => {
             <h3 className="text-xl font-semibold text-gray-400 mb-2">未找到时间线节点</h3>
             <p className="text-gray-500">请尝试不同的搜索条件</p>
           </div>
+        )}
+      </AnimatePresence>
+      
+      {/* 大图预览弹窗 */}
+      <AnimatePresence>
+        {previewImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+            onClick={() => setPreviewImage(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.8 }}
+              className="max-w-4xl max-h-[80vh] relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img 
+                src={previewImage.src} 
+                alt={`${previewImage.title} 作品详图`} 
+                className="max-h-[80vh] max-w-full object-contain rounded-md" 
+              />
+              <div className="absolute bottom-0 left-0 right-0 bg-black/70 p-3 backdrop-blur-sm">
+                <h3 className="text-white font-medium">
+                  {previewImage.title}
+                </h3>
+                <p className="text-white/70 text-sm mt-1">
+                  {previewImage.artist} (c. {previewImage.year})
+                </p>
+                <button 
+                  className="absolute top-2 right-2 text-white/70 hover:text-white"
+                  onClick={() => setPreviewImage(null)}
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
