@@ -439,6 +439,22 @@ const Timeline: React.FC = () => {
     // 设置当前选中节点
     setSelectedNode(node.id === selectedNode?.id ? null : node);
     
+    // 保存当前位置
+    savePositions();
+  };
+  
+  // 单独处理时间点标记的点击
+  const handleTimePointClick = (node: IArtStyle, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // 拖动过程中不触发点击
+    if (isDragging || isThumbnailDragging) {
+      return;
+    }
+    
+    // 设置当前选中节点
+    setSelectedNode(node.id === selectedNode?.id ? null : node);
+    
     // 如果该艺术主义有图片，显示第一张图片的大图预览
     if (node.images && node.images.length > 0) {
       const imgIndex = 0; // 默认显示第一张图片
@@ -668,7 +684,7 @@ const Timeline: React.FC = () => {
                         left: `${getPositionPercentage(node.year)}%`,
                         transform: 'translate(-50%, -50%)',
                       }}
-                      onClick={(e) => handleArtMovementLineClick(node, e)}
+                      onClick={(e) => handleTimePointClick(node, e)}
                     ></div>
                     
                     {/* 时间点之后的缩略图容器 */}
@@ -728,7 +744,7 @@ const Timeline: React.FC = () => {
                   <div 
                     className="flex items-center gap-3 relative group px-3 py-2 hover:bg-blue-500/10 rounded-md transition-colors cursor-pointer hover-trigger"
                     onClick={(e) => {
-                      // 点击整行时也在页面内显示详情
+                      // 点击整行时在页面内显示详情
                       // 除非点击的是年份按钮
                       if (!(e.target as HTMLElement).closest('.year-btn')) {
                         handleArtMovementLineClick(node, e);
