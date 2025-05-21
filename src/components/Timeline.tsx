@@ -112,7 +112,7 @@ const Timeline: React.FC = () => {
       timeRange: max - min 
     };
   }, [sortedNodes]);
-
+  
   // 加载时间线节点
   useEffect(() => {
     fetchNodes();
@@ -372,7 +372,7 @@ const Timeline: React.FC = () => {
   
   const handleMouseLeave = () => {
     if (isDragging) {
-      setIsDragging(false);
+    setIsDragging(false);
       document.body.style.userSelect = '';
     }
   };
@@ -443,17 +443,33 @@ const Timeline: React.FC = () => {
     // 保存当前位置
     savePositions();
     
-    // 如果是选中了节点，等待详情渲染后滚动到可见位置
+    // 如果是选中了节点，调整时间轴位置使得节点的年份点位于时间轴上
     if (isSelecting) {
+      // 计算需要的偏移量使该艺术主义的年份点位于时间轴上可见位置
+      const yearPosition = ((node.year - minYear) / timeRange) * 100;
+      const centerOffset = 50 - yearPosition;
+      setTimelinePosition(centerOffset);
+      
+      // 等待位置调整和详情渲染后滚动到详情区域
       setTimeout(() => {
-        if (nodeRefs.current[node.id]) {
-          // 确保详情框在视觉中心
-          nodeRefs.current[node.id]?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center'
+        // 通过ID找到对应的时间点元素
+        const timePointElement = document.getElementById(`year-${node.year}`);
+        
+        if (timePointElement) {
+          // 计算时间点相对于视口的位置
+          const rect = timePointElement.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
+          
+          // 计算滚动位置，将时间点放在时间轴下方的适当位置（考虑到详情框的展示）
+          const scrollPosition = window.pageYOffset + rect.top - 120; // 120px是时间轴下方的合适位置
+          
+          // 平滑滚动到计算出的位置
+          window.scrollTo({
+            top: scrollPosition,
+            behavior: 'smooth'
           });
         }
-      }, 100); // 给予足够时间让详情框渲染
+      }, 100);
     }
   };
   
@@ -486,17 +502,32 @@ const Timeline: React.FC = () => {
     // 保存当前位置
     savePositions();
     
-    // 如果是选中了节点，等待详情渲染后滚动到可见位置
+    // 如果是选中了节点，调整时间轴位置使得节点的年份点位于时间轴上
     if (isSelecting) {
+      // 计算需要的偏移量使该艺术主义的年份点位于时间轴上可见位置
+      const yearPosition = ((node.year - minYear) / timeRange) * 100;
+      const centerOffset = 50 - yearPosition;
+      setTimelinePosition(centerOffset);
+      
+      // 等待位置调整和详情渲染后滚动到详情区域
       setTimeout(() => {
-        if (nodeRefs.current[node.id]) {
-          // 确保详情框在视觉中心
-          nodeRefs.current[node.id]?.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center'
+        // 通过ID找到对应的时间点元素
+        const timePointElement = document.getElementById(`year-${node.year}`);
+        
+        if (timePointElement) {
+          // 计算时间点相对于视口的位置
+          const rect = timePointElement.getBoundingClientRect();
+          
+          // 计算滚动位置，将时间点放在时间轴下方的适当位置（考虑到详情框的展示）
+          const scrollPosition = window.pageYOffset + rect.top - 120; // 120px是时间轴下方的合适位置
+          
+          // 平滑滚动到计算出的位置
+          window.scrollTo({
+            top: scrollPosition,
+            behavior: 'smooth'
           });
         }
-      }, 100); // 给予足够时间让详情框渲染
+      }, 100);
     }
   };
   
@@ -586,8 +617,8 @@ const Timeline: React.FC = () => {
             <div className="flex items-center gap-2">
               <div className="relative">
                 <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="搜索艺术主义..." 
                   className="pl-10 pr-4 py-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors border border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   value={searchTerm}
@@ -597,7 +628,7 @@ const Timeline: React.FC = () => {
             </div>
             
             {selectedNode && (
-              <Button
+              <Button 
                 variant="outline"
                 size="sm"
                 onClick={handleCloseDetail}
@@ -687,12 +718,12 @@ const Timeline: React.FC = () => {
             ref={timelineListRef}
           >
             {sortedNodes.map((node, index) => (
-              <motion.div 
-                key={node.id}
-                ref={el => nodeRefs.current[node.id] = el}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.05 }}
+            <motion.div 
+              key={node.id}
+              ref={el => nodeRefs.current[node.id] = el}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: index * 0.05 }}
                 className={`flex flex-col items-start gap-2 border-b border-white/10 pb-3 
                   ${highlightedNodeId === node.id ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg p-2 -mx-4 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : ''}`}
               >
@@ -707,13 +738,13 @@ const Timeline: React.FC = () => {
                     <div 
                       id={`year-${node.year}`}
                       className="absolute top-1/2 w-3 h-3 bg-blue-500 rounded-full z-10 cursor-pointer hover:bg-blue-400 hover:scale-125 transition-all"
-                      style={{ 
-                        left: `${getPositionPercentage(node.year)}%`,
+                    style={{ 
+                      left: `${getPositionPercentage(node.year)}%`,
                         transform: 'translate(-50%, -50%)',
-                      }}
+                    }}
                       onClick={(e) => handleTimePointClick(node, e)}
-                    ></div>
-                    
+                  ></div>
+                  
                     {/* 时间点之后的缩略图容器 */}
                     <div 
                       className="absolute top-0 h-full overflow-x-auto cursor-grab active:cursor-grabbing hide-scrollbar bg-transparent group hover:bg-blue-500/5 transition-colors rounded-md"
@@ -760,8 +791,8 @@ const Timeline: React.FC = () => {
                             />
                           </div>
                         ))}
-                      </div>
-                    </div>
+                  </div>
+                </div>
                   </div>
                 </div>
                 
@@ -823,8 +854,8 @@ const Timeline: React.FC = () => {
                       </div>
                     </motion.div>
                   )}
-                </div>
-              </motion.div>
+              </div>
+            </motion.div>
             ))}
             {/* 底部额外留白空间 */}
             <div className="h-40"></div>
@@ -875,7 +906,7 @@ const Timeline: React.FC = () => {
                 >
                   <X className="w-6 h-6" />
                 </button>
-              </div>
+      </div>
             </motion.div>
           </motion.div>
         )}
