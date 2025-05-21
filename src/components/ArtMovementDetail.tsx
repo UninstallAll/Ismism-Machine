@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Tab } from '@headlessui/react';
-import { X, Info, Users, Lightbulb } from 'lucide-react';
+import { X, Info, Users, Lightbulb, ExternalLink } from 'lucide-react';
 import { IArtStyle } from '../types/art';
 
 interface ArtMovementDetailProps {
@@ -11,6 +11,7 @@ interface ArtMovementDetailProps {
 
 export default function ArtMovementDetail({ artStyle, onClose }: ArtMovementDetailProps) {
   const [activeTab, setActiveTab] = useState(0);
+  const [selectedImage, setSelectedImage] = useState<{src: string, index: number} | null>(null);
 
   // 使用标签页分类显示内容
   const tabs = [
@@ -29,6 +30,11 @@ export default function ArtMovementDetail({ artStyle, onClose }: ArtMovementDeta
     return Array.from({ length: 8 }, (_, i) => 
       artStyle.imageUrl || `/TestData/${10001 + ((i + artStyle.year) % 30)}.jpg`
     );
+  };
+
+  // 关闭大图预览
+  const closeImagePreview = () => {
+    setSelectedImage(null);
   };
 
   return (
@@ -129,11 +135,12 @@ export default function ArtMovementDetail({ artStyle, onClose }: ArtMovementDeta
         {/* 右侧艺术作品展示 */}
         <div className="w-1/2 p-3 overflow-y-auto max-h-[350px]">
           <h3 className="text-sm text-white/60 mb-2 sticky top-0 bg-black/50 py-1 z-10">代表作品</h3>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-1">
             {getArtworkImages().map((image, index) => (
               <div 
                 key={index}
-                className="aspect-square bg-black/30 rounded overflow-hidden"
+                className="aspect-square bg-black/30 rounded overflow-hidden cursor-pointer hover:brightness-110 transition-all"
+                onClick={() => setSelectedImage({src: image, index})}
               >
                 <img 
                   src={image} 
@@ -145,6 +152,48 @@ export default function ArtMovementDetail({ artStyle, onClose }: ArtMovementDeta
           </div>
         </div>
       </div>
+
+      {/* 大图预览弹窗 */}
+      <AnimatePresence>
+        {selectedImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+            onClick={closeImagePreview}
+          >
+            <motion.div
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.8 }}
+              className="max-w-4xl max-h-[80vh] relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img 
+                src={selectedImage.src} 
+                alt={`${artStyle.title}作品详图`} 
+                className="max-h-[80vh] max-w-full object-contain rounded-md" 
+              />
+              <div className="absolute bottom-0 left-0 right-0 bg-black/70 p-3 backdrop-blur-sm">
+                <h3 className="text-white font-medium">
+                  {artStyle.title} - 作品{selectedImage.index + 1}
+                </h3>
+                <p className="text-white/70 text-sm mt-1">
+                  {artStyle.artists[selectedImage.index % artStyle.artists.length]}
+                  {artStyle.artists.length > 0 ? ` (c. ${artStyle.year + (selectedImage.index % 10)})` : ''}
+                </p>
+                <button 
+                  className="absolute top-2 right-2 text-white/70 hover:text-white"
+                  onClick={closeImagePreview}
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 } 
