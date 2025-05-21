@@ -36,11 +36,9 @@ export default function ArtMovementDetail({ artStyle, onClose }: ArtMovementDeta
       {/* 标题栏 */}
       <div className="flex justify-between items-center p-2 px-3 border-b border-white/10">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-white/70">{artStyle.year}</span>
-          <h2 className="text-xl font-semibold text-white">
-            {artStyle.title}
-          </h2>
-          <span className="text-xs text-white/60">{artStyle.styleMovement}</span>
+          <span className="text-sm font-medium text-white/80">
+            {artStyle.styleMovement}
+          </span>
         </div>
         {onClose && (
           <button 
