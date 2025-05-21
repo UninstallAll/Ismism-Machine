@@ -34,7 +34,7 @@ export default function ArtMovementDetail({ artStyle, onClose }: ArtMovementDeta
   return (
     <div className="flex flex-col">
       {/* 标题栏 */}
-      <div className="flex justify-between items-center p-3 border-b border-white/10">
+      <div className="flex justify-between items-center p-2 px-3 border-b border-white/10">
         <div className="flex items-center gap-2">
           <span className="text-sm text-white/70">{artStyle.year}</span>
           <h2 className="text-xl font-semibold text-white">
@@ -55,14 +55,14 @@ export default function ArtMovementDetail({ artStyle, onClose }: ArtMovementDeta
       {/* 内容区域 */}
       <div className="flex overflow-hidden">
         {/* 左侧内容区 */}
-        <div className="w-3/5 p-3 flex flex-col">
+        <div className="w-1/2 p-3 flex flex-col">
           <Tab.Group onChange={setActiveTab}>
             <Tab.List className="flex space-x-1 border-b border-white/10 mb-3">
               {tabs.map((tab) => (
                 <Tab
                   key={tab.key}
                   className={({ selected }: { selected: boolean }) =>
-                    `flex items-center gap-1 px-3 py-2 text-sm border-b-2 outline-none ${
+                    `flex items-center gap-1 px-3 py-1 text-sm border-b-2 outline-none ${
                       selected 
                         ? 'border-blue-500 text-white' 
                         : 'border-transparent text-white/60 hover:text-white/80'
@@ -129,7 +129,7 @@ export default function ArtMovementDetail({ artStyle, onClose }: ArtMovementDeta
         </div>
         
         {/* 右侧艺术作品展示 */}
-        <div className="w-2/5 p-3 overflow-y-auto max-h-[350px]">
+        <div className="w-1/2 p-3 overflow-y-auto max-h-[350px]">
           <h3 className="text-sm text-white/60 mb-2 sticky top-0 bg-black/50 py-1 z-10">代表作品</h3>
           <div className="grid grid-cols-2 gap-2">
             {getArtworkImages().map((image, index) => (

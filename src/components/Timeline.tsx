@@ -756,9 +756,9 @@ const Timeline: React.FC = () => {
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.3 }}
-                      className="mt-2 mb-4 w-full flex justify-center"
+                      className="mt-2 mb-4 w-full"
                     >
-                      <div className="bg-black/30 w-full max-w-4xl rounded-lg overflow-hidden">
+                      <div className="bg-black/30 rounded-lg overflow-hidden">
                         <ArtMovementDetail artStyle={selectedNode} onClose={handleCloseDetail} />
                       </div>
                     </motion.div>
