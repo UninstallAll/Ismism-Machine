@@ -8,7 +8,7 @@ DEFAULT_DATABASE = "art_metadata_db"  # 默认数据库，现在可被用户配�
 
 # UI设置
 DEFAULT_GRID_COLUMNS = 3  # 默认网格列数
-DEFAULT_PAGE_SIZE = 12    # 默认每页显示的文档数量
+DEFAULT_PAGE_SIZE = 48    # 默认每页显示的文档数量
 WINDOW_SIZE = "1200x800"  # 窗口大小
 
 # Image-related settings

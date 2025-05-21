@@ -497,10 +497,29 @@ class PaginatedGrid(ttk.Frame):
         self.search_var = tk.StringVar()
         self.search_entry = ttk.Entry(self.search_frame, textvariable=self.search_var, width=30)
         self.search_entry.pack(side=tk.LEFT, padx=5)
+        
+        # 绑定实时搜索 - 当文本变化时触发搜索
+        self.search_var.trace_add("write", self._on_search_text_changed)
+        
+        # 保留回车键搜索功能
         self.search_entry.bind("<Return>", self._on_search)
+        
+        # 添加搜索下拉历史记录
+        self.search_history = []
+        self.search_history_var = tk.StringVar()
+        
+        # 创建下拉历史记录按钮
+        self.history_button = ttk.Button(self.search_frame, text="▼", width=2, 
+                                       command=self._show_search_history)
+        self.history_button.pack(side=tk.LEFT)
         
         ttk.Button(self.search_frame, text="查找", command=self._on_search).pack(side=tk.LEFT, padx=5)
         ttk.Button(self.search_frame, text="清除", command=self._clear_search).pack(side=tk.LEFT, padx=5)
+        
+        # 添加智能搜索提示
+        smart_search_label = ttk.Label(self.search_frame, text="(支持模糊匹配)", 
+                                     font=("Arial", 8), foreground="#0078D7")
+        smart_search_label.pack(side=tk.LEFT, padx=5)
         
         # 搜索结果标签
         self.search_result_var = tk.StringVar()
@@ -991,16 +1010,30 @@ class PaginatedGrid(ttk.Frame):
             
         self.search_query = query
         
+        # 如果没有搜索历史属性，初始化它
+        if not hasattr(self, 'search_history'):
+            self.search_history = []
+        
         if not query:
             # 空查询，恢复所有项目
             self.filtered_items = self.items
             self.search_result_var.set("")
         else:
+            # 开始时间
+            start_time = time.time()
+            
             # 执行搜索
             self.filtered_items = self._filter_items(query)
-            result_count = len(self.filtered_items)
-            self.search_result_var.set(f"找到 {result_count} 项结果")
             
+            # 结束时间
+            end_time = time.time()
+            
+            # 计算搜索用时
+            search_time = end_time - start_time
+            
+            result_count = len(self.filtered_items)
+            self.search_result_var.set(f"找到 {result_count} 项结果 (用时 {search_time:.3f}秒)")
+        
         # 重置页码并刷新显示
         self.current_page = 0
         self.selected_cards = []
@@ -1031,17 +1064,35 @@ class PaginatedGrid(ttk.Frame):
             self.refresh_list()
     
     def _filter_items(self, query):
-        """根据查询过滤项目"""
+        """根据查询过滤项目，使用模糊匹配增强搜索效果"""
+        from rapidfuzz import fuzz, process
         filtered = []
         
+        # 设置相似度阈值
+        SIMILARITY_THRESHOLD = 65  # 相似度阈值，可以根据需要调整
+        
+        # 如果查询为空，返回所有项目
+        if not query:
+            return self.items
+        
+        # 保存搜索历史
+        if hasattr(self, 'search_history') and query not in self.search_history:
+            self.search_history.append(query)
+            # 限制历史记录数量
+            if len(self.search_history) > 10:
+                self.search_history.pop(0)
+            
+        # 记录得分最高的匹配项
+        scored_items = []
+        
         for item in self.items:
-            # 搜索的关键字段
+            # 提取要搜索的关键字段
             search_fields = [
-                item.get('filename', ''),
-                item.get('title', ''),
+                str(item.get('filename', '')),
+                str(item.get('title', '')),
                 str(item.get('_id', '')),
-                item.get('artMovement', ''),
-                item.get('description', '')
+                str(item.get('artMovement', '')),
+                str(item.get('description', ''))
             ]
             
             # 扩展搜索 - 检查metadata字段
@@ -1049,12 +1100,43 @@ class PaginatedGrid(ttk.Frame):
                 for key, value in item['metadata'].items():
                     search_fields.append(str(value))
             
-            # 任何字段匹配即可
+            # 计算最高相似度分数
+            max_score = 0
+            
+            # 使用不同的模糊匹配方法，保留最高分数
             for field in search_fields:
-                if query in str(field).lower():
-                    filtered.append(item)
+                if not field:
+                    continue
+                    
+                # 1. 精确包含匹配（优先考虑）
+                if query.lower() in field.lower():
+                    max_score = 100
                     break
                     
+                # 2. 使用不同的模糊匹配算法
+                ratio_score = fuzz.ratio(query.lower(), field.lower())
+                partial_ratio_score = fuzz.partial_ratio(query.lower(), field.lower())
+                token_sort_score = fuzz.token_sort_ratio(query.lower(), field.lower())
+                token_set_score = fuzz.token_set_ratio(query.lower(), field.lower())
+                
+                # 取所有算法中的最高分数
+                field_max_score = max(ratio_score, partial_ratio_score, token_sort_score, token_set_score)
+                max_score = max(max_score, field_max_score)
+                
+                # 如果已经找到高分匹配，不再继续评估其他字段
+                if max_score > 95:
+                    break
+            
+            # 如果相似度超过阈值，保留该项目并记录其相似度得分
+            if max_score >= SIMILARITY_THRESHOLD:
+                scored_items.append((item, max_score))
+        
+        # 按相似度得分排序，得分高的排在前面
+        scored_items.sort(key=lambda x: x[1], reverse=True)
+        
+        # 提取排序后的项目
+        filtered = [item for item, score in scored_items]
+        
         return filtered
     
     def _on_mouse_down(self, event):
@@ -1705,6 +1787,63 @@ class PaginatedGrid(ttk.Frame):
             
         # 销毁窗口
         self.destroy()
+
+    def _show_search_history(self):
+        """显示搜索历史记录下拉列表"""
+        if not hasattr(self, 'search_history') or not self.search_history:
+            messagebox.showinfo("搜索历史", "没有搜索历史记录")
+            return
+            
+        # 创建一个弹出菜单
+        history_menu = tk.Menu(self, tearoff=0)
+        
+        # 添加清空历史选项
+        history_menu.add_command(
+            label="清空搜索历史", 
+            command=self._clear_search_history,
+            font=("Arial", 9, "italic")
+        )
+        history_menu.add_separator()
+        
+        # 添加历史记录条目
+        for history_item in reversed(self.search_history):
+            # 创建一个闭包以保留history_item的值
+            def make_command(query):
+                return lambda: self._use_history_item(query)
+                
+            history_menu.add_command(
+                label=history_item,
+                command=make_command(history_item)
+            )
+        
+        # 在按钮下方显示菜单
+        try:
+            history_menu.tk_popup(
+                self.history_button.winfo_rootx(),
+                self.history_button.winfo_rooty() + self.history_button.winfo_height()
+            )
+        finally:
+            # 确保释放菜单
+            history_menu.grab_release()
+
+    def _clear_search_history(self):
+        """清空搜索历史记录"""
+        self.search_history = []
+        
+    def _use_history_item(self, query):
+        """使用历史搜索项"""
+        self.search_var.set(query)
+        self._on_search()
+
+    def _on_search_text_changed(self, *args):
+        """处理搜索文本变化的事件，实现实时搜索"""
+        # 使用防抖动方式处理连续输入
+        # 如果已经有待处理的搜索，取消它
+        if hasattr(self, '_search_after_id'):
+            self.after_cancel(self._search_after_id)
+        
+        # 设置一个短暂的延迟（300毫秒），避免每次按键都搜索
+        self._search_after_id = self.after(300, self._on_search)
 
 def main():
     app = MongoDBViewer()
