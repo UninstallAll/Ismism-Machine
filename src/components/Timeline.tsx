@@ -434,7 +434,21 @@ const Timeline: React.FC = () => {
     setHighlightedNodeId(node.id);
     savePositions(); // 保存当前位置
     
-    // 滚动效果通过useEffect处理，确保详情元素渲染后再滚动
+    // 自动滚动，确保展开的详情视图居中
+    setTimeout(() => {
+      const nodeElement = nodeRefs.current[node.id];
+      if (nodeElement) {
+        // 计算需要滚动的位置，使节点在屏幕中间偏上的位置
+        const rect = nodeElement.getBoundingClientRect();
+        const scrollTop = rect.top + window.scrollY - (window.innerHeight / 4);
+        
+        // 平滑滚动到计算的位置
+        window.scrollTo({
+          top: scrollTop,
+          behavior: 'smooth'
+        });
+      }
+    }, 100); // 短暂延迟，确保DOM已更新
   };
   
   // 关闭艺术主义详情
@@ -502,31 +516,6 @@ const Timeline: React.FC = () => {
   const handleNowClick = () => {
     // ... existing code ...
   };
-
-  useEffect(() => {
-    // 当选中节点改变时，确保详情视图在可见范围内
-    if (selectedNode) {
-      // 短暂延迟，确保动画已开始
-      setTimeout(() => {
-        const detailElement = document.querySelector('.art-movement-detail-container');
-        if (detailElement) {
-          // 计算元素位置和屏幕中心位置
-          const rect = detailElement.getBoundingClientRect();
-          const elementCenter = rect.top + rect.height / 2;
-          const viewportCenter = window.innerHeight / 2;
-          
-          // 计算需要滚动的距离以使元素中心与屏幕中心对齐
-          const scrollOffset = elementCenter - viewportCenter;
-          
-          // 进行平滑滚动
-          window.scrollBy({
-            top: scrollOffset,
-            behavior: 'smooth'
-          });
-        }
-      }, 100);
-    }
-  }, [selectedNode]);
 
   return (
     <div className="flex flex-col h-full">
@@ -636,7 +625,7 @@ const Timeline: React.FC = () => {
 
       {/* 选中的艺术主义详情或艺术主义行列表 */}
       <AnimatePresence mode="wait">
-        {!selectedNode && (
+        {sortedNodes.length > 0 ? (
           <motion.div 
             key="timeline"
             initial={{ opacity: 0 }}
@@ -646,152 +635,148 @@ const Timeline: React.FC = () => {
             className="space-y-6 mt-4 overflow-auto"
             ref={timelineListRef}
           >
-            {sortedNodes.length > 0 ? (
-              <>
-                {sortedNodes.map((node, index) => (
-                  <motion.div 
-                    key={node.id}
-                    ref={el => nodeRefs.current[node.id] = el}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.05 }}
-                    className={`flex flex-col items-start gap-2 border-b border-white/10 pb-3 
-                      ${highlightedNodeId === node.id ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg p-2 -mx-4 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : ''}`}
-                  >
-                    {/* 艺术主义时间轴位置标记 */}
-                    <div className="w-full relative h-12 overflow-hidden">
-                      {/* 内容容器，用于横向滚动时间轴 */}
-                      <div className="w-full h-full relative">
-                        {/* 蓝色线 */}
-                        <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-blue-500/20 transform -translate-y-1/2"></div>
-                        
-                        {/* 时间点标记 - 可点击显示详情 */}
-                        <div 
-                          id={`year-${node.year}`}
-                          className="absolute top-1/2 w-0.5 h-6 bg-blue-500 z-10 cursor-pointer hover:bg-blue-400 hover:h-8 transition-all"
-                          style={{ 
-                            left: `${getPositionPercentage(node.year)}%`,
-                            transform: 'translateX(-50%)',
-                          }}
-                          onClick={(e) => handleArtMovementLineClick(node, e)}
-                        ></div>
-                        
-                        {/* 时间点之后的缩略图容器 */}
-                        <div 
-                          className="absolute top-0 h-full overflow-x-auto cursor-grab active:cursor-grabbing hide-scrollbar bg-transparent group hover:bg-blue-500/5 transition-colors rounded-md"
-                          style={{ 
-                            left: `${getPositionPercentage(node.year)}%`,
-                            right: '0',
-                            paddingLeft: '10px',
-                            width: '100vw' // 使用视口宽度，确保容器足够宽
-                          }}
-                          ref={el => thumbnailsRef.current[node.id] = el}
-                          onMouseDown={(e) => handleThumbnailMouseDown(e, node.id)}
-                          onMouseUp={handleThumbnailMouseUp}
-                          onMouseLeave={(e) => handleThumbnailMouseLeave(e)}
-                          onMouseMove={(e) => handleThumbnailMouseMove(e, node.id)}
-                        >
-                          <div className="flex items-center h-full gap-2 pr-4 pl-2" style={{ width: 'max-content', paddingRight: '200px' }}>
-                            <GripHorizontal className="h-4 w-4 text-white/30 group-hover:text-white/60 flex-shrink-0 transition-colors" />
-                            {/* 缩略图 - 限制数量为5个，提高性能 */}
-                            {Array.from({ length: Math.min(5, node.images?.length || 5) }).map((_, imgIndex) => (
-                              <div 
-                                key={imgIndex} 
-                                className="h-10 w-10 rounded-md overflow-hidden flex-shrink-0 border border-white/10 hover:border-blue-400 transition-colors bg-black/20"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigateToArtMovement(node.id);
-                                }}
-                              >
-                                <img
-                                  src={getThumbnailUrl(node, imgIndex)}
-                                  alt={`${node.title} artwork ${imgIndex + 1}`}
-                                  className="w-full h-full object-cover"
-                                  loading="lazy"
-                                  data-original-src={node.images?.[imgIndex] || ''}
-                                  onError={(e) => handleImageError(e, imgIndex)}
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+            {sortedNodes.map((node, index) => (
+              <motion.div 
+                key={node.id}
+                ref={el => nodeRefs.current[node.id] = el}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.05 }}
+                className={`flex flex-col items-start gap-2 border-b border-white/10 pb-3 
+                  ${highlightedNodeId === node.id ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg p-2 -mx-4 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : ''}`}
+              >
+                {/* 艺术主义时间轴位置标记 */}
+                <div className="w-full relative h-12 overflow-hidden">
+                  {/* 内容容器，用于横向滚动时间轴 */}
+                  <div className="w-full h-full relative">
+                    {/* 蓝色线 */}
+                    <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-blue-500/20 transform -translate-y-1/2"></div>
                     
-                    {/* 艺术主义名称和信息 - 仅显示名称和年份，位置不变 */}
-                    <div className="w-full pl-4 relative">
-                      {/* 名称和年份行 */}
-                      <div 
-                        className="flex items-center gap-3 relative group px-3 py-2 hover:bg-blue-500/10 rounded-md transition-colors cursor-pointer hover-trigger"
-                        onClick={(e) => {
-                          // 点击整行时也在页面内显示详情
-                          // 除非点击的是年份按钮
-                          if (!(e.target as HTMLElement).closest('.year-btn')) {
-                            handleArtMovementLineClick(node, e);
-                          }
-                        }}
-                      >
-                        <Button 
-                          variant="link" 
-                          className="p-0 h-auto text-lg font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent hover:from-blue-300 hover:to-purple-300 flex items-center gap-1"
-                          onClick={(e) => {
-                            e.stopPropagation(); // 防止触发父元素的点击事件
-                            handleArtMovementLineClick(node, e);
-                          }}
-                        >
-                          {node.title}
-                          <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                        </Button>
-                        
-                        <div 
-                          className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-sm cursor-pointer year-btn"
-                          onClick={(e) => {
-                            e.stopPropagation(); // 防止触发父元素的点击事件
-                            // 点击年份，同步调整时间轴位置
-                            if (timelineContainerRef.current) {
-                              const containerWidth = timelineContainerRef.current.clientWidth;
-                              const yearPosition = ((node.year - minYear) / timeRange) * 100;
-                              // 计算需要的偏移量使点击的年份居中
-                              const centerOffset = 50 - yearPosition;
-                              setTimelinePosition(centerOffset);
-                            }
-                          }}
-                        >
-                          {node.year}
-                        </div>
-                      </div>
-                      
-                      {/* 艺术主义详情展开区 - 仅当选中时显示 */}
-                      {selectedNode && selectedNode.id && node && node.id && selectedNode.id === node.id && (
-                        <motion.div 
-                          key={`detail-inline`}
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.3 }}
-                          className="mt-2 mb-4 w-full"
-                        >
-                          <div className="bg-black/30 w-full rounded-lg overflow-hidden">
-                            <ArtMovementDetail artStyle={selectedNode} onClose={handleCloseDetail} />
+                    {/* 时间点标记 - 可点击显示详情 */}
+                    <div 
+                      id={`year-${node.year}`}
+                      className="absolute top-1/2 w-0.5 h-6 bg-blue-500 z-10 cursor-pointer hover:bg-blue-400 hover:h-8 transition-all"
+                      style={{ 
+                        left: `${getPositionPercentage(node.year)}%`,
+                        transform: 'translateX(-50%)',
+                      }}
+                      onClick={(e) => handleArtMovementLineClick(node, e)}
+                    ></div>
+                    
+                    {/* 时间点之后的缩略图容器 */}
+                    <div 
+                      className="absolute top-0 h-full overflow-x-auto cursor-grab active:cursor-grabbing hide-scrollbar bg-transparent group hover:bg-blue-500/5 transition-colors rounded-md"
+                      style={{ 
+                        left: `${getPositionPercentage(node.year)}%`,
+                        right: '0',
+                        paddingLeft: '10px',
+                        width: '100vw' // 使用视口宽度，确保容器足够宽
+                      }}
+                      ref={el => thumbnailsRef.current[node.id] = el}
+                      onMouseDown={(e) => handleThumbnailMouseDown(e, node.id)}
+                      onMouseUp={handleThumbnailMouseUp}
+                      onMouseLeave={(e) => handleThumbnailMouseLeave(e)}
+                      onMouseMove={(e) => handleThumbnailMouseMove(e, node.id)}
+                    >
+                      <div className="flex items-center h-full gap-2 pr-4 pl-2" style={{ width: 'max-content', paddingRight: '200px' }}>
+                        <GripHorizontal className="h-4 w-4 text-white/30 group-hover:text-white/60 flex-shrink-0 transition-colors" />
+                        {/* 缩略图 - 限制数量为5个，提高性能 */}
+                        {Array.from({ length: Math.min(5, node.images?.length || 5) }).map((_, imgIndex) => (
+                          <div 
+                            key={imgIndex} 
+                            className="h-10 w-10 rounded-md overflow-hidden flex-shrink-0 border border-white/10 hover:border-blue-400 transition-colors bg-black/20"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigateToArtMovement(node.id);
+                            }}
+                          >
+                            <img
+                              src={getThumbnailUrl(node, imgIndex)}
+                              alt={`${node.title} artwork ${imgIndex + 1}`}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                              data-original-src={node.images?.[imgIndex] || ''}
+                              onError={(e) => handleImageError(e, imgIndex)}
+                            />
                           </div>
-                        </motion.div>
-                      )}
+                        ))}
+                      </div>
                     </div>
-                  </motion.div>
-                ))}
-                {/* 底部额外留白空间 */}
-                <div className="h-40"></div>
-              </>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-20">
-                <div className="p-5 bg-[rgba(15,15,20,0.7)] backdrop-blur-sm border border-white/10 rounded-lg shadow-glow-sm mb-4">
-                  <Search className="h-10 w-10 text-gray-400 mb-2" />
+                  </div>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-400 mb-2">未找到时间线节点</h3>
-                <p className="text-gray-500">请尝试不同的搜索条件</p>
-              </div>
-            )}
+                
+                {/* 艺术主义名称和信息 - 仅显示名称和年份，位置不变 */}
+                <div className="w-full pl-4 relative">
+                  {/* 名称和年份行 */}
+                  <div 
+                    className="flex items-center gap-3 relative group px-3 py-2 hover:bg-blue-500/10 rounded-md transition-colors cursor-pointer hover-trigger"
+                    onClick={(e) => {
+                      // 点击整行时也在页面内显示详情
+                      // 除非点击的是年份按钮
+                      if (!(e.target as HTMLElement).closest('.year-btn')) {
+                        handleArtMovementLineClick(node, e);
+                      }
+                    }}
+                  >
+                    <Button 
+                      variant="link" 
+                      className="p-0 h-auto text-lg font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent hover:from-blue-300 hover:to-purple-300 flex items-center gap-1"
+                      onClick={(e) => {
+                        e.stopPropagation(); // 防止触发父元素的点击事件
+                        handleArtMovementLineClick(node, e);
+                      }}
+                    >
+                      {node.title}
+                      <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </Button>
+                    
+                    <div 
+                      className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-sm cursor-pointer year-btn"
+                      onClick={(e) => {
+                        e.stopPropagation(); // 防止触发父元素的点击事件
+                        // 点击年份，同步调整时间轴位置
+                        if (timelineContainerRef.current) {
+                          const containerWidth = timelineContainerRef.current.clientWidth;
+                          const yearPosition = ((node.year - minYear) / timeRange) * 100;
+                          // 计算需要的偏移量使点击的年份居中
+                          const centerOffset = 50 - yearPosition;
+                          setTimelinePosition(centerOffset);
+                        }
+                      }}
+                    >
+                      {node.year}
+                    </div>
+                  </div>
+                  
+                  {/* 艺术主义详情展开区 - 仅当选中时显示 */}
+                  {selectedNode && selectedNode.id === node.id && (
+                    <motion.div 
+                      key={`detail-inline`}
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="mt-2 mb-4 w-full flex justify-center"
+                    >
+                      <div className="bg-black/30 w-full max-w-4xl rounded-lg overflow-hidden">
+                        <ArtMovementDetail artStyle={selectedNode} onClose={handleCloseDetail} />
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+            {/* 底部额外留白空间 */}
+            <div className="h-40"></div>
           </motion.div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="p-5 bg-[rgba(15,15,20,0.7)] backdrop-blur-sm border border-white/10 rounded-lg shadow-glow-sm mb-4">
+              <Search className="h-10 w-10 text-gray-400 mb-2" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-400 mb-2">未找到时间线节点</h3>
+            <p className="text-gray-500">请尝试不同的搜索条件</p>
+          </div>
         )}
       </AnimatePresence>
     </div>
