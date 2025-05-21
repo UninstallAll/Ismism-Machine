@@ -450,35 +450,44 @@ const Timeline: React.FC = () => {
       const centerOffset = 50 - yearPosition;
       setTimelinePosition(centerOffset);
       
-      // 找到时间点的引用元素
+      // 找到时间点的引用元素和节点详情元素
       const timePointElement = document.getElementById(`year-${node.year}`);
       
-      if (timePointElement) {
-        // 等待时间轴位置调整完成
-        setTimeout(() => {
-          // 再次获取时间点位置，因为可能已经移动到中心
-          const rect = timePointElement.getBoundingClientRect();
+      // 等待时间轴位置调整和详情渲染完成
+      setTimeout(() => {
+        if (timePointElement && nodeRefs.current[node.id]) {
+          // 获取详情节点元素
+          const detailElement = nodeRefs.current[node.id];
           
           // 获取时间轴线元素
           const timelineTrack = document.querySelector('.absolute.top-1\\/2.left-0.right-0.h-0\\.5.bg-white\\/5');
           
-          if (timelineTrack) {
+          if (timelineTrack && detailElement) {
+            // 首先获取各元素位置
+            const timePointRect = timePointElement.getBoundingClientRect();
             const trackRect = timelineTrack.getBoundingClientRect();
+            const detailRect = detailElement.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
             
-            // 计算滚动位置，让时间点与时间轴线对齐
-            const scrollPosition = 
-              window.pageYOffset + // 当前滚动位置
-              trackRect.top - // 时间轴线顶部位置
-              rect.height/2; // 减去时间点高度的一半以保证中心对齐
+            // 计算时间点需要的滚动位置（对齐到时间轴线）
+            const timelineAlignPosition = window.pageYOffset + trackRect.top - timePointRect.height/2;
+            
+            // 计算详情页居中的位置（视觉中心）
+            const detailCenterPosition = window.pageYOffset + detailRect.top - (viewportHeight - detailRect.height) / 2;
+            
+            // 使用详情页视觉中心位置，但会被修正以确保时间点也对齐到时间轴
+            // 计算两个位置的加权平均值，确保时间点与时间轴对齐的同时，详情页尽量居中
+            // 这里给予详情页中心位置更高的权重
+            const finalPosition = timelineAlignPosition * 0.3 + detailCenterPosition * 0.7;
             
             // 平滑滚动到计算出的位置
             window.scrollTo({
-              top: scrollPosition,
+              top: finalPosition,
               behavior: 'smooth'
             });
           }
-        }, 150); // 等待时间略长，确保位置调整已完成
-      }
+        }
+      }, 150); // 等待时间略长，确保位置调整和详情渲染已完成
     }
   };
   
@@ -518,35 +527,44 @@ const Timeline: React.FC = () => {
       const centerOffset = 50 - yearPosition;
       setTimelinePosition(centerOffset);
       
-      // 找到时间点的引用元素
+      // 找到时间点的引用元素和节点详情元素
       const timePointElement = document.getElementById(`year-${node.year}`);
       
-      if (timePointElement) {
-        // 等待时间轴位置调整完成
-        setTimeout(() => {
-          // 再次获取时间点位置，因为可能已经移动到中心
-          const rect = timePointElement.getBoundingClientRect();
+      // 等待时间轴位置调整和详情渲染完成
+      setTimeout(() => {
+        if (timePointElement && nodeRefs.current[node.id]) {
+          // 获取详情节点元素
+          const detailElement = nodeRefs.current[node.id];
           
           // 获取时间轴线元素
           const timelineTrack = document.querySelector('.absolute.top-1\\/2.left-0.right-0.h-0\\.5.bg-white\\/5');
           
-          if (timelineTrack) {
+          if (timelineTrack && detailElement) {
+            // 首先获取各元素位置
+            const timePointRect = timePointElement.getBoundingClientRect();
             const trackRect = timelineTrack.getBoundingClientRect();
+            const detailRect = detailElement.getBoundingClientRect();
+            const viewportHeight = window.innerHeight;
             
-            // 计算滚动位置，让时间点与时间轴线对齐
-            const scrollPosition = 
-              window.pageYOffset + // 当前滚动位置
-              trackRect.top - // 时间轴线顶部位置
-              rect.height/2; // 减去时间点高度的一半以保证中心对齐
+            // 计算时间点需要的滚动位置（对齐到时间轴线）
+            const timelineAlignPosition = window.pageYOffset + trackRect.top - timePointRect.height/2;
+            
+            // 计算详情页居中的位置（视觉中心）
+            const detailCenterPosition = window.pageYOffset + detailRect.top - (viewportHeight - detailRect.height) / 2;
+            
+            // 使用详情页视觉中心位置，但会被修正以确保时间点也对齐到时间轴
+            // 计算两个位置的加权平均值，确保时间点与时间轴对齐的同时，详情页尽量居中
+            // 这里给予详情页中心位置更高的权重
+            const finalPosition = timelineAlignPosition * 0.3 + detailCenterPosition * 0.7;
             
             // 平滑滚动到计算出的位置
             window.scrollTo({
-              top: scrollPosition,
+              top: finalPosition,
               behavior: 'smooth'
             });
           }
-        }, 150); // 等待时间略长，确保位置调整已完成
-      }
+        }
+      }, 150); // 等待时间略长，确保位置调整和详情渲染已完成
     }
   };
   
