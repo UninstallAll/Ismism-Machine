@@ -443,94 +443,69 @@ const Timeline: React.FC = () => {
     // 保存当前位置
     savePositions();
     
-    // 如果是选中了节点，调整时间轴位置使得节点的年份点位于时间轴上
+    // 如果是选中了节点，调整时间轴位置使得节点的年份点位于时间轴上并滚动到合适位置
     if (isSelecting) {
       // 计算需要的偏移量使该艺术主义的年份点位于时间轴可见位置
       const yearPosition = ((node.year - minYear) / timeRange) * 100;
       const centerOffset = 50 - yearPosition;
       setTimelinePosition(centerOffset);
       
-      // 使用两阶段滚动：先滚动到时间点位置，再滚动到详情中心位置
+      // 等待详情渲染和时间轴位置调整完成后滚动到理想位置
       setTimeout(() => {
-        // 找到时间点的引用元素
+        // 获取所需的DOM元素
         const timePointElement = document.getElementById(`year-${node.year}`);
-        
-        // 找到时间轴元素和其容器
-        const timelineTrack = document.querySelector('.absolute.top-1\\/2.left-0.right-0.h-0\\.5.bg-white\\/5');
         const timelineContainer = timelineRef.current;
+        const nodeElement = nodeRefs.current[node.id];
         
-        // 第一阶段：立即滚动到时间点与时间轴线对齐的位置
-        if (timePointElement && timelineTrack && timelineContainer) {
+        if (timePointElement && timelineContainer && nodeElement) {
+          // 获取时间轴线元素
+          const timelineTrack = document.querySelector('.absolute.top-1\\/2.left-0.right-0.h-0\\.5.bg-white\\/5');
+          if (!timelineTrack) return;
+          
+          // 获取所有元素的位置和尺寸信息
+          const timelineRect = timelineContainer.getBoundingClientRect();
           const timePointRect = timePointElement.getBoundingClientRect();
+          const nodeRect = nodeElement.getBoundingClientRect();
           const trackRect = timelineTrack.getBoundingClientRect();
-          const containerRect = timelineContainer.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
           
-          // 计算时间轴容器底部的位置
-          const timelineBottom = containerRect.bottom;
+          // 计算将详情内容居中所需的滚动位置
+          // 我们需要考虑:
+          // 1. 详情内容的中心应该在视口中心
+          // 2. 时间点应该与时间轴线对齐
+          // 3. 艺术主义名称不应高于时间轴
           
-          // 计算让时间点完全对齐到时间轴线所需的滚动位置
-          const alignScrollPosition = window.pageYOffset + trackRect.top - timePointRect.height/2;
+          // 计算详情内容中心位置（考虑实际展开高度）
+          const nodeCenter = nodeRect.top + nodeRect.height / 2;
+          const viewportCenter = window.innerHeight / 2;
           
-          // 立即滚动到对齐位置（不使用平滑滚动）
-          window.scrollTo({
-            top: alignScrollPosition,
-            behavior: 'auto'
-          });
+          // 计算需要的滚动位置使详情内容居中
+          let requiredScrollForCenter = window.scrollY + (nodeCenter - viewportCenter);
           
-          // 第二阶段：等待详情元素渲染后，滚动到视觉最佳位置
-          setTimeout(() => {
-            // 等待动画完成后再获取元素，确保获取到完全展开的元素
-            const detailElement = nodeRefs.current[node.id]?.querySelector('.bg-black\\/30.rounded-lg');
-            const nameElement = nodeRefs.current[node.id]?.querySelector('.text-lg.font-semibold');
+          // 计算时间点与时间轴对齐所需的最小滚动位置
+          const timelineAlignmentPosition = window.scrollY + (trackRect.top - timePointRect.height/2 - timePointRect.top);
+          
+          // 计算名称顶部到时间轴底部的距离
+          const nameElement = nodeElement.querySelector('.text-lg.font-semibold');
+          if (nameElement) {
+            const nameRect = nameElement.getBoundingClientRect();
+            const minDistanceToTimeline = 20; // 最小间距20px
+            const nameToTimelineDistance = nameRect.top - timelineRect.bottom;
             
-            if (detailElement && nameElement) {
-              const detailRect = detailElement.getBoundingClientRect();
-              const nameRect = nameElement.getBoundingClientRect();
-              const viewportHeight = window.innerHeight;
-              
-              // 重新获取时间轴线、容器和时间点位置（因为页面已经滚动）
-              const updatedTrackRect = timelineTrack.getBoundingClientRect();
-              const updatedContainerRect = timelineContainer.getBoundingClientRect();
-              const updatedTimePointRect = timePointElement.getBoundingClientRect();
-              
-              // 确保时间点仍然与时间轴对齐
-              const updatedAlignPosition = window.pageYOffset + updatedTrackRect.top - updatedTimePointRect.height/2;
-              
-              // 计算详情元素的中心位置
-              const detailCenter = detailRect.top + detailRect.height / 2;
-              
-              // 计算视口中心位置
-              const viewportCenter = window.scrollY + viewportHeight / 2;
-              
-              // 计算需要滚动的距离使得详情元素居中显示
-              const detailCenterOffset = detailCenter - viewportCenter;
-              
-              // 计算名称元素顶部与时间轴底部的距离
-              const nameToTimelineDistance = nameRect.top - updatedContainerRect.bottom;
-              
-              // 如果名称会移动到高于时间轴的位置，计算最大允许的上移距离
-              let maxUpwardOffset = 0;
-              if (nameToTimelineDistance < 20) { // 保持至少20px的间距
-                maxUpwardOffset = nameToTimelineDistance - 20;
-              }
-              
-              // 默认情况下，尝试将详情完全居中
-              let finalScrollPosition = window.scrollY + detailCenterOffset;
-              
-              // 如果居中会导致标题靠近或高于时间轴，则进行限制
-              if (finalScrollPosition < updatedAlignPosition + maxUpwardOffset) {
-                finalScrollPosition = updatedAlignPosition + maxUpwardOffset;
-              }
-              
-              // 平滑滚动到最终位置
-              window.scrollTo({
-                top: Math.max(finalScrollPosition, 0), // 确保不会滚动到负值位置
-                behavior: 'smooth'
-              });
+            // 如果居中会导致名称太靠近时间轴，调整滚动位置
+            if (nameToTimelineDistance - (nodeCenter - viewportCenter) < minDistanceToTimeline) {
+              const safeScrollPosition = window.scrollY + (nameRect.top - timelineRect.bottom - minDistanceToTimeline);
+              requiredScrollForCenter = Math.max(requiredScrollForCenter, safeScrollPosition);
             }
-          }, 300); // 增加延迟，确保详情动画完全展开
+          }
+          
+          // 使用平滑滚动到计算出的最终位置
+          window.scrollTo({
+            top: Math.max(requiredScrollForCenter, 0), // 确保不会滚动到负值位置
+            behavior: 'smooth'
+          });
         }
-      }, 50); // 等待时间轴位置调整
+      }, 300); // 使用足够的延迟确保详情完全展开
     }
   };
   
@@ -563,94 +538,69 @@ const Timeline: React.FC = () => {
     // 保存当前位置
     savePositions();
     
-    // 如果是选中了节点，调整时间轴位置使得节点的年份点位于时间轴上
+    // 如果是选中了节点，调整时间轴位置使得节点的年份点位于时间轴上并滚动到合适位置
     if (isSelecting) {
       // 计算需要的偏移量使该艺术主义的年份点位于时间轴可见位置
       const yearPosition = ((node.year - minYear) / timeRange) * 100;
       const centerOffset = 50 - yearPosition;
       setTimelinePosition(centerOffset);
       
-      // 使用两阶段滚动：先滚动到时间点位置，再滚动到详情中心位置
+      // 等待详情渲染和时间轴位置调整完成后滚动到理想位置
       setTimeout(() => {
-        // 找到时间点的引用元素
+        // 获取所需的DOM元素
         const timePointElement = document.getElementById(`year-${node.year}`);
-        
-        // 找到时间轴元素和其容器
-        const timelineTrack = document.querySelector('.absolute.top-1\\/2.left-0.right-0.h-0\\.5.bg-white\\/5');
         const timelineContainer = timelineRef.current;
+        const nodeElement = nodeRefs.current[node.id];
         
-        // 第一阶段：立即滚动到时间点与时间轴线对齐的位置
-        if (timePointElement && timelineTrack && timelineContainer) {
+        if (timePointElement && timelineContainer && nodeElement) {
+          // 获取时间轴线元素
+          const timelineTrack = document.querySelector('.absolute.top-1\\/2.left-0.right-0.h-0\\.5.bg-white\\/5');
+          if (!timelineTrack) return;
+          
+          // 获取所有元素的位置和尺寸信息
+          const timelineRect = timelineContainer.getBoundingClientRect();
           const timePointRect = timePointElement.getBoundingClientRect();
+          const nodeRect = nodeElement.getBoundingClientRect();
           const trackRect = timelineTrack.getBoundingClientRect();
-          const containerRect = timelineContainer.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
           
-          // 计算时间轴容器底部的位置
-          const timelineBottom = containerRect.bottom;
+          // 计算将详情内容居中所需的滚动位置
+          // 我们需要考虑:
+          // 1. 详情内容的中心应该在视口中心
+          // 2. 时间点应该与时间轴线对齐
+          // 3. 艺术主义名称不应高于时间轴
           
-          // 计算让时间点完全对齐到时间轴线所需的滚动位置
-          const alignScrollPosition = window.pageYOffset + trackRect.top - timePointRect.height/2;
+          // 计算详情内容中心位置（考虑实际展开高度）
+          const nodeCenter = nodeRect.top + nodeRect.height / 2;
+          const viewportCenter = window.innerHeight / 2;
           
-          // 立即滚动到对齐位置（不使用平滑滚动）
-          window.scrollTo({
-            top: alignScrollPosition,
-            behavior: 'auto'
-          });
+          // 计算需要的滚动位置使详情内容居中
+          let requiredScrollForCenter = window.scrollY + (nodeCenter - viewportCenter);
           
-          // 第二阶段：等待详情元素渲染后，滚动到视觉最佳位置
-          setTimeout(() => {
-            // 等待动画完成后再获取元素，确保获取到完全展开的元素
-            const detailElement = nodeRefs.current[node.id]?.querySelector('.bg-black\\/30.rounded-lg');
-            const nameElement = nodeRefs.current[node.id]?.querySelector('.text-lg.font-semibold');
+          // 计算时间点与时间轴对齐所需的最小滚动位置
+          const timelineAlignmentPosition = window.scrollY + (trackRect.top - timePointRect.height/2 - timePointRect.top);
+          
+          // 计算名称顶部到时间轴底部的距离
+          const nameElement = nodeElement.querySelector('.text-lg.font-semibold');
+          if (nameElement) {
+            const nameRect = nameElement.getBoundingClientRect();
+            const minDistanceToTimeline = 20; // 最小间距20px
+            const nameToTimelineDistance = nameRect.top - timelineRect.bottom;
             
-            if (detailElement && nameElement) {
-              const detailRect = detailElement.getBoundingClientRect();
-              const nameRect = nameElement.getBoundingClientRect();
-              const viewportHeight = window.innerHeight;
-              
-              // 重新获取时间轴线、容器和时间点位置（因为页面已经滚动）
-              const updatedTrackRect = timelineTrack.getBoundingClientRect();
-              const updatedContainerRect = timelineContainer.getBoundingClientRect();
-              const updatedTimePointRect = timePointElement.getBoundingClientRect();
-              
-              // 确保时间点仍然与时间轴对齐
-              const updatedAlignPosition = window.pageYOffset + updatedTrackRect.top - updatedTimePointRect.height/2;
-              
-              // 计算详情元素的中心位置
-              const detailCenter = detailRect.top + detailRect.height / 2;
-              
-              // 计算视口中心位置
-              const viewportCenter = window.scrollY + viewportHeight / 2;
-              
-              // 计算需要滚动的距离使得详情元素居中显示
-              const detailCenterOffset = detailCenter - viewportCenter;
-              
-              // 计算名称元素顶部与时间轴底部的距离
-              const nameToTimelineDistance = nameRect.top - updatedContainerRect.bottom;
-              
-              // 如果名称会移动到高于时间轴的位置，计算最大允许的上移距离
-              let maxUpwardOffset = 0;
-              if (nameToTimelineDistance < 20) { // 保持至少20px的间距
-                maxUpwardOffset = nameToTimelineDistance - 20;
-              }
-              
-              // 默认情况下，尝试将详情完全居中
-              let finalScrollPosition = window.scrollY + detailCenterOffset;
-              
-              // 如果居中会导致标题靠近或高于时间轴，则进行限制
-              if (finalScrollPosition < updatedAlignPosition + maxUpwardOffset) {
-                finalScrollPosition = updatedAlignPosition + maxUpwardOffset;
-              }
-              
-              // 平滑滚动到最终位置
-              window.scrollTo({
-                top: Math.max(finalScrollPosition, 0), // 确保不会滚动到负值位置
-                behavior: 'smooth'
-              });
+            // 如果居中会导致名称太靠近时间轴，调整滚动位置
+            if (nameToTimelineDistance - (nodeCenter - viewportCenter) < minDistanceToTimeline) {
+              const safeScrollPosition = window.scrollY + (nameRect.top - timelineRect.bottom - minDistanceToTimeline);
+              requiredScrollForCenter = Math.max(requiredScrollForCenter, safeScrollPosition);
             }
-          }, 300); // 增加延迟，确保详情动画完全展开
+          }
+          
+          // 使用平滑滚动到计算出的最终位置
+          window.scrollTo({
+            top: Math.max(requiredScrollForCenter, 0), // 确保不会滚动到负值位置
+            behavior: 'smooth'
+          });
         }
-      }, 50); // 等待时间轴位置调整
+      }, 300); // 使用足够的延迟确保详情完全展开
     }
   };
   
