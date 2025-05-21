@@ -78,6 +78,10 @@ class MongoDBViewer(tk.Tk):
         
         connect_button = ttk.Button(conn_frame, text="Connect", command=self.connect_mongodb)
         connect_button.pack(fill=tk.X, padx=5, pady=5)
+
+        # --- 新增：导入按钮 ---
+        import_button = ttk.Button(conn_frame, text="导入图片/词条", command=self.show_import_menu)
+        import_button.pack(fill=tk.X, padx=5, pady=5)
         
         # Database and collection tree view
         tree_frame = ttk.LabelFrame(self.left_frame, text="Databases and Collections")
@@ -537,4 +541,82 @@ class MongoDBViewer(tk.Tk):
         ConfigManager.save_config(self.user_config)
         
         # Destroy window
-        self.destroy() 
+        self.destroy()
+
+    # --- 新增：导入菜单和处理逻辑 ---
+    def show_import_menu(self):
+        menu = tk.Menu(self, tearoff=0)
+        menu.add_command(label="导入图片", command=self.import_images)
+        menu.add_command(label="导入词条", command=self.import_entry)
+        try:
+            menu.tk_popup(self.winfo_pointerx(), self.winfo_pointery())
+        finally:
+            menu.grab_release()
+
+    def import_images(self):
+        if not self.current_db or not self.current_collection:
+            messagebox.showwarning("未选择集合", "请先在左侧选择目标数据库和集合！")
+            return
+        file_paths = filedialog.askopenfilenames(
+            title="选择图片文件",
+            filetypes=[("图片文件", "*.png;*.jpg;*.jpeg;*.bmp;*.gif"), ("所有文件", "*.*")]
+        )
+        if not file_paths:
+            return
+        inserted = 0
+        for path in file_paths:
+            doc = {
+                "filePath": path,
+                "filename": os.path.basename(path),
+                "size": os.path.getsize(path),
+                "importedAt": datetime.datetime.now()
+            }
+            try:
+                self.db_manager.insert_document(self.current_db, self.current_collection, doc)
+                inserted += 1
+            except Exception as e:
+                print(f"导入失败: {path}, 错误: {e}")
+        self.update_status(f"成功导入{inserted}张图片")
+        self.load_collection_data()
+
+    def import_entry(self):
+        if not self.current_db or not self.current_collection:
+            messagebox.showwarning("未选择集合", "请先在左侧选择目标数据库和集合！")
+            return
+        entry = self.simple_input_dialog("导入词条", "请输入词条内容：")
+        if not entry:
+            return
+        doc = {
+            "entry": entry,
+            "importedAt": datetime.datetime.now()
+        }
+        try:
+            self.db_manager.insert_document(self.current_db, self.current_collection, doc)
+            self.update_status("成功导入词条")
+            self.load_collection_data()
+        except Exception as e:
+            messagebox.showerror("导入失败", f"导入词条失败: {e}")
+
+    def simple_input_dialog(self, title, prompt):
+        dialog = tk.Toplevel(self)
+        dialog.title(title)
+        dialog.grab_set()
+        tk.Label(dialog, text=prompt).pack(padx=10, pady=10)
+        entry_var = tk.StringVar()
+        entry = ttk.Entry(dialog, textvariable=entry_var, width=40)
+        entry.pack(padx=10, pady=5)
+        entry.focus()
+        result = {'value': None}
+        def on_ok():
+            result['value'] = entry_var.get()
+            dialog.destroy()
+        def on_cancel():
+            dialog.destroy()
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(pady=10)
+        ttk.Button(btn_frame, text="确定", command=on_ok).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="取消", command=on_cancel).pack(side=tk.LEFT, padx=5)
+        dialog.bind('<Return>', lambda e: on_ok())
+        dialog.bind('<Escape>', lambda e: on_cancel())
+        self.wait_window(dialog)
+        return result['value'] 
