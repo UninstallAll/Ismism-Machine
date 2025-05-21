@@ -271,7 +271,7 @@ const Gallery = () => {
             
             {/* 排序下拉菜单 */}
             <div className="relative" ref={sortDropdownRef}>
-              <Button
+                <Button
                 variant="outline"
                 className="border-white/10 hover:bg-white/5 gap-2"
                 onClick={() => setShowSortDropdown(!showSortDropdown)}
@@ -286,7 +286,7 @@ const Gallery = () => {
                     <ArrowDown className="h-3 w-3 ml-1" />
                 )}
                 <ChevronDown className="h-4 w-4" />
-              </Button>
+                </Button>
               
               <AnimatePresence>
                 {showSortDropdown && (
@@ -338,7 +338,7 @@ const Gallery = () => {
                             <ArrowDown className="h-3 w-3" />
                         )}
                       </button>
-                    </div>
+              </div>
                   </motion.div>
                 )}
               </AnimatePresence>
