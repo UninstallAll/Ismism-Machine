@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, X } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import GalleryGrid from '../components/GalleryGrid';
 
@@ -156,139 +156,149 @@ const ArtMovementPage = () => {
   }
 
   return (
-    <div className="pb-10">
-      {/* 头部导航 */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="mb-6 flex items-center"
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.3 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden"
+      style={{ pointerEvents: 'none' }}
+    >
+      <div 
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={goBack}
+        style={{ pointerEvents: 'auto' }}
+      />
+      
+      <motion.div 
+        className="bg-black/80 backdrop-blur-md border border-white/20 rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] overflow-hidden flex flex-col"
+        style={{ pointerEvents: 'auto' }}
+        initial={{ y: 50 }}
+        animate={{ y: 0 }}
       >
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="mr-4"
-          onClick={goBack}
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          返回
-        </Button>
-        <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-          {artStyle.title}
-        </h1>
-      </motion.div>
-
-      {/* 主体内容 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* 左侧：艺术主义介绍 */}
-        <motion.div 
-          className="lg:col-span-1"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.4 }}
-        >
-          <div className="bg-[rgba(10,10,11,0.7)] backdrop-blur-lg rounded-xl border border-white/10 p-6 sticky top-24">
-            <h2 className="text-2xl font-bold mb-4 bg-gradient-to-r from-white to-blue-400 bg-clip-text text-transparent">
+        {/* 头部导航 */}
+        <div className="p-4 border-b border-white/10 flex justify-between items-center">
+          <div className="flex items-center">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="mr-4"
+              onClick={goBack}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              返回
+            </Button>
+            <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
               {artStyle.title}
-            </h2>
+            </h1>
+          </div>
+          
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={goBack}
+            className="rounded-full w-8 h-8"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* 内容区域 - 可滚动 */}
+        <div className="flex-1 overflow-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-4 h-full">
+            {/* 左侧：艺术主义介绍，调整为更宽 */}
+            <div className="lg:col-span-3 p-6 overflow-y-auto">
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-sm text-gray-400 mb-1">时期</h3>
+                  <p className="text-lg font-medium">{artStyle.year}年</p>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm text-gray-400 mb-1">描述</h3>
+                  <p className="text-base leading-relaxed">{artStyle.description}</p>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm text-gray-400 mb-1">主要艺术家</h3>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {artStyle.artists.map((artist, index) => (
+                      <span 
+                        key={index}
+                        className="inline-block bg-white/5 text-white text-sm px-3 py-1 rounded-full"
+                      >
+                        {artist}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                
+                {artStyle.influences.length > 0 && (
+                  <div>
+                    <h3 className="text-sm text-gray-400 mb-1">影响来源</h3>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {artStyle.influences.map((influence, index) => (
+                        <span 
+                          key={index}
+                          className="inline-block bg-white/5 text-white text-sm px-3 py-1 rounded-full"
+                        >
+                          {influence}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {artStyle.influencedBy.length > 0 && (
+                  <div>
+                    <h3 className="text-sm text-gray-400 mb-1">受影响于</h3>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {artStyle.influencedBy.map((influenced, index) => (
+                        <span 
+                          key={index}
+                          className="inline-block bg-white/5 text-white text-sm px-3 py-1 rounded-full"
+                        >
+                          {influenced}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
             
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm text-gray-400 mb-1">时期</h3>
-                <p className="text-lg font-medium">{artStyle.year}年</p>
-              </div>
-              
-              <div>
-                <h3 className="text-sm text-gray-400 mb-1">描述</h3>
-                <p className="text-base">{artStyle.description}</p>
-              </div>
-              
-              <div>
-                <h3 className="text-sm text-gray-400 mb-1">主要艺术家</h3>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {artStyle.artists.map((artist, index) => (
-                    <span 
-                      key={index}
-                      className="inline-block bg-white/5 text-white text-sm px-3 py-1 rounded-full"
-                    >
-                      {artist}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              
-              {artStyle.influences.length > 0 && (
-                <div>
-                  <h3 className="text-sm text-gray-400 mb-1">影响来源</h3>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {artStyle.influences.map((influence, index) => (
-                      <span 
-                        key={index}
-                        className="inline-block bg-white/5 text-white text-sm px-3 py-1 rounded-full"
-                      >
-                        {influence}
-                      </span>
-                    ))}
+            {/* 右侧：艺术作品展示，调整为更窄、可上下滚动 */}
+            <div className="lg:col-span-1 bg-black/40 border-l border-white/10 p-4 overflow-y-auto max-h-[calc(90vh-4rem)]">
+              <h3 className="text-lg font-medium mb-4">代表作品</h3>
+              <div className="space-y-3">
+                {artworks.map((artwork, index) => (
+                  <div 
+                    key={index} 
+                    className="bg-white/5 rounded-lg overflow-hidden cursor-pointer hover:bg-white/10 transition-colors"
+                    onClick={() => setSelectedArtwork(artwork)}
+                  >
+                    <img
+                      src={artwork.imageUrl}
+                      alt={artwork.title}
+                      className="w-full aspect-square object-cover"
+                      onError={(e) => {
+                        // 图片加载失败时使用备用图片
+                        const target = e.target as HTMLImageElement;
+                        target.src = `/TestData/${10001 + (index % 30)}.jpg`;
+                      }}
+                    />
+                    <div className="p-2">
+                      <h4 className="text-sm font-medium truncate">{artwork.title}</h4>
+                      <p className="text-xs text-gray-400">{artwork.artist}</p>
+                    </div>
                   </div>
-                </div>
-              )}
-              
-              {artStyle.influencedBy.length > 0 && (
-                <div>
-                  <h3 className="text-sm text-gray-400 mb-1">受影响于</h3>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {artStyle.influencedBy.map((influenced, index) => (
-                      <span 
-                        key={index}
-                        className="inline-block bg-white/5 text-white text-sm px-3 py-1 rounded-full"
-                      >
-                        {influenced}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {artStyle.tags.length > 0 && (
-                <div>
-                  <h3 className="text-sm text-gray-400 mb-1">标签</h3>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {artStyle.tags.map((tag, index) => (
-                      <span 
-                        key={index}
-                        className="inline-block bg-primary/10 text-primary text-xs px-2 py-1 rounded-full"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+                ))}
+              </div>
             </div>
           </div>
-        </motion.div>
-        
-        {/* 右侧：艺术家作品 */}
-        <motion.div 
-          className="lg:col-span-2"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-        >
-          <h2 className="text-2xl font-bold mb-6 bg-gradient-to-r from-white to-purple-400 bg-clip-text text-transparent">
-            相关艺术作品
-          </h2>
-          
-          {artworks.length > 0 ? (
-            <GalleryGrid artworks={artworks} onSelect={setSelectedArtwork} />
-          ) : (
-            <div className="text-center py-20 text-gray-400">
-              <p className="text-lg">暂无相关艺术作品</p>
-            </div>
-          )}
-        </motion.div>
-      </div>
-    </div>
+        </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

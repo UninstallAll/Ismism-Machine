@@ -314,12 +314,24 @@ const Timeline: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: index * 0.05 }}
-              className={`flex flex-col md:flex-row items-start gap-4 border-b border-white/10 pb-6 
-                ${highlightedNodeId === node.id ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg p-4 -mx-4 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : ''}`}
+              className={`flex flex-col md:flex-row items-start gap-4 border-b border-white/10 pb-3 
+                ${highlightedNodeId === node.id ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg p-2 -mx-4 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : ''}`}
             >
-              {/* 左侧：艺术主义名称和信息 */}
-              <div className="w-full md:w-1/3">
-                <div className="flex items-center gap-2 mb-2">
+              {/* 左侧：艺术主义名称和信息 - 仅显示名称和年份 */}
+              <div className="w-full md:w-full">
+                <div 
+                  className="flex items-center gap-2 relative group cursor-pointer"
+                  onMouseEnter={(e) => {
+                    // 悬停时显示详情
+                    const target = e.currentTarget.nextElementSibling as HTMLElement;
+                    if (target) target.style.display = 'block';
+                  }}
+                  onMouseLeave={(e) => {
+                    // 离开时隐藏详情
+                    const target = e.currentTarget.nextElementSibling as HTMLElement;
+                    if (target) target.style.display = 'none';
+                  }}
+                >
                   {/* 时间点标记 */}
                   <div 
                     className="absolute top-0 w-0.5 h-6 bg-blue-500"
@@ -332,7 +344,7 @@ const Timeline: React.FC = () => {
                   
                   <Button 
                     variant="link" 
-                    className="p-0 h-auto text-xl font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent hover:from-blue-300 hover:to-purple-300 flex items-center gap-1"
+                    className="p-0 h-auto text-lg font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent hover:from-blue-300 hover:to-purple-300 flex items-center gap-1"
                     onClick={() => navigateToArtMovement(node.id)}
                   >
                     {node.title}
@@ -344,75 +356,55 @@ const Timeline: React.FC = () => {
                   </div>
                 </div>
                 
-                <p className="text-sm text-gray-300 mb-3 line-clamp-3">
-                  {node.description}
-                </p>
-                
-                <div className="mb-3">
-                  <h4 className="text-xs font-medium text-blue-400 mb-1">艺术家:</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {node.artists.map((artist, artistIndex) => (
-                      <span 
-                        key={artistIndex} 
-                        className="px-2 py-0.5 text-xs rounded-full bg-blue-500/10 text-blue-300"
-                      >
-                        {artist}
-                      </span>
-                    ))}
+                {/* 悬停时显示的详情 */}
+                <div 
+                  className="hidden mt-2 bg-black/50 backdrop-blur-sm rounded-lg p-4 border border-white/10 shadow-lg z-20 absolute w-[500px] max-w-[90vw]"
+                >
+                  <p className="text-sm text-gray-300 mb-3">
+                    {node.description}
+                  </p>
+                  
+                  <div className="mb-3">
+                    <h4 className="text-xs font-medium text-blue-400 mb-1">艺术家:</h4>
+                    <div className="flex flex-wrap gap-1">
+                      {node.artists.map((artist, artistIndex) => (
+                        <span 
+                          key={artistIndex} 
+                          className="px-2 py-0.5 text-xs rounded-full bg-blue-500/10 text-blue-300"
+                        >
+                          {artist}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {node.tags && node.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {node.tags.map((tag, tagIndex) => (
+                        <span 
+                          key={tagIndex} 
+                          className="px-2 py-0.5 text-xs rounded-full bg-purple-500/10 text-purple-300"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <div className="mt-3 pt-2 border-t border-white/10 flex justify-between items-center">
+                    <span className="text-sm font-medium text-purple-400">
+                      {node.styleMovement}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 p-1 h-auto"
+                      onClick={() => navigateToArtMovement(node.id)}
+                    >
+                      查看详情 <ArrowRight className="h-3 w-3 ml-1" />
+                    </Button>
                   </div>
                 </div>
-                
-                {node.tags && node.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {node.tags.map((tag, tagIndex) => (
-                      <span 
-                        key={tagIndex} 
-                        className="px-2 py-0.5 text-xs rounded-full bg-purple-500/10 text-purple-300"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                
-                <div className="mt-3 pt-2 border-t border-white/10 flex justify-between items-center">
-                  <span className="text-sm font-medium text-purple-400">
-                    {node.styleMovement}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 p-1 h-auto"
-                    onClick={() => navigateToArtMovement(node.id)}
-                  >
-                    查看详情 <ArrowRight className="h-3 w-3 ml-1" />
-                  </Button>
-                </div>
-              </div>
-              
-              {/* 右侧：艺术主义图片网格 */}
-              <div className="w-full md:w-2/3 grid grid-cols-2 md:grid-cols-4 gap-2">
-                {/* 显示该艺术主义的图片 */}
-                {(node.images && node.images.length > 0 ? node.images.slice(0, 4) : [...Array(4)].map((_, i) => 
-                  `/TestData/${10001 + ((index * 4 + i) % 30)}.jpg`
-                )).map((imageUrl, imgIndex) => (
-                  <div 
-                    key={imgIndex} 
-                    className="aspect-square rounded-md overflow-hidden cursor-pointer"
-                    onClick={() => navigateToArtMovement(node.id)}
-                  >
-                    <img
-                      src={imageUrl}
-                      alt={`${node.title} artwork ${imgIndex + 1}`}
-                      className="w-full h-full object-cover transition-transform hover:scale-105"
-                      onError={(e) => {
-                        // 图片加载失败时使用备用图片
-                        const target = e.target as HTMLImageElement;
-                        target.src = `/TestData/${10001 + ((index * 4 + imgIndex) % 30)}.jpg`;
-                      }}
-                    />
-                  </div>
-                ))}
               </div>
             </motion.div>
           ))
