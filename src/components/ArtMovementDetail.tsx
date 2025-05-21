@@ -40,6 +40,7 @@ export default function ArtMovementDetail({ artStyle, onClose }: ArtMovementDeta
           <h2 className="text-xl font-semibold text-white">
             {artStyle.title}
           </h2>
+          <span className="text-xs text-white/60">{artStyle.styleMovement}</span>
         </div>
         {onClose && (
           <button 
@@ -73,11 +74,22 @@ export default function ArtMovementDetail({ artStyle, onClose }: ArtMovementDeta
                 </Tab>
               ))}
             </Tab.List>
-            <Tab.Panels className="mt-2 flex-1 overflow-auto max-h-[400px]">
-              <Tab.Panel className="max-w-none h-full">
+            <Tab.Panels className="mt-2 flex-1">
+              <Tab.Panel className="max-w-none h-full overflow-auto pr-2 max-h-[300px]">
                 <p className="text-white/80 leading-relaxed">{artStyle.description}</p>
+                
+                {artStyle.tags && artStyle.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-3">
+                    {artStyle.tags.map((tag, index) => (
+                      <span key={index} className="text-xs text-white/60">
+                        {tag}
+                        {index < artStyle.tags!.length - 1 ? ',' : ''}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </Tab.Panel>
-              <Tab.Panel className="h-full overflow-auto">
+              <Tab.Panel className="h-full overflow-auto pr-2 max-h-[300px]">
                 <ul className="space-y-2">
                   {artStyle.artists.map((artist, index) => (
                     <li key={index} className="flex items-center gap-2 p-1">
@@ -86,24 +98,26 @@ export default function ArtMovementDetail({ artStyle, onClose }: ArtMovementDeta
                   ))}
                 </ul>
               </Tab.Panel>
-              <Tab.Panel className="h-full overflow-auto">
+              <Tab.Panel className="h-full overflow-auto pr-2 max-h-[300px]">
                 <div className="space-y-3">
                   <div>
                     <h3 className="text-sm text-white/60 mb-1">受影响自</h3>
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-2">
                       {artStyle.influencedBy.map((style, index) => (
                         <span key={index} className="text-sm text-white/80">
                           {style}
+                          {index < artStyle.influencedBy.length - 1 ? ',' : ''}
                         </span>
                       ))}
                     </div>
                   </div>
                   <div>
                     <h3 className="text-sm text-white/60 mb-1">影响了</h3>
-                    <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-2">
                       {artStyle.influences.map((style, index) => (
                         <span key={index} className="text-sm text-white/80">
                           {style}
+                          {index < artStyle.influences.length - 1 ? ',' : ''}
                         </span>
                       ))}
                     </div>
@@ -115,8 +129,8 @@ export default function ArtMovementDetail({ artStyle, onClose }: ArtMovementDeta
         </div>
         
         {/* 右侧艺术作品展示 */}
-        <div className="w-2/5 p-3 overflow-y-auto max-h-[400px]">
-          <h3 className="text-sm text-white/60 mb-2">代表作品</h3>
+        <div className="w-2/5 p-3 overflow-y-auto max-h-[350px]">
+          <h3 className="text-sm text-white/60 mb-2 sticky top-0 bg-black/50 py-1 z-10">代表作品</h3>
           <div className="grid grid-cols-2 gap-2">
             {getArtworkImages().map((image, index) => (
               <div 
