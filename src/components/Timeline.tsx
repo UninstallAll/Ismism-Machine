@@ -479,6 +479,7 @@ const Timeline: React.FC = () => {
           
           // 第二阶段：等待详情元素渲染后，滚动到视觉最佳位置
           setTimeout(() => {
+            // 等待动画完成后再获取元素，确保获取到完全展开的元素
             const detailElement = nodeRefs.current[node.id]?.querySelector('.bg-black\\/30.rounded-lg');
             const nameElement = nodeRefs.current[node.id]?.querySelector('.text-lg.font-semibold');
             
@@ -495,14 +496,14 @@ const Timeline: React.FC = () => {
               // 确保时间点仍然与时间轴对齐
               const updatedAlignPosition = window.pageYOffset + updatedTrackRect.top - updatedTimePointRect.height/2;
               
-              // 计算详情页的垂直中心点
-              const detailVerticalCenter = detailRect.top + detailRect.height/2;
+              // 计算详情元素的中心位置
+              const detailCenter = detailRect.top + detailRect.height / 2;
               
-              // 计算视口垂直中心点
-              const viewportVerticalCenter = viewportHeight/2;
+              // 计算视口中心位置
+              const viewportCenter = window.scrollY + viewportHeight / 2;
               
-              // 计算为让详情页居中需要的偏移量
-              const offsetY = detailVerticalCenter - viewportVerticalCenter;
+              // 计算需要滚动的距离使得详情元素居中显示
+              const detailCenterOffset = detailCenter - viewportCenter;
               
               // 计算名称元素顶部与时间轴底部的距离
               const nameToTimelineDistance = nameRect.top - updatedContainerRect.bottom;
@@ -513,10 +514,13 @@ const Timeline: React.FC = () => {
                 maxUpwardOffset = nameToTimelineDistance - 20;
               }
               
-              // 计算最终滚动位置（时间点对齐位置 + 适当的调整量，但有上限）
-              // 取偏移量和最大上移距离中的较大值(负值较小)，确保名称不会高于时间轴
-              const adjustedOffsetY = Math.max(offsetY * 0.4, maxUpwardOffset);
-              const finalScrollPosition = updatedAlignPosition + adjustedOffsetY;
+              // 默认情况下，尝试将详情完全居中
+              let finalScrollPosition = window.scrollY + detailCenterOffset;
+              
+              // 如果居中会导致标题靠近或高于时间轴，则进行限制
+              if (finalScrollPosition < updatedAlignPosition + maxUpwardOffset) {
+                finalScrollPosition = updatedAlignPosition + maxUpwardOffset;
+              }
               
               // 平滑滚动到最终位置
               window.scrollTo({
@@ -524,7 +528,7 @@ const Timeline: React.FC = () => {
                 behavior: 'smooth'
               });
             }
-          }, 100); // 等待详情渲染
+          }, 300); // 增加延迟，确保详情动画完全展开
         }
       }, 50); // 等待时间轴位置调整
     }
@@ -595,6 +599,7 @@ const Timeline: React.FC = () => {
           
           // 第二阶段：等待详情元素渲染后，滚动到视觉最佳位置
           setTimeout(() => {
+            // 等待动画完成后再获取元素，确保获取到完全展开的元素
             const detailElement = nodeRefs.current[node.id]?.querySelector('.bg-black\\/30.rounded-lg');
             const nameElement = nodeRefs.current[node.id]?.querySelector('.text-lg.font-semibold');
             
@@ -611,14 +616,14 @@ const Timeline: React.FC = () => {
               // 确保时间点仍然与时间轴对齐
               const updatedAlignPosition = window.pageYOffset + updatedTrackRect.top - updatedTimePointRect.height/2;
               
-              // 计算详情页的垂直中心点
-              const detailVerticalCenter = detailRect.top + detailRect.height/2;
+              // 计算详情元素的中心位置
+              const detailCenter = detailRect.top + detailRect.height / 2;
               
-              // 计算视口垂直中心点
-              const viewportVerticalCenter = viewportHeight/2;
+              // 计算视口中心位置
+              const viewportCenter = window.scrollY + viewportHeight / 2;
               
-              // 计算为让详情页居中需要的偏移量
-              const offsetY = detailVerticalCenter - viewportVerticalCenter;
+              // 计算需要滚动的距离使得详情元素居中显示
+              const detailCenterOffset = detailCenter - viewportCenter;
               
               // 计算名称元素顶部与时间轴底部的距离
               const nameToTimelineDistance = nameRect.top - updatedContainerRect.bottom;
@@ -629,10 +634,13 @@ const Timeline: React.FC = () => {
                 maxUpwardOffset = nameToTimelineDistance - 20;
               }
               
-              // 计算最终滚动位置（时间点对齐位置 + 适当的调整量，但有上限）
-              // 取偏移量和最大上移距离中的较大值(负值较小)，确保名称不会高于时间轴
-              const adjustedOffsetY = Math.max(offsetY * 0.4, maxUpwardOffset);
-              const finalScrollPosition = updatedAlignPosition + adjustedOffsetY;
+              // 默认情况下，尝试将详情完全居中
+              let finalScrollPosition = window.scrollY + detailCenterOffset;
+              
+              // 如果居中会导致标题靠近或高于时间轴，则进行限制
+              if (finalScrollPosition < updatedAlignPosition + maxUpwardOffset) {
+                finalScrollPosition = updatedAlignPosition + maxUpwardOffset;
+              }
               
               // 平滑滚动到最终位置
               window.scrollTo({
@@ -640,7 +648,7 @@ const Timeline: React.FC = () => {
                 behavior: 'smooth'
               });
             }
-          }, 100); // 等待详情渲染
+          }, 300); // 增加延迟，确保详情动画完全展开
         }
       }, 50); // 等待时间轴位置调整
     }
