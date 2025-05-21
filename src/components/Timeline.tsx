@@ -694,8 +694,8 @@ const Timeline: React.FC = () => {
                   style={{ 
                     left: `${getPositionPercentage(year)}%`,
                     transform: 'translateX(-50%)',
-                    top: '50%',
-                    marginTop: '-12px'
+                    top: '0',
+                    marginTop: '2px'
                   }}
                   onClick={() => handleYearClick(year)}
                 >
