@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { Search, ChevronLeft, ChevronRight, ArrowRight, GripHorizontal, Calendar } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, ChevronLeft, ChevronRight, ArrowRight, X, GripHorizontal, Calendar } from 'lucide-react';
 import { Button } from './ui/button';
 import { useTimelineStore } from '../store/timelineStore';
 import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
+import ArtMovementDetail from './ArtMovementDetail';
 
 // 开发模式下启用性能分析
 const isDev = import.meta.env.DEV;
@@ -53,6 +54,9 @@ const Timeline: React.FC = () => {
   const navigate = useNavigate();
   const [highlightedNodeId, setHighlightedNodeId] = useState<string | null>(null);
   const timelineListRef = useRef<HTMLDivElement>(null);
+  
+  // 当前选中的艺术主义节点
+  const [selectedNode, setSelectedNode] = useState<any | null>(null);
   
   // 改为直接使用时间轴位置状态
   const [timelinePosition, setTimelinePosition] = useState(0); // 0 表示中间位置，正负表示向左右偏移
@@ -421,7 +425,21 @@ const Timeline: React.FC = () => {
     e.stopPropagation();
   };
 
-  // 跳转到艺术主义详情页
+  // 点击艺术主义时间线，在页面内显示详情
+  const handleArtMovementLineClick = (node: any, e: React.MouseEvent) => {
+    e.stopPropagation(); // 防止冒泡触发父元素事件
+    setSelectedNode(node);
+    setHighlightedNodeId(node.id);
+    savePositions(); // 保存当前位置
+  };
+  
+  // 关闭艺术主义详情
+  const handleCloseDetail = () => {
+    setSelectedNode(null);
+    setHighlightedNodeId(null);
+  };
+
+  // 跳转到艺术主义详情页（保留原来的功能）
   const navigateToArtMovement = (artMovementId: string) => {
     // 保存当前位置信息，并记录当前查看的艺术主义ID
     savePositions();
@@ -501,6 +519,18 @@ const Timeline: React.FC = () => {
                 />
               </div>
             </div>
+            
+            {selectedNode && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCloseDetail}
+                className="flex items-center gap-1 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-sm"
+              >
+                <X className="h-3.5 w-3.5" />
+                关闭详情
+              </Button>
+            )}
           </div>
         </div>
       </motion.div>
@@ -568,191 +598,230 @@ const Timeline: React.FC = () => {
         </div>
       </div>
 
-      {/* 艺术主义行列表 */}
-      <div className="space-y-6 mt-4 overflow-auto" ref={timelineListRef}>
-        {sortedNodes.length > 0 ? (
-          <>
-            {sortedNodes.map((node, index) => (
-              <motion.div 
-                key={node.id}
-                ref={el => nodeRefs.current[node.id] = el}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.05 }}
-                className={`flex flex-col items-start gap-2 border-b border-white/10 pb-3 
-                  ${highlightedNodeId === node.id ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg p-2 -mx-4 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : ''}`}
-              >
-                {/* 艺术主义时间轴位置标记 */}
-                <div className="w-full relative h-12 overflow-hidden">
-                  {/* 内容容器，用于横向滚动时间轴 */}
-                  <div className="w-full h-full relative">
-                    {/* 蓝色线 */}
-                    <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-blue-500/20 transform -translate-y-1/2"></div>
-                    
-                    {/* 时间点标记 */}
-                    <div 
-                      id={`year-${node.year}`}
-                      className="absolute top-1/2 w-0.5 h-6 bg-blue-500 z-10"
-                      style={{ 
-                        left: `${getPositionPercentage(node.year)}%`,
-                        transform: 'translateX(-50%)',
-                      }}
-                    ></div>
-                    
-                    {/* 时间点之后的缩略图容器 */}
-                    <div 
-                      className="absolute top-0 h-full overflow-x-auto cursor-grab active:cursor-grabbing hide-scrollbar bg-transparent group hover:bg-blue-500/5 transition-colors rounded-md"
-                      style={{ 
-                        left: `${getPositionPercentage(node.year)}%`,
-                        right: '0',
-                        paddingLeft: '10px',
-                        width: '100vw' // 使用视口宽度，确保容器足够宽
-                      }}
-                      ref={el => thumbnailsRef.current[node.id] = el}
-                      onMouseDown={(e) => handleThumbnailMouseDown(e, node.id)}
-                      onMouseUp={handleThumbnailMouseUp}
-                      onMouseLeave={(e) => handleThumbnailMouseLeave(e)}
-                      onMouseMove={(e) => handleThumbnailMouseMove(e, node.id)}
-                    >
-                      <div className="flex items-center h-full gap-2 pr-4 pl-2" style={{ width: 'max-content', paddingRight: '200px' }}>
-                        <GripHorizontal className="h-4 w-4 text-white/30 group-hover:text-white/60 flex-shrink-0 transition-colors" />
-                        {/* 缩略图 - 限制数量为5个，提高性能 */}
-                        {Array.from({ length: Math.min(5, node.images?.length || 5) }).map((_, imgIndex) => (
-                          <div 
-                            key={imgIndex} 
-                            className="h-10 w-10 rounded-md overflow-hidden flex-shrink-0 border border-white/10 hover:border-blue-400 transition-colors bg-black/20"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigateToArtMovement(node.id);
-                            }}
-                          >
-                            <img
-                              src={getThumbnailUrl(node, imgIndex)}
-                              alt={`${node.title} artwork ${imgIndex + 1}`}
-                              className="w-full h-full object-cover"
-                              loading="lazy"
-                              data-original-src={node.images?.[imgIndex] || ''}
-                              onError={(e) => handleImageError(e, imgIndex)}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* 艺术主义名称和信息 - 仅显示名称和年份，位置不变 */}
-                <div className="w-full pl-4 relative">
-                  {/* 名称和年份行 */}
-                  <div 
-                    className="flex items-center gap-3 relative group px-3 py-2 hover:bg-blue-500/10 rounded-md transition-colors cursor-pointer hover-trigger"
-                    onClick={(e) => {
-                      // 点击整行时导航到详情页
-                      // 除非点击的是年份按钮
-                      if (!(e.target as HTMLElement).closest('.year-btn')) {
-                        navigateToArtMovement(node.id);
-                      }
-                    }}
-                  >
-                    <Button 
-                      variant="link" 
-                      className="p-0 h-auto text-lg font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent hover:from-blue-300 hover:to-purple-300 flex items-center gap-1"
-                      onClick={(e) => {
-                        e.stopPropagation(); // 防止触发父元素的点击事件
-                        navigateToArtMovement(node.id);
-                      }}
-                    >
-                      {node.title}
-                      <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </Button>
-                    
-                    <div 
-                      className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-sm cursor-pointer year-btn"
-                      onClick={(e) => {
-                        e.stopPropagation(); // 防止触发父元素的点击事件
-                        // 点击年份，同步调整时间轴位置
-                        if (timelineContainerRef.current) {
-                          const containerWidth = timelineContainerRef.current.clientWidth;
-                          const yearPosition = ((node.year - minYear) / timeRange) * 100;
-                          // 计算需要的偏移量使点击的年份居中
-                          const centerOffset = 50 - yearPosition;
-                          setTimelinePosition(centerOffset);
-                        }
-                      }}
-                    >
-                      {node.year}
-                    </div>
-                  </div>
-                  
-                  {/* 悬停时显示的详情 */}
-                  <div 
-                    className="hidden mt-2 bg-black/60 backdrop-blur-md rounded-lg p-4 border border-white/10 shadow-lg z-30 absolute w-[500px] max-w-[90vw] left-4 hover-target"
-                  >
-                    {/* 描述 */}
-                    <p className="text-sm text-gray-300 mb-3 leading-relaxed">
-                      {node.description}
-                    </p>
-                    
-                    {/* 艺术家列表 */}
-                    <div className="mb-3">
-                      <h4 className="text-xs font-medium text-blue-400 mb-1">艺术家:</h4>
-                      <div className="flex flex-wrap gap-1">
-                        {node.artists.map((artist, artistIndex) => (
-                          <span 
-                            key={artistIndex} 
-                            className="px-2 py-0.5 text-xs rounded-full bg-blue-500/10 text-blue-300"
-                          >
-                            {artist}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    {/* 标签 */}
-                    {node.tags && node.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {node.tags.map((tag, tagIndex) => (
-                          <span 
-                            key={tagIndex} 
-                            className="px-2 py-0.5 text-xs rounded-full bg-purple-500/10 text-purple-300"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {/* 底部操作栏 */}
-                    <div className="mt-3 pt-2 border-t border-white/10 flex justify-between items-center">
-                      <span className="text-sm font-medium text-purple-400">
-                        {node.styleMovement}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-xs text-white hover:text-blue-300 hover:bg-blue-500/20 p-2 h-auto rounded-full"
-                        onClick={() => navigateToArtMovement(node.id)}
-                      >
-                        查看详情 <ArrowRight className="h-3 w-3 ml-1" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-            {/* 底部额外留白空间 */}
-            <div className="h-40"></div>
-          </>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="p-5 bg-[rgba(15,15,20,0.7)] backdrop-blur-sm border border-white/10 rounded-lg shadow-glow-sm mb-4">
-              <Search className="h-10 w-10 text-gray-400 mb-2" />
+      {/* 选中的艺术主义详情或艺术主义行列表 */}
+      <AnimatePresence mode="wait">
+        {selectedNode ? (
+          <motion.div 
+            key="detail"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="flex-1 overflow-hidden"
+          >
+            <div className="bg-black h-full rounded-lg border border-white/10 shadow-lg overflow-hidden">
+              <ArtMovementDetail artStyle={selectedNode} onClose={handleCloseDetail} />
             </div>
-            <h3 className="text-xl font-semibold text-gray-400 mb-2">未找到时间线节点</h3>
-            <p className="text-gray-500">请尝试不同的搜索条件</p>
-          </div>
+          </motion.div>
+        ) : (
+          <motion.div 
+            key="timeline"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-6 mt-4 overflow-auto"
+            ref={timelineListRef}
+          >
+            {sortedNodes.length > 0 ? (
+              <>
+                {sortedNodes.map((node, index) => (
+                  <motion.div 
+                    key={node.id}
+                    ref={el => nodeRefs.current[node.id] = el}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: index * 0.05 }}
+                    className={`flex flex-col items-start gap-2 border-b border-white/10 pb-3 
+                      ${highlightedNodeId === node.id ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg p-2 -mx-4 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : ''}`}
+                  >
+                    {/* 艺术主义时间轴位置标记 */}
+                    <div className="w-full relative h-12 overflow-hidden">
+                      {/* 内容容器，用于横向滚动时间轴 */}
+                      <div className="w-full h-full relative">
+                        {/* 蓝色线 */}
+                        <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-blue-500/20 transform -translate-y-1/2"></div>
+                        
+                        {/* 时间点标记 - 可点击显示详情 */}
+                        <div 
+                          id={`year-${node.year}`}
+                          className="absolute top-1/2 w-0.5 h-6 bg-blue-500 z-10 cursor-pointer hover:bg-blue-400 hover:h-8 transition-all"
+                          style={{ 
+                            left: `${getPositionPercentage(node.year)}%`,
+                            transform: 'translateX(-50%)',
+                          }}
+                          onClick={(e) => handleArtMovementLineClick(node, e)}
+                        ></div>
+                        
+                        {/* 时间点之后的缩略图容器 */}
+                        <div 
+                          className="absolute top-0 h-full overflow-x-auto cursor-grab active:cursor-grabbing hide-scrollbar bg-transparent group hover:bg-blue-500/5 transition-colors rounded-md"
+                          style={{ 
+                            left: `${getPositionPercentage(node.year)}%`,
+                            right: '0',
+                            paddingLeft: '10px',
+                            width: '100vw' // 使用视口宽度，确保容器足够宽
+                          }}
+                          ref={el => thumbnailsRef.current[node.id] = el}
+                          onMouseDown={(e) => handleThumbnailMouseDown(e, node.id)}
+                          onMouseUp={handleThumbnailMouseUp}
+                          onMouseLeave={(e) => handleThumbnailMouseLeave(e)}
+                          onMouseMove={(e) => handleThumbnailMouseMove(e, node.id)}
+                        >
+                          <div className="flex items-center h-full gap-2 pr-4 pl-2" style={{ width: 'max-content', paddingRight: '200px' }}>
+                            <GripHorizontal className="h-4 w-4 text-white/30 group-hover:text-white/60 flex-shrink-0 transition-colors" />
+                            {/* 缩略图 - 限制数量为5个，提高性能 */}
+                            {Array.from({ length: Math.min(5, node.images?.length || 5) }).map((_, imgIndex) => (
+                              <div 
+                                key={imgIndex} 
+                                className="h-10 w-10 rounded-md overflow-hidden flex-shrink-0 border border-white/10 hover:border-blue-400 transition-colors bg-black/20"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigateToArtMovement(node.id);
+                                }}
+                              >
+                                <img
+                                  src={getThumbnailUrl(node, imgIndex)}
+                                  alt={`${node.title} artwork ${imgIndex + 1}`}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                  data-original-src={node.images?.[imgIndex] || ''}
+                                  onError={(e) => handleImageError(e, imgIndex)}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* 艺术主义名称和信息 - 仅显示名称和年份，位置不变 */}
+                    <div className="w-full pl-4 relative">
+                      {/* 名称和年份行 */}
+                      <div 
+                        className="flex items-center gap-3 relative group px-3 py-2 hover:bg-blue-500/10 rounded-md transition-colors cursor-pointer hover-trigger"
+                        onClick={(e) => {
+                          // 点击整行时导航到详情页
+                          // 除非点击的是年份按钮
+                          if (!(e.target as HTMLElement).closest('.year-btn')) {
+                            navigateToArtMovement(node.id);
+                          }
+                        }}
+                      >
+                        <Button 
+                          variant="link" 
+                          className="p-0 h-auto text-lg font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent hover:from-blue-300 hover:to-purple-300 flex items-center gap-1"
+                          onClick={(e) => {
+                            e.stopPropagation(); // 防止触发父元素的点击事件
+                            navigateToArtMovement(node.id);
+                          }}
+                        >
+                          {node.title}
+                          <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </Button>
+                        
+                        <div 
+                          className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-sm cursor-pointer year-btn"
+                          onClick={(e) => {
+                            e.stopPropagation(); // 防止触发父元素的点击事件
+                            // 点击年份，同步调整时间轴位置
+                            if (timelineContainerRef.current) {
+                              const containerWidth = timelineContainerRef.current.clientWidth;
+                              const yearPosition = ((node.year - minYear) / timeRange) * 100;
+                              // 计算需要的偏移量使点击的年份居中
+                              const centerOffset = 50 - yearPosition;
+                              setTimelinePosition(centerOffset);
+                            }
+                          }}
+                        >
+                          {node.year}
+                        </div>
+                      </div>
+                      
+                      {/* 悬停时显示的详情 */}
+                      <div 
+                        className="hidden mt-2 bg-black/60 backdrop-blur-md rounded-lg p-4 border border-white/10 shadow-lg z-30 absolute w-[500px] max-w-[90vw] left-4 hover-target"
+                      >
+                        {/* 描述 */}
+                        <p className="text-sm text-gray-300 mb-3 leading-relaxed">
+                          {node.description}
+                        </p>
+                        
+                        {/* 艺术家列表 */}
+                        <div className="mb-3">
+                          <h4 className="text-xs font-medium text-blue-400 mb-1">艺术家:</h4>
+                          <div className="flex flex-wrap gap-1">
+                            {node.artists.map((artist, artistIndex) => (
+                              <span 
+                                key={artistIndex} 
+                                className="px-2 py-0.5 text-xs rounded-full bg-blue-500/10 text-blue-300"
+                              >
+                                {artist}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        {/* 标签 */}
+                        {node.tags && node.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {node.tags.map((tag, tagIndex) => (
+                              <span 
+                                key={tagIndex} 
+                                className="px-2 py-0.5 text-xs rounded-full bg-purple-500/10 text-purple-300"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* 底部操作栏 */}
+                        <div className="mt-3 pt-2 border-t border-white/10 flex justify-between items-center">
+                          <span className="text-sm font-medium text-purple-400">
+                            {node.styleMovement}
+                          </span>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-xs text-white hover:text-blue-300 hover:bg-blue-500/20 p-2 h-auto rounded-full"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleArtMovementLineClick(node, e);
+                              }}
+                            >
+                              在页面内查看
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-xs text-white hover:text-blue-300 hover:bg-blue-500/20 p-2 h-auto rounded-full"
+                              onClick={() => navigateToArtMovement(node.id)}
+                            >
+                              查看详情页 <ArrowRight className="h-3 w-3 ml-1" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+                {/* 底部额外留白空间 */}
+                <div className="h-40"></div>
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-20">
+                <div className="p-5 bg-[rgba(15,15,20,0.7)] backdrop-blur-sm border border-white/10 rounded-lg shadow-glow-sm mb-4">
+                  <Search className="h-10 w-10 text-gray-400 mb-2" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-400 mb-2">未找到时间线节点</h3>
+                <p className="text-gray-500">请尝试不同的搜索条件</p>
+              </div>
+            )}
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
     </div>
   );
 };
