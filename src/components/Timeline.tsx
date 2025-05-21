@@ -433,6 +433,8 @@ const Timeline: React.FC = () => {
     setSelectedNode(node);
     setHighlightedNodeId(node.id);
     savePositions(); // 保存当前位置
+    
+    // 滚动效果通过useEffect处理，确保详情元素渲染后再滚动
   };
   
   // 关闭艺术主义详情
@@ -500,6 +502,31 @@ const Timeline: React.FC = () => {
   const handleNowClick = () => {
     // ... existing code ...
   };
+
+  useEffect(() => {
+    // 当选中节点改变时，确保详情视图在可见范围内
+    if (selectedNode) {
+      // 短暂延迟，确保动画已开始
+      setTimeout(() => {
+        const detailElement = document.querySelector('.art-movement-detail-container');
+        if (detailElement) {
+          // 计算元素位置和屏幕中心位置
+          const rect = detailElement.getBoundingClientRect();
+          const elementCenter = rect.top + rect.height / 2;
+          const viewportCenter = window.innerHeight / 2;
+          
+          // 计算需要滚动的距离以使元素中心与屏幕中心对齐
+          const scrollOffset = elementCenter - viewportCenter;
+          
+          // 进行平滑滚动
+          window.scrollBy({
+            top: scrollOffset,
+            behavior: 'smooth'
+          });
+        }
+      }, 100);
+    }
+  }, [selectedNode]);
 
   return (
     <div className="flex flex-col h-full">
@@ -616,7 +643,7 @@ const Timeline: React.FC = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="flex-1 overflow-hidden mx-4 mb-4"
+            className="flex-1 overflow-hidden mx-4 mb-4 art-movement-detail-container"
           >
             <div className="bg-black h-full rounded-lg border border-white/10 shadow-lg overflow-hidden">
               <ArtMovementDetail artStyle={selectedNode} onClose={handleCloseDetail} />
