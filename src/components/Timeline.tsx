@@ -639,13 +639,15 @@ const Timeline: React.FC = () => {
         {selectedNode && (
           <motion.div 
             key="detail"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="mx-4 mb-4 art-movement-detail-container flex justify-center items-center"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mx-4 mb-4 mt-2 art-movement-detail-container"
           >
-            <div className="bg-black w-full max-w-4xl h-[600px] rounded-lg border border-white/10 shadow-lg overflow-hidden">
+            <div className="bg-black/40 backdrop-blur-sm w-full rounded-lg border border-white/10 shadow-lg overflow-hidden
+                          border-l-2 border-l-blue-500 ml-10 pl-2"
+            >
               <ArtMovementDetail artStyle={selectedNode} onClose={handleCloseDetail} />
             </div>
           </motion.div>

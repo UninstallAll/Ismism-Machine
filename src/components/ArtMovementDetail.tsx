@@ -32,11 +32,13 @@ export default function ArtMovementDetail({ artStyle, onClose }: ArtMovementDeta
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col">
       {/* 标题栏 */}
       <div className="flex justify-between items-center p-4 border-b border-white/10">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-white/60">{artStyle.year}</span>
+        <div className="flex items-center gap-3">
+          <div className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-sm">
+            {artStyle.year}
+          </div>
           <h2 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
             {artStyle.title}
           </h2>
@@ -55,9 +57,9 @@ export default function ArtMovementDetail({ artStyle, onClose }: ArtMovementDeta
       </div>
 
       {/* 内容区域 */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex overflow-hidden p-2">
         {/* 左侧内容区 - 不再允许独立滚动 */}
-        <div className="w-3/5 p-4 flex flex-col">
+        <div className="w-3/5 p-2 flex flex-col">
           <Tab.Group onChange={setActiveTab}>
             <Tab.List className="flex space-x-1 border-b border-white/10 mb-4">
               {tabs.map((tab) => (
@@ -76,9 +78,20 @@ export default function ArtMovementDetail({ artStyle, onClose }: ArtMovementDeta
                 </Tab>
               ))}
             </Tab.List>
-            <Tab.Panels className="mt-2 flex-1 overflow-auto">
+            <Tab.Panels className="mt-2 flex-1 overflow-auto max-h-[400px]">
               <Tab.Panel className="prose prose-invert max-w-none h-full">
                 <p className="text-white/80 leading-relaxed">{artStyle.description}</p>
+                
+                {/* 添加标签展示，与时间轴条目悬停卡片风格一致 */}
+                {artStyle.tags && artStyle.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-3">
+                    {artStyle.tags.map((tag, index) => (
+                      <span key={index} className="px-2 py-0.5 text-xs rounded-full bg-purple-500/10 text-purple-300">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </Tab.Panel>
               <Tab.Panel className="h-full overflow-auto">
                 <ul className="space-y-2">
@@ -121,7 +134,7 @@ export default function ArtMovementDetail({ artStyle, onClose }: ArtMovementDeta
         </div>
         
         {/* 右侧艺术作品展示 - 允许独立滚动 */}
-        <div className="w-2/5 bg-black/20 p-4 overflow-y-auto">
+        <div className="w-2/5 bg-black/10 rounded-lg p-4 overflow-y-auto max-h-[400px]">
           <h3 className="text-sm font-medium text-white/60 mb-3 sticky top-0 bg-black/60 py-2 backdrop-blur-sm z-10">代表作品</h3>
           <div className="grid grid-cols-2 gap-3">
             {getArtworkImages().map((image, index) => (
