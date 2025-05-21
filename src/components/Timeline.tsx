@@ -453,20 +453,8 @@ const Timeline: React.FC = () => {
   
   // 关闭艺术主义详情
   const handleCloseDetail = () => {
-    // 使用淡出动画关闭详情
     setSelectedNode(null);
     setHighlightedNodeId(null);
-    
-    // 添加短暂延迟，等待动画完成
-    setTimeout(() => {
-      // 滚动到原始位置
-      if (timelineListRef.current) {
-        const savedScrollPosition = sessionStorage.getItem(TIMELINE_SCROLL_POSITION_KEY);
-        if (savedScrollPosition) {
-          timelineListRef.current.scrollTop = parseFloat(savedScrollPosition);
-        }
-      }
-    }, 100);
   };
 
   // 跳转到艺术主义详情页（保留原来的功能）
@@ -544,28 +532,28 @@ const Timeline: React.FC = () => {
           </h1>
           
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            {!selectedNode ? (
-              <div className="flex items-center gap-2">
-                <div className="relative">
-                  <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                  <input 
-                    type="text" 
-                    placeholder="搜索艺术主义..." 
-                    className="pl-10 pr-4 py-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors border border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                <input 
+                  type="text" 
+                  placeholder="搜索艺术主义..." 
+                  className="pl-10 pr-4 py-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors border border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
-            ) : (
+            </div>
+            
+            {selectedNode && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleCloseDetail}
                 className="flex items-center gap-1 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-sm"
               >
-                <ChevronLeft className="h-3.5 w-3.5" />
-                返回全部
+                <X className="h-3.5 w-3.5" />
+                关闭详情
               </Button>
             )}
           </div>
@@ -652,15 +640,10 @@ const Timeline: React.FC = () => {
                 key={node.id}
                 ref={el => nodeRefs.current[node.id] = el}
                 initial={{ opacity: 0, y: 20 }}
-                animate={{ 
-                  opacity: selectedNode ? (selectedNode.id === node.id ? 1 : 0) : 1,
-                  y: 0,
-                  height: selectedNode ? (selectedNode.id === node.id ? 'auto' : 0) : 'auto'
-                }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.05 }}
                 className={`flex flex-col items-start gap-2 border-b border-white/10 pb-3 
-                  ${highlightedNodeId === node.id ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg p-2 -mx-4 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : ''}
-                  ${selectedNode && selectedNode.id !== node.id ? 'overflow-hidden' : ''}`}
+                  ${highlightedNodeId === node.id ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg p-2 -mx-4 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : ''}`}
               >
                 {/* 艺术主义时间轴位置标记 */}
                 <div className="w-full relative h-12 overflow-hidden">
