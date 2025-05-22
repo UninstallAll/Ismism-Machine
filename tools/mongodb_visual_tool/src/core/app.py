@@ -387,7 +387,7 @@ class MongoDBViewer(tk.Tk):
         """
         try:
             if action == "view":
-                self.show_document_details(doc)
+                self.edit_document_dialog(doc)
             elif action == "export":
                 self.export_document(doc)
             elif action == "relate":
@@ -395,12 +395,75 @@ class MongoDBViewer(tk.Tk):
             elif action == "delete":
                 self.delete_document(doc)
             elif action == "bulk_export":
-                self.bulk_export_documents(doc)  # doc is a document list
+                self.bulk_export_documents(doc)
             elif action == "bulk_relate":
-                self.bulk_create_relationships(doc)  # doc is a document list
+                self.bulk_create_relationships(doc)
         except Exception as e:
             messagebox.showerror("Action Error", f"Error performing action: {str(e)}")
             self.update_status(f"Error: {str(e)}")
+    
+    def edit_document_dialog(self, doc):
+        """弹出编辑文档信息的表单，保存到数据库"""
+        if not self.current_db or not self.current_collection:
+            messagebox.showwarning("未选择集合", "请先在左侧选择目标数据库和集合！")
+            return
+        dialog = tk.Toplevel(self)
+        dialog.title("编辑文件信息")
+        dialog.grab_set()
+        dialog.resizable(False, False)
+        main_frame = ttk.Frame(dialog, padding=10)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        entries = {}
+        row = 0
+        for key, value in doc.items():
+            if key == "_id":
+                ttk.Label(main_frame, text=f"ID: {value}").grid(row=row, column=0, sticky=tk.W, pady=5, columnspan=2)
+                row += 1
+                continue
+            ttk.Label(main_frame, text=key+":").grid(row=row, column=0, sticky=tk.W, pady=5)
+            entry = ttk.Entry(main_frame, width=40)
+            entry.insert(0, str(value))
+            entry.grid(row=row, column=1, sticky=tk.W, pady=5)
+            entries[key] = entry
+            row += 1
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.grid(row=row, column=0, columnspan=2, pady=10)
+        def on_save():
+            update_data = {}
+            for k, entry in entries.items():
+                v = entry.get()
+                # 尝试类型转换
+                if k == "size":
+                    try:
+                        v = int(v)
+                    except:
+                        pass
+                update_data[k] = v
+            try:
+                success = self.db_manager.update_document(
+                    self.current_db,
+                    self.current_collection,
+                    str(doc.get("_id")),
+                    update_data
+                )
+                if success:
+                    messagebox.showinfo("保存成功", "文件信息已更新！")
+                    dialog.destroy()
+                    self.load_collection_data()
+                else:
+                    messagebox.showerror("保存失败", "数据库未更新任何内容。")
+            except Exception as e:
+                messagebox.showerror("保存失败", f"数据库更新失败: {e}")
+        ttk.Button(btn_frame, text="保存", command=on_save).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text="取消", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        # 居中弹窗
+        dialog.update_idletasks()
+        width = dialog.winfo_width()
+        height = dialog.winfo_height()
+        x = (dialog.winfo_screenwidth() // 2) - (width // 2)
+        y = (dialog.winfo_screenheight() // 2) - (height // 2)
+        dialog.geometry(f'{width}x{height}+{x}+{y}')
+        self.wait_window(dialog)
     
     def show_document_details(self, doc):
         """Show document details

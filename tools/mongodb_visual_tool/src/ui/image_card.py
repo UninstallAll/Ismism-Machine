@@ -282,7 +282,7 @@ class ImageCard(ttk.Frame):
             callback (callable): Callback function for menu actions
         """
         self.context_menu = tk.Menu(self, tearoff=0)
-        self.context_menu.add_command(label="View Details", command=lambda: callback("view", self.doc))
+        self.context_menu.add_command(label="Edit Details", command=lambda: callback("view", self.doc))
         self.context_menu.add_command(label="Export", command=lambda: callback("export", self.doc))
         self.context_menu.add_command(label="Create Relationship", command=lambda: callback("relate", self.doc))
         self.context_menu.add_separator()
