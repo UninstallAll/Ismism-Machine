@@ -79,33 +79,33 @@ class ImageCard(ttk.Frame):
                                              variable=self.select_var,
                                              style="Bold.TCheckbutton",
                                              command=self._on_checkbox_toggle)
-        self.select_checkbox.pack(side=tk.LEFT)
+        self.select_checkbox.pack(side=tk.LEFT, padx=(8,4), pady=2)
         
         # Display filename or title
         name = self.metadata.get('filename', "Untitled")
         self.name_label = ttk.Label(self.meta_frame, text=name, wraplength=width-40)
-        self.name_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.name_label.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=8, pady=2)
         
         # Add warning mark if file doesn't exist
         if self.doc.get('_file_missing'):
             warning_label = ttk.Label(self.meta_frame, text="⚠️", foreground="red", 
                                     font=("Arial", 12, "bold"))
-            warning_label.pack(side=tk.RIGHT)
+            warning_label.pack(side=tk.RIGHT, padx=8, pady=2)
         
         # Add size information (if available)
         info_frame = tk.Frame(self.main_frame, background=default_bg)
-        info_frame.pack(fill=tk.X, padx=5)
+        info_frame.pack(fill=tk.X, padx=5, pady=(0,4))
         
         if 'size' in self.metadata:
             size_kb = int(self.metadata['size'] / 1024) if isinstance(self.metadata['size'], (int, float)) else '?'
             size_text = f"Size: {size_kb} KB"
             size_label = ttk.Label(info_frame, text=size_text)
-            size_label.pack(side=tk.LEFT, padx=(0, 10))
+            size_label.pack(side=tk.LEFT, padx=(8, 10), pady=2)
             
         # Add art movement (if available)
         if 'artMovement' in self.metadata:
             movement_label = ttk.Label(info_frame, text=f"Style: {self.metadata['artMovement']}")
-            movement_label.pack(side=tk.LEFT)
+            movement_label.pack(side=tk.LEFT, padx=8, pady=2)
         
         # Bind left click event
         self.bind("<Button-1>", self._on_click)
@@ -144,13 +144,8 @@ class ImageCard(ttk.Frame):
     
     def _on_click(self, event):
         """Handle left click event"""
-        # Toggle selection state
-        new_state = not self.select_var.get()
-        self.select_var.set(new_state)
-        # Directly call to update visual effects
-        self._on_checkbox_toggle(event)
-        # Force UI update
-        self.update_idletasks()
+        if self.on_select_callback:
+            self.on_select_callback(self, not self.is_selected, event)
     
     def _on_checkbox_toggle(self, event=None):
         """Handle checkbox state change"""
@@ -229,10 +224,6 @@ class ImageCard(ttk.Frame):
             # Ensure filename label color also changes
             if hasattr(self, 'name_label'):
                 self.name_label.configure(foreground=default_text)
-        
-        # Call selection callback if provided
-        if self.on_select_callback:
-            self.on_select_callback(self, self.is_selected, event)
     
     def set_selected(self, selected):
         """Set selection state
@@ -242,7 +233,6 @@ class ImageCard(ttk.Frame):
         """
         if selected != self.select_var.get():
             self.select_var.set(selected)
-            # 不传递事件参数，避免干扰多选逻辑
             self._on_checkbox_toggle(None)
     
     def load_image(self):

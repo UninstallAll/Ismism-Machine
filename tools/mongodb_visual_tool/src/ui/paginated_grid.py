@@ -7,6 +7,7 @@ from tkinter import ttk, Menu, messagebox
 import math
 import os
 from PIL import Image, ImageTk
+from rapidfuzz import fuzz
 
 from ..config.settings import DEFAULT_PAGE_SIZE
 from .image_card import ImageCard
@@ -59,6 +60,9 @@ class PaginatedGrid(ttk.Frame):
         # Last selected index
         self.last_selected_index = None
         
+        # Selection mode
+        self.selection_mode = "multi"  # multi(多选)/single(单选)
+        
         # Create UI
         self._create_ui()
         
@@ -100,24 +104,24 @@ class PaginatedGrid(ttk.Frame):
         self.shift_pressed = False
     
     def _select_all_shortcut(self, event):
-        """Handle select all shortcut"""
-        for card in self.displayed_cards:
-            card.set_selected(True)
-        self._update_selection_ui()
-        return "break"  # Prevent event propagation
+        if self.selection_mode == "multi":
+            for card in self.displayed_cards:
+                card.set_selected(True)
+            self._update_selection_ui()
+        return "break"
     
     def _deselect_all_shortcut(self, event):
-        """Handle deselect all shortcut"""
-        for card in self.displayed_cards:
-            card.set_selected(False)
-        self._update_selection_ui()
+        if self.selection_mode == "multi":
+            for card in self.displayed_cards:
+                card.set_selected(False)
+            self._update_selection_ui()
         return "break"
     
     def _invert_selection_shortcut(self, event):
-        """Handle invert selection shortcut"""
-        for card in self.displayed_cards:
-            card.set_selected(not card.is_selected)
-        self._update_selection_ui()
+        if self.selection_mode == "multi":
+            for card in self.displayed_cards:
+                card.set_selected(not card.is_selected)
+            self._update_selection_ui()
         return "break"
         
     def _create_ui(self):
@@ -256,9 +260,9 @@ class PaginatedGrid(ttk.Frame):
         self.canvas.bind("<Configure>", self._on_canvas_configure)
         
         # Bind mouse events
-        self.canvas.bind("<MouseWheel>", self._on_mousewheel)  # Windows
-        self.canvas.bind("<Button-4>", self._on_mousewheel)    # Linux scroll up
-        self.canvas.bind("<Button-5>", self._on_mousewheel)    # Linux scroll down
+        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)  # Windows
+        self.canvas.bind_all("<Button-4>", self._on_mousewheel)    # Linux scroll up
+        self.canvas.bind_all("<Button-5>", self._on_mousewheel)    # Linux scroll down
         
         # Bind mouse drag events
         self.canvas.bind("<ButtonPress-1>", self._on_mouse_down)
@@ -293,6 +297,10 @@ class PaginatedGrid(ttk.Frame):
         self.shortcut_label = ttk.Label(self.shortcut_frame, text=shortcut_text, anchor="w", foreground="#666666")
         self.shortcut_label.pack(fill=tk.X)
         # --- 说明栏结束 ---
+        
+        # 新增：选择模式切换按钮
+        self.select_mode_btn = ttk.Button(self.toolbar, text="切换为单选", command=self._toggle_selection_mode)
+        self.select_mode_btn.pack(side=tk.LEFT, padx=5)
     
     def _switch_view_mode(self):
         """Switch view mode (grid/list)"""
@@ -329,55 +337,71 @@ class PaginatedGrid(ttk.Frame):
         pass
     
     def refresh_grid(self):
-        """Refresh grid view"""
-        # 清空旧的图片加载队列，避免无效任务堆积
+        """Refresh grid view (重写选择逻辑，完全复刻list模式)"""
         self.image_loader.clear_queue()
-        # Clear existing cards
         for card in self.displayed_cards:
             card.destroy()
         self.displayed_cards = []
-        
-        # Calculate current page items to display
+
         start_index = (self.current_page - 1) * self.page_size
         end_index = min(start_index + self.page_size, len(self.filtered_items))
-        
-        # Ensure start index is valid
         if start_index >= len(self.filtered_items) and self.current_page > 1:
             self.current_page = max(1, self.current_page - 1)
             start_index = (self.current_page - 1) * self.page_size
             end_index = min(start_index + self.page_size, len(self.filtered_items))
-        
-        # Current page items
         current_page_items = self.filtered_items[start_index:end_index]
-        
-        # Create cards and layout
+
         row = 0
         col = 0
         for item in current_page_items:
-            # Create card
             card = ImageCard(self.cards_frame, item)
             card.grid(row=row, column=col, padx=5, pady=5, sticky="nsew")
             card.bind_select_callback(self._on_card_selected)
-            
-            # Set context menu
             if self.context_menu_callback:
                 card.setup_context_menu(self.context_menu_callback)
-            
-            # Add to displayed cards list
             self.displayed_cards.append(card)
-            
-            # Asynchronously load image
             self.image_loader.add_task(card)
-            
-            # Update row and column
             col += 1
             if col >= self.columns:
                 col = 0
                 row += 1
-        
-        # Update pagination controls
+
+        # 绑定卡片点击事件，完全复刻list模式的多选逻辑
+        for idx, card in enumerate(self.displayed_cards):
+            def make_on_click(c, i):
+                def _on_click(event):
+                    if self.selection_mode == "single":
+                        for cc in self.displayed_cards:
+                            cc.set_selected(False)
+                        c.set_selected(True)
+                        self.last_selected_index = i if c.is_selected else None
+                    else:
+                        shift_pressed = (event.state & 0x0001) != 0
+                        ctrl_pressed = (event.state & 0x0004) != 0
+                        if shift_pressed and self.last_selected_index is not None:
+                            start = min(self.last_selected_index, i)
+                            end = max(self.last_selected_index, i)
+                            for j in range(start, end + 1):
+                                self.displayed_cards[j].set_selected(True)
+                        elif ctrl_pressed:
+                            c.set_selected(not c.is_selected)
+                            self.last_selected_index = i if c.is_selected else self.last_selected_index
+                        else:
+                            for cc in self.displayed_cards:
+                                cc.set_selected(False)
+                            c.set_selected(True)
+                            self.last_selected_index = i if c.is_selected else None
+                    self._update_selection_ui()
+                    if self.on_show_details:
+                        try:
+                            self.on_show_details(c.doc)
+                        except Exception as e:
+                            print(f"Auto show details error: {e}")
+                return _on_click
+            card.bind("<Button-1>", make_on_click(card, idx))
+
         self._update_pagination_controls()
-        self._update_select_all_btn()  # 新增：刷新全选按钮
+        self._update_select_all_btn()
     
     def refresh_list(self):
         """Refresh list view"""
@@ -413,39 +437,35 @@ class PaginatedGrid(ttk.Frame):
         self._update_select_all_btn()  # 新增：刷新全选按钮
     
     def _on_card_selected(self, card, is_selected, event=None):
-        """Handle card selection state change
-        
-        Args:
-            card: Image card object
-            is_selected (bool): Whether it's selected
-            event: Mouse event
-        """
         try:
             idx = self.displayed_cards.index(card)
-            shift_pressed = False
-            ctrl_pressed = False
-            if event:
-                shift_pressed = (event.state & 0x0001) != 0
-                ctrl_pressed = (event.state & 0x0004) != 0
-            selected_count = sum(1 for c in self.displayed_cards if c.is_selected)
-            if (not shift_pressed and not ctrl_pressed and selected_count > 1):
-                pass
-            elif shift_pressed and self.last_selected_index is not None:
-                start = min(self.last_selected_index, idx)
-                end = max(self.last_selected_index, idx)
-                for i in range(start, end + 1):
-                    self.displayed_cards[i].set_selected(True)
-            elif ctrl_pressed:
-                pass
-            else:
+            if self.selection_mode == "single":
                 for c in self.displayed_cards:
-                    if c != card:
+                    c.set_selected(False)
+                card.set_selected(True)
+                self.last_selected_index = idx if card.is_selected else None
+            else:
+                shift_pressed = False
+                ctrl_pressed = False
+                if event:
+                    shift_pressed = (event.state & 0x0001) != 0
+                    ctrl_pressed = (event.state & 0x0004) != 0
+                if shift_pressed and self.last_selected_index is not None:
+                    start = min(self.last_selected_index, idx)
+                    end = max(self.last_selected_index, idx)
+                    for i in range(start, end + 1):
+                        self.displayed_cards[i].set_selected(True)
+                elif ctrl_pressed:
+                    card.set_selected(not card.is_selected)
+                    self.last_selected_index = idx if card.is_selected else self.last_selected_index
+                else:
+                    for c in self.displayed_cards:
                         c.set_selected(False)
-            self.last_selected_index = idx
+                    card.set_selected(True)
+                    self.last_selected_index = idx if card.is_selected else None
         except Exception as e:
             print(f"Selection error: {e}")
         self._update_selection_ui()
-        # 新增：点击卡片时自动显示详情
         try:
             if self.on_show_details:
                 self.on_show_details(card.doc)
@@ -453,33 +473,29 @@ class PaginatedGrid(ttk.Frame):
             print(f"Auto show details error: {e}")
     
     def _update_selection_ui(self):
-        """Update selection state related UI"""
-        # Get selected documents
-        self.selected_docs = []
-        for card in self.displayed_cards:
-            if card.is_selected:
-                self.selected_docs.append(card.doc)
-        
-        # Update bulk operation buttons state
+        """Update selection state related UI（避免多余重绘）"""
+        self.selected_docs = [card.doc for card in self.displayed_cards if card.is_selected]
         has_selection = len(self.selected_docs) > 0
-        for i in range(1, len(self.operations_frame.winfo_children())):  # Skip select all button
-            if has_selection:
-                self.operations_frame.winfo_children()[i].configure(state="normal")
-            else:
-                self.operations_frame.winfo_children()[i].configure(state="disabled")
-        self._update_status_bar()  # 新增：刷新状态栏
-        self._update_select_all_btn()  # 新增：刷新全选按钮
+        for i in range(1, len(self.operations_frame.winfo_children())):
+            self.operations_frame.winfo_children()[i].configure(state="normal" if has_selection else "disabled")
+        self._update_status_bar()
+        self._update_select_all_btn()
     
     def _toggle_select_all(self):
-        """全选/全不选当前页"""
-        # 判断当前页是否已全选
+        """全选/全不选当前页（批量静默更新，避免闪烁）"""
         all_selected = all(card.is_selected for card in self.displayed_cards) and len(self.displayed_cards) > 0
+        # 暂时禁用卡片的回调，批量设置后再统一刷新
+        for card in self.displayed_cards:
+            card.on_select_callback = None
         if all_selected:
             for card in self.displayed_cards:
                 card.set_selected(False)
         else:
             for card in self.displayed_cards:
                 card.set_selected(True)
+        # 恢复回调
+        for card in self.displayed_cards:
+            card.on_select_callback = self._on_card_selected
         self._update_selection_ui()
         self._update_select_all_btn()
     
@@ -504,7 +520,7 @@ class PaginatedGrid(ttk.Frame):
         self.canvas.itemconfig(self.canvas_window, width=event.width)
     
     def _on_mousewheel(self, event):
-        """Handle mouse wheel event"""
+        print("滚轮事件", event)
         delta = -1 * (event.delta // 120) if hasattr(event, 'delta') else 1 if event.num == 5 else -1
         self.canvas.yview_scroll(delta, "units")
     
@@ -692,53 +708,41 @@ class PaginatedGrid(ttk.Frame):
             self.refresh_list()
     
     def _filter_items(self, query):
-        """Filter items based on query
-        
-        Args:
-            query (str): Search query
-        
-        Returns:
-            list: Filtered items list
-        """
+        """Filter items based on query (fuzzy match with rapidfuzz)"""
         query = query.lower()
         filtered = []
-        
+        scored = []
         for item in self.all_items:
-            # Search multiple fields
-            found = False
-            
+            max_score = 0
             # Check filename
             filename = str(item.get('filename', '')).lower()
-            if query in filename:
-                found = True
-                
+            score = fuzz.partial_ratio(query, filename)
+            max_score = max(max_score, score)
             # Check title
             title = str(item.get('title', '')).lower()
-            if query in title:
-                found = True
-                
+            score = fuzz.partial_ratio(query, title)
+            max_score = max(max_score, score)
             # Check metadata
             if 'metadata' in item and isinstance(item['metadata'], dict):
                 for key, value in item['metadata'].items():
-                    if query in str(key).lower() or query in str(value).lower():
-                        found = True
-                        break
-                        
+                    score1 = fuzz.partial_ratio(query, str(key).lower())
+                    score2 = fuzz.partial_ratio(query, str(value).lower())
+                    max_score = max(max_score, score1, score2)
             # Check art movement
             art_movement = str(item.get('artMovement', '')).lower()
-            if query in art_movement:
-                found = True
-                
-            # If match found in metadata direct fields
+            score = fuzz.partial_ratio(query, art_movement)
+            max_score = max(max_score, score)
+            # Check all direct fields
             for key, value in item.items():
-                if isinstance(value, (str, int, float)) and query in str(value).lower():
-                    found = True
-                    break
-            
-            # Add matched item
-            if found:
-                filtered.append(item)
-        
+                if isinstance(value, (str, int, float)):
+                    score = fuzz.partial_ratio(query, str(value).lower())
+                    max_score = max(max_score, score)
+            # 命中阈值70
+            if max_score >= 70:
+                scored.append((item, max_score))
+        # 按相似度降序排序
+        scored.sort(key=lambda x: -x[1])
+        filtered = [x[0] for x in scored]
         return filtered
     
     def _show_search_history(self):
@@ -786,9 +790,11 @@ class PaginatedGrid(ttk.Frame):
     
     def _on_search_text_changed(self, *args):
         """Handle search text change event"""
-        # If search box is empty, clear search results
+        # 实时搜索：只要有内容就自动搜索，无需回车
         if not self.search_var.get().strip():
             self._clear_search()
+        else:
+            self._on_search()
     
     def set_items(self, items):
         """Set items to display
@@ -907,3 +913,15 @@ class PaginatedGrid(ttk.Frame):
             self.select_all_btn.config(text="全不选")
         else:
             self.select_all_btn.config(text="全选")
+
+    def _toggle_selection_mode(self):
+        if self.selection_mode == "multi":
+            self.selection_mode = "single"
+            self.select_mode_btn.config(text="切换为多选")
+        else:
+            self.selection_mode = "multi"
+            self.select_mode_btn.config(text="切换为单选")
+        for card in self.displayed_cards:
+            card.set_selected(False)
+        self.last_selected_index = None
+        self._update_selection_ui()
