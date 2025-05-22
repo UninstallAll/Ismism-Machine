@@ -1,6 +1,6 @@
 {
-  "last_db": "art_metadata_db",
-  "last_collection": "image_metadata",
+  "last_db": "123",
+  "last_collection": "123",
   "auto_connect": true,
   "mongodb_uri": "mongodb://localhost:27017/",
   "grid_columns": 4
