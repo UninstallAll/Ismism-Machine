@@ -209,6 +209,7 @@ class PaginatedGrid(ttk.Frame):
         vsb.pack(side=tk.RIGHT, fill=tk.Y)
         hsb.pack(side=tk.BOTTOM, fill=tk.X)
         self.list_view.pack(fill=tk.BOTH, expand=True)
+        self.list_view.bind("<<TreeviewSelect>>", self._on_list_selection_changed)
         
         # Grid view - Canvas + Frame
         self.grid_frame = ttk.Frame(self.view_container)
@@ -353,12 +354,16 @@ class PaginatedGrid(ttk.Frame):
 
         row = 0
         col = 0
+        selected_ids = set(str(doc.get('_id')) for doc in self.selected_docs)
         for item in current_page_items:
             card = ImageCard(self.cards_frame, item)
             card.grid(row=row, column=col, padx=5, pady=5, sticky="nsew")
             card.bind_select_callback(self._on_card_selected)
             if self.context_menu_callback:
                 card.setup_context_menu(self.context_menu_callback)
+            # 同步选中状态
+            if str(item.get('_id')) in selected_ids:
+                card.set_selected(True)
             self.displayed_cards.append(card)
             self.image_loader.add_task(card)
             col += 1
@@ -422,15 +427,15 @@ class PaginatedGrid(ttk.Frame):
         current_page_items = self.filtered_items[start_index:end_index]
         
         # Add items to list view
+        selected_ids = set(str(doc.get('_id')) for doc in self.selected_docs)
         for item in current_page_items:
-            # Get data
             filename = item.get('filename', 'Unknown')
             filetype = os.path.splitext(filename)[1] if 'filename' in item else 'Unknown'
             size = f"{int(item.get('size', 0) / 1024)} KB" if 'size' in item else 'Unknown'
-            
-            # Insert item into list view
-            self.list_view.insert("", "end", text=str(item.get('_id', '')), 
-                                values=(filename, filetype, size))
+            row_id = self.list_view.insert("", "end", text=str(item.get('_id', '')), values=(filename, filetype, size))
+            # 同步选中状态
+            if str(item.get('_id')) in selected_ids:
+                self.list_view.selection_add(row_id)
         
         # Update pagination controls
         self._update_pagination_controls()
@@ -925,3 +930,14 @@ class PaginatedGrid(ttk.Frame):
             card.set_selected(False)
         self.last_selected_index = None
         self._update_selection_ui()
+
+    def _on_list_selection_changed(self, event=None):
+        # 只要列表选择变更，selected_docs就同步
+        selected_ids = set(self.list_view.item(i, 'text') for i in self.list_view.selection())
+        # 用_id查找doc
+        self.selected_docs = [item for item in self.filtered_items if str(item.get('_id')) in selected_ids]
+        self._update_status_bar()
+        self._update_select_all_btn()
+        # 如果当前是grid模式，也刷新grid同步选中
+        if self.current_view == "grid":
+            self.refresh_grid()
