@@ -10,18 +10,23 @@ import tkinter as tk
 class ImageLoader:
     """Asynchronous image loader using thread pool to load images"""
     
-    def __init__(self, callback):
+    def __init__(self, callback, num_workers=4):
         """Initialize image loader
         
         Args:
             callback (callable): Callback function when image loading completes
+            num_workers (int): Number of worker threads
         """
         self.queue = queue.Queue()
         self.running = True
         self.callback = callback
-        self.thread = threading.Thread(target=self._process_queue)
-        self.thread.daemon = True
-        self.thread.start()
+        self.threads = []
+        self.num_workers = num_workers
+        for _ in range(self.num_workers):
+            t = threading.Thread(target=self._process_queue)
+            t.daemon = True
+            t.start()
+            self.threads.append(t)
     
     def add_task(self, card):
         """Add image loading task
@@ -29,7 +34,8 @@ class ImageLoader:
         Args:
             card: Card object containing the image
         """
-        self.queue.put(card)
+        if self._is_widget_valid(card):
+            self.queue.put(card)
     
     def queue_image(self, card):
         """Add image loading task (alias for add_task)
@@ -71,10 +77,10 @@ class ImageLoader:
                 self.queue.task_done()
                 
                 # Brief pause to reduce CPU load
-                time.sleep(0.01)
+                time.sleep(0.005)
             except queue.Empty:
                 # Queue empty, wait for new tasks
-                time.sleep(0.1)
+                time.sleep(0.05)
             except Exception as e:
                 print(f"Image loading error: {str(e)}")
                 # Continue processing next task
@@ -90,16 +96,16 @@ class ImageLoader:
             bool: Whether valid
         """
         try:
-            widget.winfo_exists()
-            return True
+            return widget is not None and widget.winfo_exists()
         except:
             return False
     
     def stop(self):
         """Stop the image loader"""
         self.running = False
-        if self.thread.is_alive():
-            self.thread.join(timeout=1.0)
+        for t in self.threads:
+            if t.is_alive():
+                t.join(timeout=1.0)
             
     def clear_queue(self):
         """Clear all tasks from the queue"""

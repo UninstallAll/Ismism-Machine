@@ -26,8 +26,8 @@ class PaginatedGrid(ttk.Frame):
         
         # Basic properties
         self.parent = parent
-        self.page_size = page_size
-        self.columns = 3  # Default column count
+        self.page_size = 50  # 默认每页50个
+        self.columns = 3     # 初始列数，后续自动调整
         self.current_page = 1
         self.total_pages = 1
         self.all_items = []  # All items
@@ -61,7 +61,7 @@ class PaginatedGrid(ttk.Frame):
         self._create_ui()
         
         # Create image loader
-        self.image_loader = ImageLoader(self._on_image_loaded)
+        self.image_loader = ImageLoader(self._on_image_loaded, num_workers=4)
         
         # Bind keyboard shortcuts
         self._bind_keyboard_shortcuts()
@@ -166,15 +166,19 @@ class PaginatedGrid(ttk.Frame):
         )
         self.sort_field_combo.pack(side=tk.LEFT, padx=2)
         self.sort_field_combo.bind("<<ComboboxSelected>>", self._on_sort_changed)
-        self.sort_order_button = ttk.Button(self.toolbar, text="↑", width=2, command=self._toggle_sort_order)
-        self.sort_order_button.pack(side=tk.LEFT, padx=2)
+        # --- 新增：双排序按钮 ---
+        self.asc_button = ttk.Button(self.toolbar, text="↑", width=2, command=lambda: self._set_sort_order(False))
+        self.desc_button = ttk.Button(self.toolbar, text="↓", width=2, command=lambda: self._set_sort_order(True))
+        self.asc_button.pack(side=tk.LEFT, padx=0)
+        self.desc_button.pack(side=tk.LEFT, padx=(0, 8))
+        self._update_sort_buttons()
         # --- 排序控件结束 ---
         
         # Bulk operations buttons
         self.operations_frame = ttk.Frame(self.toolbar)
         self.operations_frame.pack(side=tk.RIGHT)
-        
-        ttk.Button(self.operations_frame, text="Select All", command=self._toggle_select_all).pack(side=tk.LEFT, padx=2)
+        self.select_all_btn = ttk.Button(self.operations_frame, text="全选", command=self._toggle_select_all)
+        self.select_all_btn.pack(side=tk.LEFT, padx=2)
         ttk.Button(self.operations_frame, text="Bulk Export", command=self._bulk_export).pack(side=tk.LEFT, padx=2)
         ttk.Button(self.operations_frame, text="Create Relation", command=self._bulk_create_relation).pack(side=tk.LEFT, padx=2)
         
@@ -240,7 +244,7 @@ class PaginatedGrid(ttk.Frame):
         self.page_size_var = tk.StringVar(value=str(self.page_size))
         self.page_size_combo = ttk.Combobox(self.pagination_frame, 
                                           textvariable=self.page_size_var,
-                                          values=["10", "20", "50", "100"],
+                                          values=["10", "20", "50", "100", "All"],
                                           width=5)
         self.page_size_combo.pack(side=tk.LEFT)
         self.page_size_combo.bind("<<ComboboxSelected>>", self._on_page_size_changed)
@@ -264,8 +268,29 @@ class PaginatedGrid(ttk.Frame):
         self.status_frame.pack(fill=tk.X, padx=5, pady=(0, 5), side=tk.BOTTOM)
         self.status_var = tk.StringVar(value="Total: 0, Selected: 0")
         self.status_label = ttk.Label(self.status_frame, textvariable=self.status_var, anchor="w")
-        self.status_label.pack(fill=tk.X)
+        self.status_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        # --- 新增：列数设置控件 ---
+        ttk.Label(self.status_frame, text="Columns:").pack(side=tk.RIGHT, padx=(2, 0))
+        self.columns_var = tk.StringVar(value=str(self.columns))
+        self.columns_combo = ttk.Combobox(
+            self.status_frame,
+            textvariable=self.columns_var,
+            values=[str(i) for i in range(2, 9)],
+            width=3,
+            state="readonly"
+        )
+        self.columns_combo.pack(side=tk.RIGHT, padx=(0, 8))
+        self.columns_combo.bind("<<ComboboxSelected>>", self._on_columns_changed)
         # --- 状态栏结束 ---
+        # --- 新增：快捷键说明栏 ---
+        self.shortcut_frame = ttk.Frame(self.main_frame)
+        self.shortcut_frame.pack(fill=tk.X, padx=5, pady=(0, 0), side=tk.BOTTOM)
+        shortcut_text = (
+            "快捷键： Ctrl+A 全选   Ctrl+D 全不选   Ctrl+I 反选   Shift+点击 连续多选   Ctrl+点击 断续多选"
+        )
+        self.shortcut_label = ttk.Label(self.shortcut_frame, text=shortcut_text, anchor="w", foreground="#666666")
+        self.shortcut_label.pack(fill=tk.X)
+        # --- 说明栏结束 ---
     
     def _switch_view_mode(self):
         """Switch view mode (grid/list)"""
@@ -295,10 +320,16 @@ class PaginatedGrid(ttk.Frame):
             card: Image card object
             success (bool): Whether loading was successful
         """
+        # 避免UI已销毁时更新
+        if not card or not card.winfo_exists():
+            return
+        # 这里可以做图片加载完成后的UI刷新（如需要）
         pass
     
     def refresh_grid(self):
         """Refresh grid view"""
+        # 清空旧的图片加载队列，避免无效任务堆积
+        self.image_loader.clear_queue()
         # Clear existing cards
         for card in self.displayed_cards:
             card.destroy()
@@ -344,6 +375,7 @@ class PaginatedGrid(ttk.Frame):
         
         # Update pagination controls
         self._update_pagination_controls()
+        self._update_select_all_btn()  # 新增：刷新全选按钮
     
     def refresh_list(self):
         """Refresh list view"""
@@ -376,6 +408,7 @@ class PaginatedGrid(ttk.Frame):
         
         # Update pagination controls
         self._update_pagination_controls()
+        self._update_select_all_btn()  # 新增：刷新全选按钮
     
     def _on_card_selected(self, card, is_selected, event=None):
         """Handle card selection state change
@@ -387,37 +420,30 @@ class PaginatedGrid(ttk.Frame):
         """
         try:
             idx = self.displayed_cards.index(card)
-            
-            # 检测shift和ctrl键状态（直接从事件获取，更准确）
             shift_pressed = False
             ctrl_pressed = False
-            
             if event:
-                # 位掩码：0x0001 = Shift, 0x0004 = Control
                 shift_pressed = (event.state & 0x0001) != 0
                 ctrl_pressed = (event.state & 0x0004) != 0
-            
-            if shift_pressed and self.last_selected_index is not None:
-                # Shift连续选择
+            # --- 优化：全选后点击单卡只切换该卡片，不清空其它选择 ---
+            selected_count = sum(1 for c in self.displayed_cards if c.is_selected)
+            if (not shift_pressed and not ctrl_pressed and selected_count > 1):
+                # 只切换当前卡片，不清空其它
+                pass  # 不做全清
+            elif shift_pressed and self.last_selected_index is not None:
                 start = min(self.last_selected_index, idx)
                 end = max(self.last_selected_index, idx)
                 for i in range(start, end + 1):
                     self.displayed_cards[i].set_selected(True)
             elif ctrl_pressed:
-                # Ctrl多选时不改变其他项目状态
                 pass  # is_selected已经在card内部处理了
             else:
-                # 单选，取消其他所有选择
                 for c in self.displayed_cards:
                     if c != card:
                         c.set_selected(False)
-            
-            # 记录最后选择的索引
             self.last_selected_index = idx
-            
         except Exception as e:
             print(f"Selection error: {e}")
-        
         self._update_selection_ui()
     
     def _update_selection_ui(self):
@@ -436,18 +462,20 @@ class PaginatedGrid(ttk.Frame):
             else:
                 self.operations_frame.winfo_children()[i].configure(state="disabled")
         self._update_status_bar()  # 新增：刷新状态栏
+        self._update_select_all_btn()  # 新增：刷新全选按钮
     
     def _toggle_select_all(self):
-        """Toggle select all/deselect all"""
-        # Check if all cards are selected
-        all_selected = all(card.is_selected for card in self.displayed_cards)
-        
-        # Toggle selection state
-        for card in self.displayed_cards:
-            card.set_selected(not all_selected)
-        
-        # Update UI
+        """全选/全不选当前页"""
+        # 判断当前页是否已全选
+        all_selected = all(card.is_selected for card in self.displayed_cards) and len(self.displayed_cards) > 0
+        if all_selected:
+            for card in self.displayed_cards:
+                card.set_selected(False)
+        else:
+            for card in self.displayed_cards:
+                card.set_selected(True)
         self._update_selection_ui()
+        self._update_select_all_btn()
     
     def _bulk_export(self):
         """Bulk export selected documents"""
@@ -462,6 +490,7 @@ class PaginatedGrid(ttk.Frame):
     def _on_frame_configure(self, event):
         """Handle internal frame resize event"""
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        self._auto_adjust_columns()
     
     def _on_canvas_configure(self, event):
         """Handle canvas resize event"""
@@ -606,22 +635,20 @@ class PaginatedGrid(ttk.Frame):
         self.next_button.configure(state="normal" if self.current_page < self.total_pages else "disabled")
     
     def _on_page_size_changed(self, event):
-        """Handle items per page change event"""
         try:
-            new_size = int(self.page_size_var.get())
-            if new_size != self.page_size and new_size > 0:
-                # Calculate new current page, keeping displayed items roughly in the same position
-                first_item_index = (self.current_page - 1) * self.page_size
-                self.page_size = new_size
-                self.current_page = max(1, first_item_index // self.page_size + 1)
-                
-                # Refresh view
-                if self.current_view == "grid":
-                    self.refresh_grid()
-                else:
-                    self.refresh_list()
-        except ValueError:
-            # User entered non-numeric value, restore original value
+            value = self.page_size_var.get()
+            if value == "All":
+                self.page_size = len(self.filtered_items) if self.filtered_items else len(self.all_items)
+            else:
+                new_size = int(value)
+                if new_size != self.page_size and new_size > 0:
+                    self.page_size = new_size
+            self.current_page = 1
+            if self.current_view == "grid":
+                self.refresh_grid()
+            else:
+                self.refresh_list()
+        except Exception:
             self.page_size_var.set(str(self.page_size))
     
     def _on_search(self, event=None):
@@ -783,7 +810,7 @@ class PaginatedGrid(ttk.Frame):
         """
         self.columns = columns
         if self.current_view == "grid":
-            self.refresh_grid() 
+            self.refresh_grid()
     
     # --- 新增：排序相关方法 ---
     def _sort_items(self):
@@ -815,12 +842,22 @@ class PaginatedGrid(ttk.Frame):
     def _on_sort_changed(self, event=None):
         self._sort_items()
         self._on_search()  # 重新过滤和刷新
+        self._update_sort_buttons()
 
-    def _toggle_sort_order(self):
-        self.sort_reverse = not self.sort_reverse
-        self.sort_order_button.config(text="↓" if self.sort_reverse else "↑")
+    def _set_sort_order(self, reverse):
+        self.sort_reverse = reverse
+        self._update_sort_buttons()
         self._sort_items()
         self._on_search()
+
+    def _update_sort_buttons(self):
+        # 高亮当前排序方向
+        if self.sort_reverse:
+            self.asc_button.state(["!pressed"])
+            self.desc_button.state(["pressed"])
+        else:
+            self.asc_button.state(["pressed"])
+            self.desc_button.state(["!pressed"])
     # --- 排序相关方法结束 --- 
 
     def _update_status_bar(self):
@@ -828,3 +865,33 @@ class PaginatedGrid(ttk.Frame):
         total = len(self.all_items)
         selected = len(self.selected_docs)
         self.status_var.set(f"Total: {total}, Selected: {selected}")
+
+    def _on_columns_changed(self, event=None):
+        try:
+            new_columns = int(self.columns_var.get())
+            if new_columns != self.columns and new_columns > 0:
+                self.set_columns(new_columns)
+        except Exception:
+            pass
+
+    def _auto_adjust_columns(self):
+        # 自动根据窗口宽度调整列数
+        try:
+            min_card_width = 240  # 卡片+间距
+            frame_width = self.cards_frame.winfo_width()
+            if frame_width > 0:
+                new_columns = max(1, frame_width // min_card_width)
+                if new_columns != self.columns:
+                    self.columns = new_columns
+                    if self.current_view == "grid":
+                        self.refresh_grid()
+        except Exception:
+            pass
+
+    def _update_select_all_btn(self):
+        """根据当前页选择状态切换按钮文本"""
+        all_selected = all(card.is_selected for card in self.displayed_cards) and len(self.displayed_cards) > 0
+        if all_selected:
+            self.select_all_btn.config(text="全不选")
+        else:
+            self.select_all_btn.config(text="全选")
