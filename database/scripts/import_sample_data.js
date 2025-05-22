@@ -177,6 +177,101 @@ async function importSampleData() {
     const itemInsertResult = await itemsCollection.insertMany(itemsData);
     console.log(`导入了 ${itemInsertResult.insertedCount} 个项目条目`);
     
+    // 导入艺术家数据
+    console.log('导入艺术家数据...');
+    const artistsCollection = mongodb.db.collection('artists');
+    const artistsData = [
+      {
+        name: 'Vincent van Gogh',
+        bio: '荷兰后印象派画家，代表作《星夜》《向日葵》。',
+        image: 'url_to_vangogh.jpg',
+        artwork_ids: [],
+        movement_ids: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        name: 'Pablo Picasso',
+        bio: '西班牙画家、雕塑家，立体主义创始人之一。',
+        image: 'url_to_picasso.jpg',
+        artwork_ids: [],
+        movement_ids: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    ];
+    const artistInsertResult = await artistsCollection.insertMany(artistsData);
+    console.log(`导入了 ${artistInsertResult.insertedCount} 个艺术家`);
+    const artistIds = Object.values(artistInsertResult.insertedIds);
+
+    // 导入艺术主义数据
+    console.log('导入艺术主义数据...');
+    const movementsCollection = mongodb.db.collection('movements');
+    const movementsData = [
+      {
+        name: 'Post-Impressionism',
+        description: '后印象主义，强调表现力和个人情感。',
+        artist_ids: [artistIds[0]],
+        artwork_ids: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        name: 'Cubism',
+        description: '立体主义，强调几何形体的分解与重组。',
+        artist_ids: [artistIds[1]],
+        artwork_ids: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    ];
+    const movementInsertResult = await movementsCollection.insertMany(movementsData);
+    console.log(`导入了 ${movementInsertResult.insertedCount} 个艺术主义`);
+    const movementIds = Object.values(movementInsertResult.insertedIds);
+
+    // 导入艺术品数据
+    console.log('导入艺术品数据...');
+    const artworksCollection = mongodb.db.collection('artworks');
+    const artworksData = [
+      {
+        title: 'Starry Night',
+        image: 'url_to_starry_night.jpg',
+        artist_id: artistIds[0],
+        movement_ids: [movementIds[0]],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        title: 'Les Demoiselles d\'Avignon',
+        image: 'url_to_demoiselles.jpg',
+        artist_id: artistIds[1],
+        movement_ids: [movementIds[1]],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    ];
+    const artworkInsertResult = await artworksCollection.insertMany(artworksData);
+    console.log(`导入了 ${artworkInsertResult.insertedCount} 个艺术品`);
+    const artworkIds = Object.values(artworkInsertResult.insertedIds);
+
+    // 更新artists和movements的artwork_ids、movement_ids、artist_ids
+    await artistsCollection.updateOne(
+      { _id: artistIds[0] },
+      { $set: { artwork_ids: [artworkIds[0]], movement_ids: [movementIds[0]] } }
+    );
+    await artistsCollection.updateOne(
+      { _id: artistIds[1] },
+      { $set: { artwork_ids: [artworkIds[1]], movement_ids: [movementIds[1]] } }
+    );
+    await movementsCollection.updateOne(
+      { _id: movementIds[0] },
+      { $set: { artwork_ids: [artworkIds[0]], artist_ids: [artistIds[0]] } }
+    );
+    await movementsCollection.updateOne(
+      { _id: movementIds[1] },
+      { $set: { artwork_ids: [artworkIds[1]], artist_ids: [artistIds[1]] } }
+    );
+    
     console.log('样本数据导入完成！');
     
     // 获取并显示项目统计

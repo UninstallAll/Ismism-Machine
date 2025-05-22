@@ -1,6 +1,6 @@
 {
-  "last_db": "art_metadata_db",
-  "last_collection": "image_metadata",
+  "last_db": "ismism_machine_db",
+  "last_collection": "projects",
   "auto_connect": true,
   "mongodb_uri": "mongodb://localhost:27017/",
   "grid_columns": 4
