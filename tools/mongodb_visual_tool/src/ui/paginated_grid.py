@@ -15,12 +15,13 @@ from ..utils.image_loader import ImageLoader
 class PaginatedGrid(ttk.Frame):
     """Paginated grid component for displaying image cards"""
     
-    def __init__(self, parent, page_size=DEFAULT_PAGE_SIZE):
+    def __init__(self, parent, page_size=DEFAULT_PAGE_SIZE, on_show_details=None):
         """Initialize the paginated grid
         
         Args:
             parent: Parent component
             page_size (int, optional): Number of items to display per page
+            on_show_details (callable, optional): Callback function for showing document details
         """
         super().__init__(parent)
         
@@ -36,6 +37,7 @@ class PaginatedGrid(ttk.Frame):
         self.selected_docs = []  # Selected documents
         self.context_menu_callback = None
         self.current_view = "grid"  # Default view mode (grid or list)
+        self.on_show_details = on_show_details
         
         # Control key states
         self.ctrl_pressed = False
@@ -425,18 +427,16 @@ class PaginatedGrid(ttk.Frame):
             if event:
                 shift_pressed = (event.state & 0x0001) != 0
                 ctrl_pressed = (event.state & 0x0004) != 0
-            # --- 优化：全选后点击单卡只切换该卡片，不清空其它选择 ---
             selected_count = sum(1 for c in self.displayed_cards if c.is_selected)
             if (not shift_pressed and not ctrl_pressed and selected_count > 1):
-                # 只切换当前卡片，不清空其它
-                pass  # 不做全清
+                pass
             elif shift_pressed and self.last_selected_index is not None:
                 start = min(self.last_selected_index, idx)
                 end = max(self.last_selected_index, idx)
                 for i in range(start, end + 1):
                     self.displayed_cards[i].set_selected(True)
             elif ctrl_pressed:
-                pass  # is_selected已经在card内部处理了
+                pass
             else:
                 for c in self.displayed_cards:
                     if c != card:
@@ -445,6 +445,12 @@ class PaginatedGrid(ttk.Frame):
         except Exception as e:
             print(f"Selection error: {e}")
         self._update_selection_ui()
+        # 新增：点击卡片时自动显示详情
+        try:
+            if self.on_show_details:
+                self.on_show_details(card.doc)
+        except Exception as e:
+            print(f"Auto show details error: {e}")
     
     def _update_selection_ui(self):
         """Update selection state related UI"""
@@ -793,9 +799,8 @@ class PaginatedGrid(ttk.Frame):
         self.all_items = items or []
         self._sort_items()  # 新增：每次设置数据时先排序
         self.filtered_items = self.all_items[:]
+        self._sort_items()  # 新增：filtered_items也排序
         self.current_page = 1
-        
-        # Refresh view
         if self.current_view == "grid":
             self.refresh_grid()
         else:
@@ -838,17 +843,24 @@ class PaginatedGrid(ttk.Frame):
                 return str(item.get("artMovement") or "").lower()
             return ""
         self.all_items.sort(key=get_key, reverse=reverse)
+        self.filtered_items.sort(key=get_key, reverse=reverse)
 
     def _on_sort_changed(self, event=None):
         self._sort_items()
-        self._on_search()  # 重新过滤和刷新
+        if self.current_view == "grid":
+            self.refresh_grid()
+        else:
+            self.refresh_list()
         self._update_sort_buttons()
 
     def _set_sort_order(self, reverse):
         self.sort_reverse = reverse
         self._update_sort_buttons()
         self._sort_items()
-        self._on_search()
+        if self.current_view == "grid":
+            self.refresh_grid()
+        else:
+            self.refresh_list()
 
     def _update_sort_buttons(self):
         # 高亮当前排序方向

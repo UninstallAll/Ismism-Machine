@@ -101,7 +101,7 @@ class MongoDBViewer(tk.Tk):
         self.main_pane.add(self.right_frame, weight=3)  # Give right panel more space
         
         # Create paginated grid
-        self.paginated_grid = PaginatedGrid(self.right_frame)
+        self.paginated_grid = PaginatedGrid(self.right_frame, on_show_details=self.show_document_details)
         self.paginated_grid.pack(fill=tk.BOTH, expand=True)
         self.paginated_grid.set_context_menu_callback(self.handle_context_menu)
         
@@ -422,19 +422,18 @@ class MongoDBViewer(tk.Tk):
         Returns:
             str: Formatted JSON string
         """
-        # Create document copy for modification
-        json_doc = {}
-        
-        # Handle special types
-        for key, value in doc.items():
-            if isinstance(value, ObjectId):
-                json_doc[key] = str(value)
-            elif isinstance(value, datetime.datetime):
-                json_doc[key] = value.isoformat()
+        def convert(obj):
+            if isinstance(obj, ObjectId):
+                return str(obj)
+            elif isinstance(obj, datetime.datetime):
+                return obj.isoformat()
+            elif isinstance(obj, dict):
+                return {k: convert(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [convert(i) for i in obj]
             else:
-                json_doc[key] = value
-        
-        # Convert to formatted JSON string
+                return obj
+        json_doc = convert(doc)
         return json.dumps(json_doc, indent=2, ensure_ascii=False)
     
     def create_relationship(self, doc):
