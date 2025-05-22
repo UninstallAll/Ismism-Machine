@@ -112,7 +112,7 @@ const Timeline: React.FC = () => {
       timeRange: max - min 
     };
   }, [sortedNodes]);
-
+  
   // 加载时间线节点
   useEffect(() => {
     fetchNodes();
@@ -372,7 +372,7 @@ const Timeline: React.FC = () => {
   
   const handleMouseLeave = () => {
     if (isDragging) {
-      setIsDragging(false);
+    setIsDragging(false);
       document.body.style.userSelect = '';
     }
   };
@@ -427,28 +427,181 @@ const Timeline: React.FC = () => {
     e.stopPropagation();
   };
 
-  // 点击艺术主义时间线，在页面内显示详情
+  // 处理艺术主义时间线点击
   const handleArtMovementLineClick = (node: IArtStyle, e: React.MouseEvent) => {
-    e.stopPropagation(); // 防止冒泡触发父元素事件
-    setSelectedNode(node);
-    setHighlightedNodeId(node.id);
-    savePositions(); // 保存当前位置
+    e.stopPropagation();
     
-    // 自动滚动，确保展开的详情视图居中
-    setTimeout(() => {
-      const nodeElement = nodeRefs.current[node.id];
-      if (nodeElement) {
-        // 计算需要滚动的位置，使节点在屏幕中间偏上的位置
-        const rect = nodeElement.getBoundingClientRect();
-        const scrollTop = rect.top + window.scrollY - (window.innerHeight / 4);
+    // 拖动过程中不触发点击
+    if (isDragging || isThumbnailDragging) {
+      return;
+    }
+    
+    // 设置当前选中节点
+    const isSelecting = node.id !== selectedNode?.id;
+    setSelectedNode(isSelecting ? node : null);
+    
+    // 保存当前位置
+    savePositions();
+    
+    // 如果是选中了节点，调整时间轴位置使得节点的年份点位于时间轴上并滚动到合适位置
+    if (isSelecting) {
+      // 计算需要的偏移量使该艺术主义的年份点位于时间轴可见位置
+      const yearPosition = ((node.year - minYear) / timeRange) * 100;
+      const centerOffset = 50 - yearPosition;
+      setTimelinePosition(centerOffset);
+      
+      // 等待详情渲染和时间轴位置调整完成后滚动到理想位置
+      setTimeout(() => {
+        // 获取所需的DOM元素
+        const timePointElement = document.getElementById(`year-${node.year}`);
+        const timelineContainer = timelineRef.current;
+        const nodeElement = nodeRefs.current[node.id];
         
-        // 平滑滚动到计算的位置
-        window.scrollTo({
-          top: scrollTop,
-          behavior: 'smooth'
-        });
-      }
-    }, 100); // 短暂延迟，确保DOM已更新
+        if (timePointElement && timelineContainer && nodeElement) {
+          // 获取时间轴线元素
+          const timelineTrack = document.querySelector('.absolute.top-1\\/2.left-0.right-0.h-0\\.5.bg-white\\/5');
+          if (!timelineTrack) return;
+          
+          // 获取所有元素的位置和尺寸信息
+          const timelineRect = timelineContainer.getBoundingClientRect();
+          const timePointRect = timePointElement.getBoundingClientRect();
+          const nodeRect = nodeElement.getBoundingClientRect();
+          const trackRect = timelineTrack.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
+          
+          // 计算将详情内容居中所需的滚动位置
+          // 我们需要考虑:
+          // 1. 详情内容的中心应该在视口中心
+          // 2. 时间点应该与时间轴线对齐
+          // 3. 艺术主义名称不应高于时间轴
+          
+          // 计算详情内容中心位置（考虑实际展开高度）
+          const nodeCenter = nodeRect.top + nodeRect.height / 2;
+          const viewportCenter = window.innerHeight / 2;
+          
+          // 计算需要的滚动位置使详情内容居中
+          let requiredScrollForCenter = window.scrollY + (nodeCenter - viewportCenter);
+          
+          // 计算时间点与时间轴对齐所需的最小滚动位置
+          const timelineAlignmentPosition = window.scrollY + (trackRect.top - timePointRect.height/2 - timePointRect.top);
+          
+          // 计算名称顶部到时间轴底部的距离
+          const nameElement = nodeElement.querySelector('.text-lg.font-semibold');
+          if (nameElement) {
+            const nameRect = nameElement.getBoundingClientRect();
+            const minDistanceToTimeline = 20; // 最小间距20px
+            const nameToTimelineDistance = nameRect.top - timelineRect.bottom;
+            
+            // 如果居中会导致名称太靠近时间轴，调整滚动位置
+            if (nameToTimelineDistance - (nodeCenter - viewportCenter) < minDistanceToTimeline) {
+              const safeScrollPosition = window.scrollY + (nameRect.top - timelineRect.bottom - minDistanceToTimeline);
+              requiredScrollForCenter = Math.max(requiredScrollForCenter, safeScrollPosition);
+            }
+          }
+          
+          // 使用平滑滚动到计算出的最终位置
+          window.scrollTo({
+            top: Math.max(requiredScrollForCenter, 0), // 确保不会滚动到负值位置
+            behavior: 'smooth'
+          });
+        }
+      }, 300); // 使用足够的延迟确保详情完全展开
+    }
+  };
+  
+  // 单独处理时间点标记的点击
+  const handleTimePointClick = (node: IArtStyle, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    // 拖动过程中不触发点击
+    if (isDragging || isThumbnailDragging) {
+      return;
+    }
+    
+    // 设置当前选中节点
+    const isSelecting = node.id !== selectedNode?.id;
+    setSelectedNode(isSelecting ? node : null);
+    
+    // 如果该艺术主义有图片，显示第一张图片的大图预览
+    if (node.images && node.images.length > 0) {
+      const imgIndex = 0; // 默认显示第一张图片
+      const image = getThumbnailUrl(node, imgIndex);
+      const artistIndex = imgIndex % node.artists.length;
+      setPreviewImage({
+        src: image,
+        title: node.title,
+        artist: node.artists[artistIndex] || '未知艺术家',
+        year: node.year
+      });
+    }
+    
+    // 保存当前位置
+    savePositions();
+    
+    // 如果是选中了节点，调整时间轴位置使得节点的年份点位于时间轴上并滚动到合适位置
+    if (isSelecting) {
+      // 计算需要的偏移量使该艺术主义的年份点位于时间轴可见位置
+      const yearPosition = ((node.year - minYear) / timeRange) * 100;
+      const centerOffset = 50 - yearPosition;
+      setTimelinePosition(centerOffset);
+      
+      // 等待详情渲染和时间轴位置调整完成后滚动到理想位置
+      setTimeout(() => {
+        // 获取所需的DOM元素
+        const timePointElement = document.getElementById(`year-${node.year}`);
+        const timelineContainer = timelineRef.current;
+        const nodeElement = nodeRefs.current[node.id];
+        
+        if (timePointElement && timelineContainer && nodeElement) {
+          // 获取时间轴线元素
+          const timelineTrack = document.querySelector('.absolute.top-1\\/2.left-0.right-0.h-0\\.5.bg-white\\/5');
+          if (!timelineTrack) return;
+          
+          // 获取所有元素的位置和尺寸信息
+          const timelineRect = timelineContainer.getBoundingClientRect();
+          const timePointRect = timePointElement.getBoundingClientRect();
+          const nodeRect = nodeElement.getBoundingClientRect();
+          const trackRect = timelineTrack.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
+          
+          // 计算将详情内容居中所需的滚动位置
+          // 我们需要考虑:
+          // 1. 详情内容的中心应该在视口中心
+          // 2. 时间点应该与时间轴线对齐
+          // 3. 艺术主义名称不应高于时间轴
+          
+          // 计算详情内容中心位置（考虑实际展开高度）
+          const nodeCenter = nodeRect.top + nodeRect.height / 2;
+          const viewportCenter = window.innerHeight / 2;
+          
+          // 计算需要的滚动位置使详情内容居中
+          let requiredScrollForCenter = window.scrollY + (nodeCenter - viewportCenter);
+          
+          // 计算时间点与时间轴对齐所需的最小滚动位置
+          const timelineAlignmentPosition = window.scrollY + (trackRect.top - timePointRect.height/2 - timePointRect.top);
+          
+          // 计算名称顶部到时间轴底部的距离
+          const nameElement = nodeElement.querySelector('.text-lg.font-semibold');
+          if (nameElement) {
+            const nameRect = nameElement.getBoundingClientRect();
+            const minDistanceToTimeline = 20; // 最小间距20px
+            const nameToTimelineDistance = nameRect.top - timelineRect.bottom;
+            
+            // 如果居中会导致名称太靠近时间轴，调整滚动位置
+            if (nameToTimelineDistance - (nodeCenter - viewportCenter) < minDistanceToTimeline) {
+              const safeScrollPosition = window.scrollY + (nameRect.top - timelineRect.bottom - minDistanceToTimeline);
+              requiredScrollForCenter = Math.max(requiredScrollForCenter, safeScrollPosition);
+            }
+          }
+          
+          // 使用平滑滚动到计算出的最终位置
+          window.scrollTo({
+            top: Math.max(requiredScrollForCenter, 0), // 确保不会滚动到负值位置
+            behavior: 'smooth'
+          });
+        }
+      }, 300); // 使用足够的延迟确保详情完全展开
+    }
   };
   
   // 关闭艺术主义详情
@@ -517,6 +670,8 @@ const Timeline: React.FC = () => {
     // ... existing code ...
   };
 
+  const [previewImage, setPreviewImage] = useState<{src: string, title: string, artist: string, year: number} | null>(null);
+
   return (
     <div className="flex flex-col h-full">
       {/* 标题和搜索栏 */}
@@ -535,8 +690,8 @@ const Timeline: React.FC = () => {
             <div className="flex items-center gap-2">
               <div className="relative">
                 <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="搜索艺术主义..." 
                   className="pl-10 pr-4 py-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors border border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   value={searchTerm}
@@ -546,7 +701,7 @@ const Timeline: React.FC = () => {
             </div>
             
             {selectedNode && (
-              <Button
+              <Button 
                 variant="outline"
                 size="sm"
                 onClick={handleCloseDetail}
@@ -610,7 +765,9 @@ const Timeline: React.FC = () => {
                   className="text-xs text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 hover:scale-110 transition-all cursor-pointer px-2 py-1 rounded-full absolute bg-transparent"
                   style={{ 
                     left: `${getPositionPercentage(year)}%`,
-                    transform: 'translateX(-50%)'
+                    transform: 'translateX(-50%)',
+                    top: '0',
+                    marginTop: '2px'
                   }}
                   onClick={() => handleYearClick(year)}
                 >
@@ -636,12 +793,12 @@ const Timeline: React.FC = () => {
             ref={timelineListRef}
           >
             {sortedNodes.map((node, index) => (
-              <motion.div 
-                key={node.id}
-                ref={el => nodeRefs.current[node.id] = el}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.05 }}
+            <motion.div 
+              key={node.id}
+              ref={el => nodeRefs.current[node.id] = el}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: index * 0.05 }}
                 className={`flex flex-col items-start gap-2 border-b border-white/10 pb-3 
                   ${highlightedNodeId === node.id ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-lg p-2 -mx-4 shadow-[0_0_15px_rgba(59,130,246,0.3)]' : ''}`}
               >
@@ -655,14 +812,15 @@ const Timeline: React.FC = () => {
                     {/* 时间点标记 - 可点击显示详情 */}
                     <div 
                       id={`year-${node.year}`}
-                      className="absolute top-1/2 w-0.5 h-6 bg-blue-500 z-10 cursor-pointer hover:bg-blue-400 hover:h-8 transition-all"
+                      className="absolute top-1/2 w-3 h-3 bg-blue-500 rounded-full z-10 cursor-pointer hover:bg-blue-400 hover:scale-125 transition-all"
                       style={{ 
                         left: `${getPositionPercentage(node.year)}%`,
-                        transform: 'translateX(-50%)',
+                        transform: 'translate(-50%, -50%)',
+                        marginTop: '0' // 确保与时间轴线对齐
                       }}
-                      onClick={(e) => handleArtMovementLineClick(node, e)}
+                      onClick={(e) => handleTimePointClick(node, e)}
                     ></div>
-                    
+                  
                     {/* 时间点之后的缩略图容器 */}
                     <div 
                       className="absolute top-0 h-full overflow-x-auto cursor-grab active:cursor-grabbing hide-scrollbar bg-transparent group hover:bg-blue-500/5 transition-colors rounded-md"
@@ -684,10 +842,19 @@ const Timeline: React.FC = () => {
                         {Array.from({ length: Math.min(5, node.images?.length || 5) }).map((_, imgIndex) => (
                           <div 
                             key={imgIndex} 
-                            className="h-10 w-10 rounded-md overflow-hidden flex-shrink-0 border border-white/10 hover:border-blue-400 transition-colors bg-black/20"
+                            className="h-10 w-10 rounded-md overflow-hidden flex-shrink-0 border border-white/10 hover:border-blue-400 transition-colors bg-black/20 cursor-pointer"
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigateToArtMovement(node.id);
+                              
+                              // 打开图片预览而不是导航
+                              const image = getThumbnailUrl(node, imgIndex);
+                              const artistIndex = imgIndex % node.artists.length;
+                              setPreviewImage({
+                                src: image,
+                                title: node.title,
+                                artist: node.artists[artistIndex] || '未知艺术家',
+                                year: node.year + (imgIndex % 10)
+                              });
                             }}
                           >
                             <img
@@ -700,8 +867,8 @@ const Timeline: React.FC = () => {
                             />
                           </div>
                         ))}
-                      </div>
-                    </div>
+                  </div>
+                </div>
                   </div>
                 </div>
                 
@@ -711,7 +878,7 @@ const Timeline: React.FC = () => {
                   <div 
                     className="flex items-center gap-3 relative group px-3 py-2 hover:bg-blue-500/10 rounded-md transition-colors cursor-pointer hover-trigger"
                     onClick={(e) => {
-                      // 点击整行时也在页面内显示详情
+                      // 点击整行时在页面内显示详情
                       // 除非点击的是年份按钮
                       if (!(e.target as HTMLElement).closest('.year-btn')) {
                         handleArtMovementLineClick(node, e);
@@ -763,8 +930,8 @@ const Timeline: React.FC = () => {
                       </div>
                     </motion.div>
                   )}
-                </div>
-              </motion.div>
+              </div>
+            </motion.div>
             ))}
             {/* 底部额外留白空间 */}
             <div className="h-40"></div>
@@ -777,6 +944,47 @@ const Timeline: React.FC = () => {
             <h3 className="text-xl font-semibold text-gray-400 mb-2">未找到时间线节点</h3>
             <p className="text-gray-500">请尝试不同的搜索条件</p>
           </div>
+        )}
+      </AnimatePresence>
+      
+      {/* 大图预览弹窗 */}
+      <AnimatePresence>
+        {previewImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+            onClick={() => setPreviewImage(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.8 }}
+              className="max-w-4xl max-h-[80vh] relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img 
+                src={previewImage.src} 
+                alt={`${previewImage.title} 作品详图`} 
+                className="max-h-[80vh] max-w-full object-contain rounded-md" 
+              />
+              <div className="absolute bottom-0 left-0 right-0 bg-black/70 p-3 backdrop-blur-sm">
+                <h3 className="text-white font-medium">
+                  {previewImage.title}
+                </h3>
+                <p className="text-white/70 text-sm mt-1">
+                  {previewImage.artist} (c. {previewImage.year})
+                </p>
+                <button 
+                  className="absolute top-2 right-2 text-white/70 hover:text-white"
+                  onClick={() => setPreviewImage(null)}
+                >
+                  <X className="w-6 h-6" />
+                </button>
+      </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
