@@ -148,11 +148,11 @@ class ImageCard(ttk.Frame):
         new_state = not self.select_var.get()
         self.select_var.set(new_state)
         # Directly call to update visual effects
-        self._on_checkbox_toggle()
+        self._on_checkbox_toggle(event)
         # Force UI update
         self.update_idletasks()
     
-    def _on_checkbox_toggle(self):
+    def _on_checkbox_toggle(self, event=None):
         """Handle checkbox state change"""
         self.is_selected = self.select_var.get()
         
@@ -232,7 +232,7 @@ class ImageCard(ttk.Frame):
         
         # Call selection callback if provided
         if self.on_select_callback:
-            self.on_select_callback(self, self.is_selected)
+            self.on_select_callback(self, self.is_selected, event)
     
     def set_selected(self, selected):
         """Set selection state
@@ -242,7 +242,8 @@ class ImageCard(ttk.Frame):
         """
         if selected != self.select_var.get():
             self.select_var.set(selected)
-            self._on_checkbox_toggle()
+            # 不传递事件参数，避免干扰多选逻辑
+            self._on_checkbox_toggle(None)
     
     def load_image(self):
         """Load and display image"""
@@ -301,15 +302,7 @@ class ImageCard(ttk.Frame):
         self.bind("<Button-3>", self._show_context_menu)
         self.image_label.bind("<Button-3>", self._show_context_menu)
         self.name_label.bind("<Button-3>", self._show_context_menu)
-        
-    def bind_select_callback(self, callback):
-        """Bind selection callback
-        
-        Args:
-            callback (callable): Callback function for selection change
-        """
-        self.on_select_callback = callback
-        
+    
     def _show_context_menu(self, event):
         """Show context menu at mouse position
         
@@ -317,4 +310,15 @@ class ImageCard(ttk.Frame):
             event: Mouse event
         """
         if hasattr(self, 'context_menu'):
-            self.context_menu.post(event.x_root, event.y_root) 
+            # 选中该项目
+            self.set_selected(True)
+            # 显示菜单
+            self.context_menu.post(event.x_root, event.y_root)
+    
+    def bind_select_callback(self, callback):
+        """Bind selection callback
+        
+        Args:
+            callback (callable): Callback function for selection change
+        """
+        self.on_select_callback = callback 

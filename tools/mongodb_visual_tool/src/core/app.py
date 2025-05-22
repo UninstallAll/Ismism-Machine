@@ -12,7 +12,7 @@ import queue
 from bson.objectid import ObjectId
 import datetime
 
-from ..config.settings import WINDOW_SIZE, DEFAULT_DATABASE
+from ..config.settings import WINDOW_SIZE, DEFAULT_DATABASE, RELATIONSHIP_TYPES
 from ..config.config_manager import ConfigManager
 from ..db.mongo_manager import MongoDBManager
 from ..db.validator import DataValidator
@@ -385,18 +385,22 @@ class MongoDBViewer(tk.Tk):
             doc: Document or document list
             event: Event object (optional)
         """
-        if action == "view":
-            self.show_document_details(doc)
-        elif action == "export":
-            self.export_document(doc)
-        elif action == "relate":
-            self.create_relationship(doc)
-        elif action == "delete":
-            self.delete_document(doc)
-        elif action == "bulk_export":
-            self.bulk_export_documents(doc)  # doc is a document list
-        elif action == "bulk_relate":
-            self.bulk_create_relationships(doc)  # doc is a document list
+        try:
+            if action == "view":
+                self.show_document_details(doc)
+            elif action == "export":
+                self.export_document(doc)
+            elif action == "relate":
+                self.create_relationship(doc)
+            elif action == "delete":
+                self.delete_document(doc)
+            elif action == "bulk_export":
+                self.bulk_export_documents(doc)  # doc is a document list
+            elif action == "bulk_relate":
+                self.bulk_create_relationships(doc)  # doc is a document list
+        except Exception as e:
+            messagebox.showerror("Action Error", f"Error performing action: {str(e)}")
+            self.update_status(f"Error: {str(e)}")
     
     def show_document_details(self, doc):
         """Show document details
@@ -439,8 +443,128 @@ class MongoDBViewer(tk.Tk):
         Args:
             doc: Document object
         """
-        # If you need to implement this feature, add code here
-        messagebox.showinfo("Feature Not Implemented", "Create relationship feature is not yet implemented")
+        if not self.current_db:
+            messagebox.showwarning("No Database Selected", "No database is currently selected.")
+            return
+            
+        # Get relationship type
+        from ..config.settings import RELATIONSHIP_TYPES
+        
+        # Create dialog
+        dialog = tk.Toplevel(self)
+        dialog.title("Create Relationship")
+        dialog.grab_set()
+        dialog.resizable(False, False)
+        
+        # Configure frame for the inputs
+        main_frame = ttk.Frame(dialog, padding=10)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        ttk.Label(main_frame, text="Source Document:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        source_label = ttk.Label(main_frame, text=doc.get('filename', str(doc.get('_id', 'Unknown'))))
+        source_label.grid(row=0, column=1, sticky=tk.W, pady=5)
+        
+        ttk.Label(main_frame, text="Relationship Type:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        rel_type_var = tk.StringVar()
+        rel_type_combo = ttk.Combobox(main_frame, textvariable=rel_type_var, values=RELATIONSHIP_TYPES)
+        rel_type_combo.grid(row=1, column=1, sticky=tk.EW, pady=5)
+        
+        ttk.Label(main_frame, text="Target Collection:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        target_coll_var = tk.StringVar()
+        collections = self.db_manager.list_collections(self.current_db)
+        target_coll_combo = ttk.Combobox(main_frame, textvariable=target_coll_var, values=collections)
+        target_coll_combo.grid(row=2, column=1, sticky=tk.EW, pady=5)
+        target_coll_combo.bind("<<ComboboxSelected>>", lambda e: load_targets())
+        
+        ttk.Label(main_frame, text="Target Document:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        target_doc_frame = ttk.Frame(main_frame)
+        target_doc_frame.grid(row=3, column=1, sticky=tk.EW, pady=5)
+        
+        target_docs = []
+        target_doc_var = tk.StringVar()
+        target_doc_combo = ttk.Combobox(target_doc_frame, textvariable=target_doc_var, values=[], width=30)
+        target_doc_combo.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
+        def load_targets():
+            """Load target documents"""
+            nonlocal target_docs
+            coll = target_coll_var.get()
+            if coll:
+                try:
+                    target_docs = self.db_manager.get_documents(self.current_db, coll, limit=100)
+                    target_doc_combo['values'] = [doc.get('filename', str(doc.get('_id'))) for doc in target_docs]
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to load target documents: {e}")
+        
+        # Buttons
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(fill=tk.X, pady=10)
+        
+        result = {'success': False}
+        
+        def on_create():
+            """Create relationship"""
+            if not rel_type_var.get():
+                messagebox.showwarning("Missing Data", "Please select a relationship type.")
+                return
+                
+            if not target_coll_var.get():
+                messagebox.showwarning("Missing Data", "Please select a target collection.")
+                return
+                
+            if not target_doc_var.get():
+                messagebox.showwarning("Missing Data", "Please select a target document.")
+                return
+                
+            try:
+                # Get target document
+                target_idx = target_doc_combo.current()
+                if target_idx < 0:
+                    messagebox.showwarning("Missing Data", "Please select a valid target document.")
+                    return
+                    
+                target_doc = target_docs[target_idx]
+                
+                # Create relationship document
+                rel_doc = {
+                    "source_id": doc.get('_id'),
+                    "source_collection": self.current_collection,
+                    "target_id": target_doc.get('_id'),
+                    "target_collection": target_coll_var.get(),
+                    "relationship_type": rel_type_var.get(),
+                    "created_at": datetime.datetime.now()
+                }
+                
+                # Save relationship to database (in a relationships collection)
+                rel_collection = "relationships"
+                if rel_collection not in self.db_manager.list_collections(self.current_db):
+                    # Create collection if it doesn't exist
+                    self.db_manager.insert_document(self.current_db, rel_collection, {"_placeholder": True})
+                    
+                self.db_manager.insert_document(self.current_db, rel_collection, rel_doc)
+                
+                result['success'] = True
+                messagebox.showinfo("Success", "Relationship created successfully!")
+                dialog.destroy()
+                
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create relationship: {e}")
+        
+        ttk.Button(btn_frame, text="Create", command=on_create).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        
+        # Center dialog
+        dialog.update_idletasks()
+        width = dialog.winfo_width()
+        height = dialog.winfo_height()
+        x = (dialog.winfo_screenwidth() // 2) - (width // 2)
+        y = (dialog.winfo_screenheight() // 2) - (height // 2)
+        dialog.geometry(f'{width}x{height}+{x}+{y}')
+        
+        # Wait for dialog to close
+        self.wait_window(dialog)
+        
+        return result.get('success', False)
     
     def export_document(self, doc):
         """Export document to file
@@ -522,8 +646,131 @@ class MongoDBViewer(tk.Tk):
         Args:
             docs (list): Document list
         """
-        # If you need to implement this feature, add code here
-        messagebox.showinfo("Feature Not Implemented", "Bulk create relationships feature is not yet implemented")
+        if not docs or len(docs) < 1:
+            messagebox.showwarning("No Documents", "No documents selected for relationship creation.")
+            return
+            
+        if not self.current_db:
+            messagebox.showwarning("No Database Selected", "No database is currently selected.")
+            return
+        
+        # Create dialog
+        dialog = tk.Toplevel(self)
+        dialog.title("Bulk Create Relationships")
+        dialog.grab_set()
+        dialog.resizable(False, False)
+        
+        # Configure frame for the inputs
+        main_frame = ttk.Frame(dialog, padding=10)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        ttk.Label(main_frame, text=f"Selected Documents: {len(docs)}").grid(row=0, column=0, columnspan=2, sticky=tk.W, pady=5)
+        
+        ttk.Label(main_frame, text="Relationship Type:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        rel_type_var = tk.StringVar()
+        rel_type_combo = ttk.Combobox(main_frame, textvariable=rel_type_var, values=RELATIONSHIP_TYPES)
+        rel_type_combo.grid(row=1, column=1, sticky=tk.EW, pady=5)
+        
+        ttk.Label(main_frame, text="Target Collection:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        target_coll_var = tk.StringVar()
+        collections = self.db_manager.list_collections(self.current_db)
+        target_coll_combo = ttk.Combobox(main_frame, textvariable=target_coll_var, values=collections)
+        target_coll_combo.grid(row=2, column=1, sticky=tk.EW, pady=5)
+        target_coll_combo.bind("<<ComboboxSelected>>", lambda e: load_targets())
+        
+        ttk.Label(main_frame, text="Target Document:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        target_doc_frame = ttk.Frame(main_frame)
+        target_doc_frame.grid(row=3, column=1, sticky=tk.EW, pady=5)
+        
+        target_docs = []
+        target_doc_var = tk.StringVar()
+        target_doc_combo = ttk.Combobox(target_doc_frame, textvariable=target_doc_var, values=[], width=30)
+        target_doc_combo.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
+        def load_targets():
+            """Load target documents"""
+            nonlocal target_docs
+            coll = target_coll_var.get()
+            if coll:
+                try:
+                    target_docs = self.db_manager.get_documents(self.current_db, coll, limit=100)
+                    target_doc_combo['values'] = [doc.get('filename', str(doc.get('_id'))) for doc in target_docs]
+                except Exception as e:
+                    messagebox.showerror("Error", f"Failed to load target documents: {e}")
+        
+        # Buttons
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(fill=tk.X, pady=10)
+        
+        result = {'success': False}
+        
+        def on_create():
+            """Create relationships"""
+            if not rel_type_var.get():
+                messagebox.showwarning("Missing Data", "Please select a relationship type.")
+                return
+                
+            if not target_coll_var.get():
+                messagebox.showwarning("Missing Data", "Please select a target collection.")
+                return
+                
+            if not target_doc_var.get():
+                messagebox.showwarning("Missing Data", "Please select a target document.")
+                return
+                
+            try:
+                # Get target document
+                target_idx = target_doc_combo.current()
+                if target_idx < 0:
+                    messagebox.showwarning("Missing Data", "Please select a valid target document.")
+                    return
+                    
+                target_doc = target_docs[target_idx]
+                
+                # Create relationship documents
+                rel_collection = "relationships"
+                if rel_collection not in self.db_manager.list_collections(self.current_db):
+                    # Create collection if it doesn't exist
+                    self.db_manager.insert_document(self.current_db, rel_collection, {"_placeholder": True})
+                
+                # Create relationships for each selected document
+                successful = 0
+                for source_doc in docs:
+                    rel_doc = {
+                        "source_id": source_doc.get('_id'),
+                        "source_collection": self.current_collection,
+                        "target_id": target_doc.get('_id'),
+                        "target_collection": target_coll_var.get(),
+                        "relationship_type": rel_type_var.get(),
+                        "created_at": datetime.datetime.now()
+                    }
+                    
+                    # Save to database
+                    self.db_manager.insert_document(self.current_db, rel_collection, rel_doc)
+                    successful += 1
+                
+                result['success'] = True
+                messagebox.showinfo("Success", f"Created {successful} relationships successfully!")
+                dialog.destroy()
+                
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to create relationships: {e}")
+        
+        ttk.Button(btn_frame, text="Create", command=on_create).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        
+        # Center dialog
+        dialog.update_idletasks()
+        width = dialog.winfo_width()
+        height = dialog.winfo_height()
+        x = (dialog.winfo_screenwidth() // 2) - (width // 2)
+        y = (dialog.winfo_screenheight() // 2) - (height // 2)
+        dialog.geometry(f'{width}x{height}+{x}+{y}')
+        
+        # Wait for dialog to close
+        self.wait_window(dialog)
+        
+        return result.get('success', False)
     
     def delete_document(self, doc):
         """Delete document
@@ -531,8 +778,38 @@ class MongoDBViewer(tk.Tk):
         Args:
             doc: Document object
         """
-        # If you need to implement this feature, add code here
-        messagebox.showinfo("Feature Not Implemented", "Delete document feature is not yet implemented")
+        if not self.current_db or not self.current_collection:
+            messagebox.showwarning("No Collection Selected", "No collection is currently selected.")
+            return
+            
+        # Confirm deletion
+        confirm = messagebox.askyesno("Confirm Deletion", 
+                                     f"Are you sure you want to delete this document?\n\n" +
+                                     f"Filename: {doc.get('filename', 'Unknown')}\n" +
+                                     f"ID: {doc.get('_id', 'Unknown')}")
+        if not confirm:
+            return
+            
+        try:
+            # Delete document from database
+            success = self.db_manager.delete_document(
+                self.current_db, 
+                self.current_collection,
+                str(doc.get('_id'))
+            )
+            
+            if success:
+                self.update_status(f"Document deleted successfully")
+                messagebox.showinfo("Delete Successful", "Document has been deleted successfully.")
+                
+                # Refresh collection data
+                self.load_collection_data()
+            else:
+                self.update_status("Failed to delete document")
+                messagebox.showerror("Delete Failed", "Failed to delete the document.")
+        except Exception as e:
+            self.update_status(f"Delete failed: {str(e)}")
+            messagebox.showerror("Delete Error", f"Failed to delete document: {str(e)}")
     
     def on_close(self):
         """Handle window close event"""

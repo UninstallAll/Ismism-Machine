@@ -50,6 +50,13 @@ class PaginatedGrid(ttk.Frame):
         # Search history
         self.search_history = []
         
+        # 排序相关属性
+        self.sort_field = "filename"
+        self.sort_reverse = False
+        
+        # Last selected index
+        self.last_selected_index = None
+        
         # Create UI
         self._create_ui()
         
@@ -147,6 +154,22 @@ class PaginatedGrid(ttk.Frame):
         self.view_button = ttk.Button(self.toolbar, text="Switch View", command=self._switch_view_mode)
         self.view_button.pack(side=tk.LEFT, padx=5)
         
+        # --- 新增：排序控件 ---
+        ttk.Label(self.toolbar, text="Sort by:").pack(side=tk.LEFT, padx=(20, 2))
+        self.sort_field_var = tk.StringVar(value="filename")
+        self.sort_field_combo = ttk.Combobox(
+            self.toolbar,
+            textvariable=self.sort_field_var,
+            values=["filename", "importedAt", "size", "artMovement"],
+            width=12,
+            state="readonly"
+        )
+        self.sort_field_combo.pack(side=tk.LEFT, padx=2)
+        self.sort_field_combo.bind("<<ComboboxSelected>>", self._on_sort_changed)
+        self.sort_order_button = ttk.Button(self.toolbar, text="↑", width=2, command=self._toggle_sort_order)
+        self.sort_order_button.pack(side=tk.LEFT, padx=2)
+        # --- 排序控件结束 ---
+        
         # Bulk operations buttons
         self.operations_frame = ttk.Frame(self.toolbar)
         self.operations_frame.pack(side=tk.RIGHT)
@@ -235,6 +258,14 @@ class PaginatedGrid(ttk.Frame):
         self.canvas.bind("<ButtonPress-1>", self._on_mouse_down)
         self.canvas.bind("<B1-Motion>", self._on_mouse_drag)
         self.canvas.bind("<ButtonRelease-1>", self._on_mouse_release)
+        
+        # --- 新增：底部状态栏 ---
+        self.status_frame = ttk.Frame(self.main_frame)
+        self.status_frame.pack(fill=tk.X, padx=5, pady=(0, 5), side=tk.BOTTOM)
+        self.status_var = tk.StringVar(value="Total: 0, Selected: 0")
+        self.status_label = ttk.Label(self.status_frame, textvariable=self.status_var, anchor="w")
+        self.status_label.pack(fill=tk.X)
+        # --- 状态栏结束 ---
     
     def _switch_view_mode(self):
         """Switch view mode (grid/list)"""
@@ -346,14 +377,47 @@ class PaginatedGrid(ttk.Frame):
         # Update pagination controls
         self._update_pagination_controls()
     
-    def _on_card_selected(self, card, is_selected):
+    def _on_card_selected(self, card, is_selected, event=None):
         """Handle card selection state change
         
         Args:
             card: Image card object
             is_selected (bool): Whether it's selected
+            event: Mouse event
         """
-        # Update UI
+        try:
+            idx = self.displayed_cards.index(card)
+            
+            # 检测shift和ctrl键状态（直接从事件获取，更准确）
+            shift_pressed = False
+            ctrl_pressed = False
+            
+            if event:
+                # 位掩码：0x0001 = Shift, 0x0004 = Control
+                shift_pressed = (event.state & 0x0001) != 0
+                ctrl_pressed = (event.state & 0x0004) != 0
+            
+            if shift_pressed and self.last_selected_index is not None:
+                # Shift连续选择
+                start = min(self.last_selected_index, idx)
+                end = max(self.last_selected_index, idx)
+                for i in range(start, end + 1):
+                    self.displayed_cards[i].set_selected(True)
+            elif ctrl_pressed:
+                # Ctrl多选时不改变其他项目状态
+                pass  # is_selected已经在card内部处理了
+            else:
+                # 单选，取消其他所有选择
+                for c in self.displayed_cards:
+                    if c != card:
+                        c.set_selected(False)
+            
+            # 记录最后选择的索引
+            self.last_selected_index = idx
+            
+        except Exception as e:
+            print(f"Selection error: {e}")
+        
         self._update_selection_ui()
     
     def _update_selection_ui(self):
@@ -371,6 +435,7 @@ class PaginatedGrid(ttk.Frame):
                 self.operations_frame.winfo_children()[i].configure(state="normal")
             else:
                 self.operations_frame.winfo_children()[i].configure(state="disabled")
+        self._update_status_bar()  # 新增：刷新状态栏
     
     def _toggle_select_all(self):
         """Toggle select all/deselect all"""
@@ -699,6 +764,7 @@ class PaginatedGrid(ttk.Frame):
             items (list): Items list
         """
         self.all_items = items or []
+        self._sort_items()  # 新增：每次设置数据时先排序
         self.filtered_items = self.all_items[:]
         self.current_page = 1
         
@@ -707,6 +773,7 @@ class PaginatedGrid(ttk.Frame):
             self.refresh_grid()
         else:
             self.refresh_list()
+        self._update_status_bar()  # 新增：刷新状态栏
     
     def set_columns(self, columns):
         """Set grid column count
@@ -717,3 +784,47 @@ class PaginatedGrid(ttk.Frame):
         self.columns = columns
         if self.current_view == "grid":
             self.refresh_grid() 
+    
+    # --- 新增：排序相关方法 ---
+    def _sort_items(self):
+        field = self.sort_field_var.get()
+        reverse = self.sort_reverse
+        def get_key(item):
+            if field == "filename":
+                return str(item.get("filename") or item.get("title") or "").lower()
+            elif field == "importedAt":
+                value = item.get("importedAt")
+                import datetime
+                if isinstance(value, datetime.datetime):
+                    return value.timestamp()
+                elif isinstance(value, str):
+                    try:
+                        from dateutil import parser
+                        return parser.parse(value).timestamp()
+                    except Exception:
+                        return float('-inf') if not reverse else float('inf')
+                else:
+                    return float('-inf') if not reverse else float('inf')
+            elif field == "size":
+                return item.get("size") or 0
+            elif field == "artMovement":
+                return str(item.get("artMovement") or "").lower()
+            return ""
+        self.all_items.sort(key=get_key, reverse=reverse)
+
+    def _on_sort_changed(self, event=None):
+        self._sort_items()
+        self._on_search()  # 重新过滤和刷新
+
+    def _toggle_sort_order(self):
+        self.sort_reverse = not self.sort_reverse
+        self.sort_order_button.config(text="↓" if self.sort_reverse else "↑")
+        self._sort_items()
+        self._on_search()
+    # --- 排序相关方法结束 --- 
+
+    def _update_status_bar(self):
+        """更新底部状态栏信息"""
+        total = len(self.all_items)
+        selected = len(self.selected_docs)
+        self.status_var.set(f"Total: {total}, Selected: {selected}")
