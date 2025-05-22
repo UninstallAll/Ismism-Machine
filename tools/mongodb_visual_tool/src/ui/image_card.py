@@ -286,7 +286,7 @@ class ImageCard(ttk.Frame):
         self.context_menu.add_command(label="Export", command=lambda: callback("export", self.doc))
         self.context_menu.add_command(label="Create Relationship", command=lambda: callback("relate", self.doc))
         self.context_menu.add_separator()
-        self.context_menu.add_command(label="Delete", command=lambda: callback("delete", self.doc))
+        self.context_menu.add_command(label="Delete", command=lambda: callback("delete", self._get_delete_docs()))
         
         # Bind context menu to card
         self.bind("<Button-3>", self._show_context_menu)
@@ -312,3 +312,10 @@ class ImageCard(ttk.Frame):
             callback (callable): Callback function for selection change
         """
         self.on_select_callback = callback 
+    
+    def _get_delete_docs(self):
+        # 如果有多选，批量删除，否则只删自己
+        grid = self.master.master.master  # cards_frame->canvas->grid_frame->PaginatedGrid
+        if hasattr(grid, 'selected_docs') and len(grid.selected_docs) > 0:
+            return grid.selected_docs
+        return self.doc 

@@ -393,7 +393,11 @@ class MongoDBViewer(tk.Tk):
             elif action == "relate":
                 self.create_relationship(doc)
             elif action == "delete":
-                self.delete_document(doc)
+                # 支持批量删除
+                if isinstance(doc, list):
+                    self.delete_documents(doc)
+                else:
+                    self.delete_document(doc)
             elif action == "bulk_export":
                 self.bulk_export_documents(doc)
             elif action == "bulk_relate":
@@ -872,6 +876,49 @@ class MongoDBViewer(tk.Tk):
         except Exception as e:
             self.update_status(f"Delete failed: {str(e)}")
             messagebox.showerror("Delete Error", f"Failed to delete document: {str(e)}")
+    
+    def delete_documents(self, docs):
+        """Delete multiple documents and their associated files"""
+        print(f"[DEBUG] Entering delete_documents. Docs count: {len(docs)}")
+        if not self.current_db or not self.current_collection:
+            messagebox.showwarning("未选择集合", "请先在左侧选择目标数据库和集合！")
+            print("[DEBUG] No database or collection selected.")
+            return
+        if not docs:
+            print("[DEBUG] Docs list is empty.")
+            return
+        # 确认
+        confirm = messagebox.askyesno(
+            "Confirm Deletion",
+            f"Are you sure you want to delete {len(docs)} documents?\n\n" +
+            "\n".join([str(doc.get('filename', doc.get('_id', 'Unknown'))) for doc in docs[:5]]) +
+            ("\n..." if len(docs) > 5 else "")
+        )
+        if not confirm:
+            return
+        success_count = 0
+        failed_docs = []
+        for doc in docs:
+            print(f"[DEBUG] Processing doc: {doc.get('_id')}")
+            print(f"[DEBUG] Doc content: {doc}")
+            try:
+                ok = self.db_manager.delete_document(
+                    self.current_db,
+                    self.current_collection,
+                    str(doc.get('_id'))
+                )
+                if ok:
+                    success_count += 1
+            except Exception as e:
+                print(f"Delete failed: {doc.get('_id')}, {e}")
+                failed_docs.append(doc)
+        if success_count:
+            self.update_status(f"Deleted {success_count} documents successfully")
+            messagebox.showinfo("Delete Successful", f"Deleted {success_count} documents successfully.")
+            self.load_collection_data()
+        else:
+            self.update_status("Failed to delete documents")
+            messagebox.showerror("Delete Failed", "Failed to delete the selected documents.")
     
     def on_close(self):
         """Handle window close event"""

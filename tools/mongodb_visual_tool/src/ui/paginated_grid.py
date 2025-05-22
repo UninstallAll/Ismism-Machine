@@ -210,6 +210,7 @@ class PaginatedGrid(ttk.Frame):
         hsb.pack(side=tk.BOTTOM, fill=tk.X)
         self.list_view.pack(fill=tk.BOTH, expand=True)
         self.list_view.bind("<<TreeviewSelect>>", self._on_list_selection_changed)
+        self.list_view.bind("<Button-3>", self._show_list_context_menu)  # 绑定右键菜单事件
         
         # Grid view - Canvas + Frame
         self.grid_frame = ttk.Frame(self.view_container)
@@ -941,3 +942,41 @@ class PaginatedGrid(ttk.Frame):
         # 如果当前是grid模式，也刷新grid同步选中
         if self.current_view == "grid":
             self.refresh_grid()
+
+    def _show_list_context_menu(self, event):
+        """显示列表视图的右键菜单
+        
+        Args:
+            event: 鼠标事件
+        """
+        # 获取点击位置的行ID
+        row_id = self.list_view.identify_row(event.y)
+        if not row_id:
+            return
+            
+        # 如果点击的行没有被选中，则选中它
+        if row_id not in self.list_view.selection():
+            self.list_view.selection_set(row_id)
+            
+        # 获取对应的文档
+        doc_id = self.list_view.item(row_id, 'text')
+        doc = next((d for d in self.filtered_items if str(d.get('_id')) == doc_id), None)
+        
+        if not doc:
+            return
+            
+        # 创建右键菜单
+        context_menu = tk.Menu(self, tearoff=0)
+        context_menu.add_command(label="Edit Details", command=lambda: self.context_menu_callback("view", doc))
+        context_menu.add_command(label="Export", command=lambda: self.context_menu_callback("export", doc))
+        context_menu.add_command(label="Create Relationship", command=lambda: self.context_menu_callback("relate", doc))
+        context_menu.add_separator()
+        
+        # 根据是否有多选来决定删除操作传递的参数
+        if len(self.selected_docs) > 0:
+            context_menu.add_command(label="Delete", command=lambda: self.context_menu_callback("delete", self.selected_docs))
+        else:
+            context_menu.add_command(label="Delete", command=lambda: self.context_menu_callback("delete", doc))
+            
+        # 显示菜单
+        context_menu.post(event.x_root, event.y_root)
