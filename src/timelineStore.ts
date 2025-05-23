@@ -7,6 +7,7 @@ interface TimelineNode {
   year: number;
   description: string;
   imageUrl?: string;
+  images?: string[];
   artists: string[];
   styleMovement: string;
   influences: string[];
@@ -32,7 +33,7 @@ interface TimelineState {
   removeNode: (id: string) => Promise<void>;
 }
 
-// 示例数据
+// 示例数据作为备用
 const sampleNodes: TimelineNode[] = [
   {
     id: '1',
@@ -73,26 +74,50 @@ const sampleNodes: TimelineNode[] = [
 ];
 
 export const useTimelineStore = create<TimelineState>((set) => ({
-  nodes: sampleNodes, // 使用示例数据
-  connections: [
-    { source: '1', target: '2', type: 'influence' },
-    { source: '2', target: '3', type: 'influence' }
-  ],
+  nodes: [],
+  connections: [],
   loading: false,
   error: null,
   
-  // 加载节点数据
+  // 从API加载节点数据
   fetchNodes: async () => {
     set({ loading: true, error: null });
     try {
-      // 在实际应用中，这里会从API获取数据
-      // 但现在我们直接使用示例数据
-      // const nodes = await fetchTimelineNodes();
-      setTimeout(() => {
+      const nodes = await fetchTimelineNodes();
+      // 如果API返回空数据，使用示例数据
+      if (!nodes || nodes.length === 0) {
         set({ nodes: sampleNodes, loading: false });
-      }, 500); // 模拟加载延迟
+        return;
+      }
+      set({ nodes, loading: false });
+      
+      // 生成连接关系
+      const connections = nodes.reduce<Connection[]>((acc, node) => {
+        node.influencedBy.forEach(influencer => {
+          const sourceNode = nodes.find(n => n.title.toLowerCase() === influencer.toLowerCase());
+          if (sourceNode) {
+            acc.push({
+              source: sourceNode.id,
+              target: node.id,
+              type: 'influence'
+            });
+          }
+        });
+        return acc;
+      }, []);
+      set({ connections });
     } catch (error) {
-      set({ error: error instanceof Error ? error.message : 'Unknown error', loading: false });
+      console.error('Failed to fetch nodes:', error);
+      // 如果API请求失败，使用示例数据
+      set({ 
+        nodes: sampleNodes, 
+        connections: [
+          { source: '1', target: '2', type: 'influence' },
+          { source: '2', target: '3', type: 'influence' }
+        ],
+        loading: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch data'
+      });
     }
   },
   
@@ -103,9 +128,9 @@ export const useTimelineStore = create<TimelineState>((set) => ({
         node.id === id ? { ...node, position } : node
       )
     }));
-    // 在实际应用中，这里会将更新同步到服务器
+    // 同步到服务器
     updateNode(id, { position }).catch(error => {
-      console.error('更新节点位置失败:', error);
+      console.error('Failed to update node position:', error);
     });
   },
   
@@ -113,22 +138,17 @@ export const useTimelineStore = create<TimelineState>((set) => ({
   addNode: async (nodeData) => {
     set({ loading: true, error: null });
     try {
-      // 在实际应用中，这里会调用API创建节点
-      // const newNode = await createNode(nodeData);
-      const newNode = {
-        id: `${Date.now()}`,
-        ...nodeData,
-        artists: nodeData.artists || [],
-        influences: nodeData.influences || [],
-        influencedBy: nodeData.influencedBy || []
-      } as TimelineNode;
-      
+      const newNode = await createNode(nodeData);
       set(state => ({ 
         nodes: [...state.nodes, newNode],
         loading: false
       }));
     } catch (error) {
-      set({ error: error instanceof Error ? error.message : 'Unknown error', loading: false });
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to add node',
+        loading: false 
+      });
+      throw error;
     }
   },
   
@@ -136,14 +156,20 @@ export const useTimelineStore = create<TimelineState>((set) => ({
   removeNode: async (id) => {
     set({ loading: true, error: null });
     try {
-      // 在实际应用中，这里会调用API删除节点
-      // await deleteNode(id);
+      await deleteNode(id);
       set(state => ({
         nodes: state.nodes.filter(node => node.id !== id),
+        connections: state.connections.filter(
+          conn => conn.source !== id && conn.target !== id
+        ),
         loading: false
       }));
     } catch (error) {
-      set({ error: error instanceof Error ? error.message : 'Unknown error', loading: false });
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to remove node',
+        loading: false 
+      });
+      throw error;
     }
   }
 })); 

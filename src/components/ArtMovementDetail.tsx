@@ -1,8 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tab } from '@headlessui/react';
 import { X, Info, Users, Lightbulb, ExternalLink } from 'lucide-react';
 import { IArtStyle } from '../types/art';
+
+interface Artist {
+  _id: string;
+  name: string;
+  birthYear?: number;
+  deathYear?: number;
+  nationality?: string;
+  biography?: string;
+}
 
 interface ArtMovementDetailProps {
   artStyle: IArtStyle;
@@ -12,6 +21,34 @@ interface ArtMovementDetailProps {
 export default function ArtMovementDetail({ artStyle, onClose }: ArtMovementDetailProps) {
   const [activeTab, setActiveTab] = useState(0);
   const [selectedImage, setSelectedImage] = useState<{src: string, index: number} | null>(null);
+  const [artists, setArtists] = useState<Artist[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // 获取艺术家信息
+  useEffect(() => {
+    const fetchArtists = async () => {
+      if (activeTab === 1) { // 只在艺术家标签页被选中时加载
+        setIsLoading(true);
+        setError(null);
+        try {
+          const response = await fetch(`/api/movements/${artStyle.id}/artists`);
+          if (!response.ok) {
+            throw new Error('Failed to fetch artists');
+          }
+          const data = await response.json();
+          setArtists(data);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Failed to load artists');
+          console.error('Error fetching artists:', err);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchArtists();
+  }, [artStyle.id, activeTab]);
 
   // 使用标签页分类显示内容
   const tabs = [
@@ -94,13 +131,40 @@ export default function ArtMovementDetail({ artStyle, onClose }: ArtMovementDeta
                 )}
               </Tab.Panel>
               <Tab.Panel className="h-full overflow-auto pr-2 max-h-[300px]">
-                <ul className="space-y-2">
-                  {artStyle.artists.map((artist, index) => (
-                    <li key={index} className="flex items-center gap-2 p-1">
-                      <span>{artist}</span>
-                    </li>
-                  ))}
-                </ul>
+                {isLoading ? (
+                  <div className="flex items-center justify-center h-32">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                  </div>
+                ) : error ? (
+                  <div className="text-red-400 text-center py-4">
+                    {error}
+                  </div>
+                ) : artists.length > 0 ? (
+                  <ul className="space-y-3">
+                    {artists.map((artist) => (
+                      <li key={artist._id} className="p-2 hover:bg-white/5 rounded-md transition-colors">
+                        <h3 className="font-medium text-white">{artist.name}</h3>
+                        {(artist.birthYear || artist.deathYear) && (
+                          <p className="text-sm text-white/60">
+                            {artist.birthYear && `${artist.birthYear}`}
+                            {artist.birthYear && artist.deathYear && ' - '}
+                            {artist.deathYear && `${artist.deathYear}`}
+                          </p>
+                        )}
+                        {artist.nationality && (
+                          <p className="text-sm text-white/70">{artist.nationality}</p>
+                        )}
+                        {artist.biography && (
+                          <p className="text-sm text-white/80 mt-1">{artist.biography}</p>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="text-white/60 text-center py-4">
+                    暂无艺术家信息
+                  </div>
+                )}
               </Tab.Panel>
               <Tab.Panel className="h-full overflow-auto pr-2 max-h-[300px]">
                 <div className="space-y-3">
