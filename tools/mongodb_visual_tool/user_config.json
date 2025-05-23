@@ -1,6 +1,6 @@
 {
-  "last_db": "123",
-  "last_collection": "123",
+  "last_db": "ismism_machine_db",
+  "last_collection": "items",
   "auto_connect": true,
   "mongodb_uri": "mongodb://localhost:27017/",
   "grid_columns": 4

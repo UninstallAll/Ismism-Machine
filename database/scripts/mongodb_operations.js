@@ -112,6 +112,120 @@ import { MongoClient, ObjectId } from 'mongodb';import { fileURLToPath } from 'u
     }
   }
 
+  // 艺术家相关操作
+  async createArtist(artistData) {
+    try {
+      const result = await this.db.collection('artists').insertOne({
+        ...artistData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      console.log(`艺术家创建成功，ID: ${result.insertedId}`);
+      return result;
+    } catch (err) {
+      console.error('创建艺术家失败:', err);
+      throw err;
+    }
+  }
+
+  async findArtistById(artistId) {
+    try {
+      return await this.db.collection('artists').findOne({ _id: new ObjectId(artistId) });
+    } catch (err) {
+      console.error('查找艺术家失败:', err);
+      throw err;
+    }
+  }
+
+  async updateArtist(artistId, updateData) {
+    try {
+      const result = await this.db.collection('artists').updateOne(
+        { _id: new ObjectId(artistId) },
+        { $set: { ...updateData, updatedAt: new Date() } }
+      );
+      return result;
+    } catch (err) {
+      console.error('更新艺术家失败:', err);
+      throw err;
+    }
+  }
+
+  // 艺术品相关操作
+  async createArtwork(artworkData) {
+    try {
+      const result = await this.db.collection('artworks').insertOne({
+        ...artworkData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      console.log(`艺术品创建成功，ID: ${result.insertedId}`);
+      return result;
+    } catch (err) {
+      console.error('创建艺术品失败:', err);
+      throw err;
+    }
+  }
+
+  async findArtworkById(artworkId) {
+    try {
+      return await this.db.collection('artworks').findOne({ _id: new ObjectId(artworkId) });
+    } catch (err) {
+      console.error('查找艺术品失败:', err);
+      throw err;
+    }
+  }
+
+  async updateArtwork(artworkId, updateData) {
+    try {
+      const result = await this.db.collection('artworks').updateOne(
+        { _id: new ObjectId(artworkId) },
+        { $set: { ...updateData, updatedAt: new Date() } }
+      );
+      return result;
+    } catch (err) {
+      console.error('更新艺术品失败:', err);
+      throw err;
+    }
+  }
+
+  // 艺术主义相关操作
+  async createMovement(movementData) {
+    try {
+      const result = await this.db.collection('movements').insertOne({
+        ...movementData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      console.log(`艺术主义创建成功，ID: ${result.insertedId}`);
+      return result;
+    } catch (err) {
+      console.error('创建艺术主义失败:', err);
+      throw err;
+    }
+  }
+
+  async findMovementById(movementId) {
+    try {
+      return await this.db.collection('movements').findOne({ _id: new ObjectId(movementId) });
+    } catch (err) {
+      console.error('查找艺术主义失败:', err);
+      throw err;
+    }
+  }
+
+  async updateMovement(movementId, updateData) {
+    try {
+      const result = await this.db.collection('movements').updateOne(
+        { _id: new ObjectId(movementId) },
+        { $set: { ...updateData, updatedAt: new Date() } }
+      );
+      return result;
+    } catch (err) {
+      console.error('更新艺术主义失败:', err);
+      throw err;
+    }
+  }
+
   // 创建索引
   async createIndexes() {
     try {
