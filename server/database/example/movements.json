@@ -1,0 +1,177 @@
+[
+  {
+    "_id": "6830bc9983a1a567c05d4669",
+    "name": "Postmodern art",
+    "start_year": 1970,
+    "end_year": null,
+    "description": "Postmodern art is a body of art movements that sought to contradict some aspects of modernism or some aspects that emerged or developed in its aftermath. In general, movements such as intermedia, installation art, conceptual art and multimedia, particularly involving video are described as postmodern.",
+    "representative_artists": [
+      "6830bc9a83a1a567c05d466a",
+      "6830bc9b83a1a567c05d466d",
+      "6830bc9c83a1a567c05d466f"
+    ],
+    "notable_artworks": [
+      "6830bc9b83a1a567c05d466b",
+      "6830bc9b83a1a567c05d466c",
+      "6830bc9c83a1a567c05d466e",
+      "6830bc9d83a1a567c05d4670",
+      "6830bc9d83a1a567c05d4671"
+    ]
+  },
+  {
+    "_id": "6830bc9d83a1a567c05d4672",
+    "name": "Neo-expressionism",
+    "start_year": 1980,
+    "end_year": null,
+    "description": "Neo-expressionism is a style of late modernist or early-postmodern painting and sculpture that emerged in the late 1970s. Neo-expressionists were sometimes called Transavantgarde, Junge Wilde or Neue Wilden ('The new wild ones'; 'New Fauves' would better meet the meaning of the term). It is characterized by intense subjectivity and rough handling of materials.",
+    "representative_artists": [
+      "6830bc9e83a1a567c05d4673",
+      "6830bc9e83a1a567c05d4675",
+      "6830bc9f83a1a567c05d4677"
+    ],
+    "notable_artworks": [
+      "6830bc9e83a1a567c05d4674",
+      "6830bc9f83a1a567c05d4676",
+      "6830bc9f83a1a567c05d4678"
+    ]
+  },
+  {
+    "_id": "6830bca083a1a567c05d4679",
+    "name": "Installation art",
+    "start_year": 1970,
+    "end_year": null,
+    "description": "Installation art is an artistic genre of three-dimensional works that are often site-specific and designed to transform the perception of a space. Generally, the term is applied to interior spaces, whereas exterior interventions are often called public art, land art or art intervention; however, the boundaries between these terms overlap.",
+    "representative_artists": [
+      "6830bca083a1a567c05d467a",
+      "6830bca083a1a567c05d467c",
+      "6830bca283a1a567c05d467f"
+    ],
+    "notable_artworks": [
+      "6830bca083a1a567c05d467b",
+      "6830bca183a1a567c05d467d",
+      "6830bca183a1a567c05d467e",
+      "6830bca283a1a567c05d4680"
+    ]
+  },
+  {
+    "_id": "6830bca283a1a567c05d4681",
+    "name": "Digital art",
+    "start_year": 1965,
+    "end_year": null,
+    "description": "Digital art, or the digital arts, is artistic work that uses digital technology as part of the creative or presentational process. It can also refer to computational art that uses and engages with digital media. Since the 1960s, various names have been used to describe digital art, including computer art, electronic art, multimedia art, and new media art. Digital art includes pieces stored on physical media, such as with digital painting, and galleries on websites. This extenuates to the field known as Visual Computation.",
+    "representative_artists": [
+      "6830bca383a1a567c05d4682",
+      "6830bca483a1a567c05d4684",
+      "6830bca483a1a567c05d4686"
+    ],
+    "notable_artworks": [
+      "6830bca383a1a567c05d4683",
+      "6830bca483a1a567c05d4685",
+      "6830bca583a1a567c05d4687"
+    ]
+  },
+  {
+    "_id": "6830bca583a1a567c05d4688",
+    "name": "Performance art",
+    "start_year": 1960,
+    "end_year": null,
+    "description": "Performance art is an artwork or art exhibition created through actions executed by the artist or other participants. It may be witnessed live or through documentation, spontaneously developed or written, and is traditionally presented to a public in a fine art context in an interdisciplinary mode. Also known as artistic action, it has been developed through the years as a genre of its own in which art is presented live. It had an important and fundamental role in 20th century avant-garde art.",
+    "representative_artists": [
+      "6830bca683a1a567c05d4689",
+      "6830bca783a1a567c05d468b",
+      "6830bca783a1a567c05d468d"
+    ],
+    "notable_artworks": [
+      "6830bca683a1a567c05d468a",
+      "6830bca783a1a567c05d468c",
+      "6830bca883a1a567c05d468e"
+    ]
+  },
+  {
+    "_id": "6830bca983a1a567c05d468f",
+    "name": "Land art",
+    "start_year": 1960,
+    "end_year": null,
+    "description": "Land art, variously known as Earth art, environmental art, and Earthworks, is an art movement that emerged in the 1960s and 1970s, largely associated with Great Britain and the United States but that also includes examples from many other countries. As a trend, \"land art\" expanded the boundaries of traditional art making in the materials used and the siting of the works. The materials used are often the materials of the Earth, including the soil, rocks, vegetation, and water found on-site, and the sites are often distant from population centers. Though sometimes fairly inaccessible, photo documentation is commonly brought back to the urban art gallery.",
+    "representative_artists": [
+      "6830bca983a1a567c05d4690",
+      "6830bcaa83a1a567c05d4692",
+      "6830bcab83a1a567c05d4695"
+    ],
+    "notable_artworks": [
+      "6830bca983a1a567c05d4691",
+      "6830bcaa83a1a567c05d4693",
+      "6830bcab83a1a567c05d4694",
+      "6830bcab83a1a567c05d4696"
+    ]
+  },
+  {
+    "_id": "6830bcac83a1a567c05d4697",
+    "name": "Video art",
+    "start_year": 1963,
+    "end_year": null,
+    "description": "Video art is an art form which relies on using video technology as a visual and audio medium. Video art emerged during the late 1960s as new consumer video technology such as video tape recorders became available outside corporate broadcasting. Video art can take many forms: recordings that are broadcast; installations viewed in galleries or museums; works either streamed online, or distributed as video tapes, or on DVDs; and performances which may incorporate one or more television sets, video monitors, and projections, displaying live or recorded images and sounds.",
+    "representative_artists": [
+      "6830bcac83a1a567c05d4698",
+      "6830bcad83a1a567c05d469a",
+      "6830bcae83a1a567c05d469c"
+    ],
+    "notable_artworks": [
+      "6830bcad83a1a567c05d4699",
+      "6830bcad83a1a567c05d469b",
+      "6830bcae83a1a567c05d469d"
+    ]
+  },
+  {
+    "_id": "6830bcaf83a1a567c05d469e",
+    "name": "Street art",
+    "start_year": 1960,
+    "end_year": null,
+    "description": "Street art is visual art created in public locations for public visibility. It has been associated with the terms \"independent art\", \"post-graffiti\", \"neo-graffiti\" and guerrilla art.",
+    "representative_artists": [
+      "6830bcaf83a1a567c05d469f",
+      "6830bcb083a1a567c05d46a2",
+      "6830bcb183a1a567c05d46a4"
+    ],
+    "notable_artworks": [
+      "6830bcb083a1a567c05d46a0",
+      "6830bcb083a1a567c05d46a1",
+      "6830bcb183a1a567c05d46a3",
+      "6830bcb283a1a567c05d46a5"
+    ]
+  },
+  {
+    "_id": "6830bcb283a1a567c05d46a6",
+    "name": "New media art",
+    "start_year": 1994,
+    "end_year": null,
+    "description": "New media art includes artworks designed and produced by means of electronic media technologies. It comprises virtual art, computer graphics, computer animation, digital art, interactive art, sound art, Internet art, video games, robotics, 3D printing, immersive installation and cyborg art. The term defines itself by the thereby created artwork, which differentiates itself from that deriving from conventional visual arts such as architecture, painting or sculpture.",
+    "representative_artists": [
+      "6830bcb283a1a567c05d46a7",
+      "6830bcb383a1a567c05d46a9",
+      "6830bcb483a1a567c05d46ab"
+    ],
+    "notable_artworks": [
+      "6830bcb383a1a567c05d46a8",
+      "6830bcb383a1a567c05d46aa",
+      "6830bcb483a1a567c05d46ac"
+    ]
+  },
+  {
+    "_id": "6830bcb483a1a567c05d46ad",
+    "name": "Relational art",
+    "start_year": 1990,
+    "end_year": null,
+    "description": "Relational art or relational aesthetics is a mode or tendency in fine art practice originally observed and highlighted by French art critic Nicolas Bourriaud. Bourriaud defined the approach as \"a set of artistic practices which take as their theoretical and practical point of departure the whole of human relations and their social context, rather than an independent and private space.\" The artist can be more accurately viewed as the \"catalyst\" in relational art, rather than being at the centre.",
+    "representative_artists": [
+      "6830bcb583a1a567c05d46ae",
+      "6830bcb583a1a567c05d46b0",
+      "6830bcb683a1a567c05d46b2"
+    ],
+    "notable_artworks": [
+      "6830bcb583a1a567c05d46af",
+      "6830bcb683a1a567c05d46b1",
+      "6830bcb683a1a567c05d46b3"
+    ]
+  }
+]
