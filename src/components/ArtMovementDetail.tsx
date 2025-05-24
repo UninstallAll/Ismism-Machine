@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { IArtStyle } from '../types/art';
+import { IArtStyle, IArtwork } from '../types/art';
 import { X, User, Image, Info, Palette, ChevronLeft, ChevronRight } from 'lucide-react';
+import axios from 'axios';
 
 interface ArtMovementDetailProps {
   artStyle: IArtStyle;
@@ -11,6 +12,9 @@ interface ArtMovementDetailProps {
 const ArtMovementDetail: React.FC<ArtMovementDetailProps> = ({ artStyle, onClose }) => {
   // 当前显示的作品索引
   const [currentArtworkIndex, setCurrentArtworkIndex] = useState(0);
+  const [artworks, setArtworks] = useState<IArtwork[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   // 获取艺术家头像
   const getArtistAvatar = (artistName: string, index: number) => {
@@ -34,8 +38,40 @@ const ArtMovementDetail: React.FC<ArtMovementDetailProps> = ({ artStyle, onClose
     target.src = `/TestData/1004${index % 10}.jpg`;
   };
   
+  // 获取当前艺术主义相关的艺术作品
+  useEffect(() => {
+    const fetchArtworks = async () => {
+      if (!artStyle.id) return;
+      
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        // 从数据库获取艺术主义相关的作品
+        const response = await axios.get(`/api/art-movements/${artStyle.id}`);
+        const movementData = response.data;
+        
+        if (movementData && movementData.artworks && movementData.artworks.length > 0) {
+          setArtworks(movementData.artworks);
+        } else {
+          // 如果没有找到作品，使用传入的artStyle中的作品
+          setArtworks(artStyle.artworks || []);
+        }
+      } catch (err) {
+        console.error('获取艺术作品失败:', err);
+        setError('无法加载艺术作品');
+        // 使用传入的artStyle中的作品作为备用
+        setArtworks(artStyle.artworks || []);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchArtworks();
+  }, [artStyle.id]);
+  
   // 获取展示的作品
-  const artworksToShow = artStyle.artworks || [];
+  const artworksToShow = artworks.length > 0 ? artworks : (artStyle.artworks || []);
   
   // 处理翻页
   const handlePrevArtwork = () => {
@@ -126,7 +162,15 @@ const ArtMovementDetail: React.FC<ArtMovementDetailProps> = ({ artStyle, onClose
               <h3 className="font-semibold text-lg">艺术作品展示</h3>
             </div>
             
-            {artworksToShow.length > 0 ? (
+            {isLoading ? (
+              <div className="text-center py-6 text-gray-400">
+                加载中...
+              </div>
+            ) : error ? (
+              <div className="text-center py-6 text-red-400">
+                {error}
+              </div>
+            ) : artworksToShow.length > 0 ? (
               <div className="relative">
                 {/* 作品图片 */}
                 <div className="aspect-square overflow-hidden rounded-lg bg-black/20">
@@ -196,14 +240,14 @@ const ArtMovementDetail: React.FC<ArtMovementDetailProps> = ({ artStyle, onClose
           </div>
 
           {/* 代表作品列表 */}
-          {artStyle.artworks && artStyle.artworks.length > 0 && (
+          {artworksToShow.length > 0 && (
             <div className="bg-white/5 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-3">
                 <Image className="h-5 w-5 text-blue-400" />
                 <h3 className="font-semibold text-lg">代表作品</h3>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                {artStyle.artworks.map((artwork, index) => (
+                {artworksToShow.map((artwork, index) => (
                   <motion.div
                     key={artwork.id || index}
                     className="group relative overflow-hidden rounded-lg cursor-pointer"
