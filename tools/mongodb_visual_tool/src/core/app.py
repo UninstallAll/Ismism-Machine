@@ -966,32 +966,45 @@ class MongoDBViewer(tk.Tk):
         # Destroy window
         self.destroy()
 
-    # --- 新增：导入菜单和处理逻辑 ---
+    # --- Import menu and handlers ---
     def show_import_menu(self):
+        """Show import menu"""
         menu = tk.Menu(self, tearoff=0)
-        menu.add_command(label="导入图片", command=self.import_images)
-        menu.add_command(label="添加词条", command=self.import_entry)
-        menu.add_command(label="批量导入词条", command=self.import_entries_from_json)
+        menu.add_command(label="Import Files", command=self.import_files)
+        menu.add_command(label="Import JSON", command=self.import_json)
         try:
             menu.tk_popup(self.winfo_pointerx(), self.winfo_pointery())
         finally:
             menu.grab_release()
 
-    def import_images(self):
+    def import_files(self):
+        """Import files into collection"""
         if not self.current_db or not self.current_collection:
-            messagebox.showwarning("未选择集合", "请先在左侧选择目标数据库和集合！")
+            messagebox.showwarning("No Collection Selected", "Please select a target collection first!")
             return
+            
         file_paths = filedialog.askopenfilenames(
-            title="选择图片文件",
-            filetypes=[("图片文件", "*.png;*.jpg;*.jpeg;*.bmp;*.gif"), ("所有文件", "*.*")]
+            title="Select Files",
+            filetypes=[
+                ("All Supported Files", "*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.json"),
+                ("Image Files", "*.png;*.jpg;*.jpeg;*.bmp;*.gif"),
+                ("JSON Files", "*.json"),
+                ("All Files", "*.*")
+            ]
         )
+        
         if not file_paths:
             return
+            
         inserted = 0
         for path in file_paths:
+            filename = os.path.basename(path)
+            # 使用文件名（不包含扩展名）作为标题
+            title = os.path.splitext(filename)[0]
             doc = {
                 "filePath": path,
-                "filename": os.path.basename(path),
+                "filename": filename,
+                "title": title,  # 添加title字段
                 "size": os.path.getsize(path),
                 "importedAt": datetime.datetime.now()
             }
@@ -999,73 +1012,20 @@ class MongoDBViewer(tk.Tk):
                 self.db_manager.insert_document(self.current_db, self.current_collection, doc)
                 inserted += 1
             except Exception as e:
-                print(f"导入失败: {path}, 错误: {e}")
-        self.update_status(f"成功导入{inserted}张图片")
+                print(f"Import failed: {path}, Error: {e}")
+                
+        self.update_status(f"Successfully imported {inserted} files")
         self.load_collection_data()
 
-    def import_entry(self):
+    def import_json(self):
+        """Import data from JSON file"""
         if not self.current_db or not self.current_collection:
-            messagebox.showwarning("未选择集合", "请先在左侧选择目标数据库和集合！")
-            return
-        dialog = tk.Toplevel(self)
-        dialog.title("添加词条")
-        dialog.grab_set()
-        dialog.resizable(False, False)
-        
-        main_frame = ttk.Frame(dialog, padding=10)
-        main_frame.pack(fill=tk.BOTH, expand=True)
-        
-        ttk.Label(main_frame, text="词条内容:").pack(padx=10, pady=(10,5))
-        entry_text = tk.Text(main_frame, width=40, height=5)
-        entry_text.pack(padx=10, pady=5)
-        entry_text.focus()
-        
-        btn_frame = ttk.Frame(main_frame)
-        btn_frame.pack(pady=10)
-        
-        def on_ok():
-            content = entry_text.get("1.0", tk.END).strip()
-            if not content:
-                return
-            doc = {
-                "entry": content,
-                "importedAt": datetime.datetime.now()
-            }
-            try:
-                self.db_manager.insert_document(self.current_db, self.current_collection, doc)
-                self.update_status("成功添加词条")
-                self.load_collection_data()
-                dialog.destroy()
-            except Exception as e:
-                messagebox.showerror("添加失败", f"添加词条失败: {e}")
-        
-        def on_cancel():
-            dialog.destroy()
-        
-        ttk.Button(btn_frame, text="确定", command=on_ok).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="取消", command=on_cancel).pack(side=tk.LEFT, padx=5)
-        
-        dialog.bind('<Escape>', lambda e: on_cancel())
-        
-        # 居中显示对话框
-        dialog.update_idletasks()
-        width = dialog.winfo_width()
-        height = dialog.winfo_height()
-        x = (dialog.winfo_screenwidth() // 2) - (width // 2)
-        y = (dialog.winfo_screenheight() // 2) - (height // 2)
-        dialog.geometry(f'{width}x{height}+{x}+{y}')
-        
-        self.wait_window(dialog)
-
-    def import_entries_from_json(self):
-        """从JSON文件批量导入词条"""
-        if not self.current_db or not self.current_collection:
-            messagebox.showwarning("未选择集合", "请先在左侧选择目标数据库和集合！")
+            messagebox.showwarning("No Collection Selected", "Please select a target collection first!")
             return
             
         file_path = filedialog.askopenfilename(
-            title="选择JSON文件",
-            filetypes=[("JSON文件", "*.json"), ("所有文件", "*.*")]
+            title="Select JSON File",
+            filetypes=[("JSON Files", "*.json"), ("All Files", "*.*")]
         )
         
         if not file_path:
@@ -1073,91 +1033,60 @@ class MongoDBViewer(tk.Tk):
             
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
-                entries = json.load(f)
+                data = json.load(f)
             
-            if not isinstance(entries, (list, dict)):
-                messagebox.showerror("格式错误", "JSON文件格式不正确，应为数组或对象格式")
+            if not isinstance(data, (list, dict)):
+                messagebox.showerror("Format Error", "Invalid JSON format. Must be an array or object.")
                 return
                 
-            # 如果是字典，转换为列表
-            if isinstance(entries, dict):
-                entries = [entries]
+            # Convert to list if it's a dictionary
+            if isinstance(data, dict):
+                data = [data]
                 
-            # 添加导入时间
-            for entry in entries:
-                if isinstance(entry, (str, int, float)):
-                    # 如果是基本类型，转换为词条对象
-                    entry = {"entry": str(entry)}
-                entry["importedAt"] = datetime.datetime.now()
+            # Add import timestamp
+            for item in data:
+                if isinstance(item, (str, int, float)):
+                    item = {"content": str(item)}
+                item["importedAt"] = datetime.datetime.now()
                 
-            # 批量插入
-            result = self.db_manager.insert_many(self.current_db, self.current_collection, entries)
+            # Bulk insert
+            result = self.db_manager.insert_many(self.current_db, self.current_collection, data)
             
             if result:
-                messagebox.showinfo("导入成功", f"成功导入 {len(entries)} 个词条")
+                messagebox.showinfo("Import Successful", f"Successfully imported {len(data)} items")
                 self.load_collection_data()
             else:
-                messagebox.showerror("导入失败", "导入过程中发生错误")
+                messagebox.showerror("Import Failed", "An error occurred during import")
                 
         except json.JSONDecodeError:
-            messagebox.showerror("格式错误", "JSON文件格式不正确")
+            messagebox.showerror("Format Error", "Invalid JSON format")
         except Exception as e:
-            messagebox.showerror("导入失败", f"导入词条失败: {e}")
+            messagebox.showerror("Import Failed", f"Import failed: {e}")
 
     def _show_collection_menu(self, event):
-        """显示集合的右键菜单"""
-        # 获取点击的项
+        """Show right-click menu for collection"""
         item = self.db_tree.identify_row(event.y)
-        if not item:
+        if not item or not self.db_tree.parent(item):
             return
             
-        # 获取父节点（数据库节点）
-        parent = self.db_tree.parent(item)
-        if not parent:  # 如果点击的是数据库节点，不显示菜单
-            return
-            
-        # 获取数据库和集合名称
-        db_name = self.db_tree.item(parent, "text")
+        db_name = self.db_tree.item(self.db_tree.parent(item), "text")
         collection_name = self.db_tree.item(item, "text")
-        
-        # 获取当前视图类型
         current_view = self.collection_views.get_view(db_name, collection_name)
         
-        # 创建右键菜单
         menu = tk.Menu(self, tearoff=0)
-        
-        # 切换视图选项
         menu.add_command(
-            label="切换视图" if current_view == "grid" else "切换视图",
-            command=lambda: self._switch_view(db_name, collection_name, "list" if current_view == "grid" else "grid")
+            label="Grid View" if current_view == "list" else "List View",
+            command=lambda: self._switch_view(db_name, collection_name, 
+                                           "grid" if current_view == "list" else "list")
         )
-        
-        # 设为默认视图选项
-        menu.add_command(
-            label="设为默认视图",
-            command=lambda: self._set_default_view(db_name, collection_name, current_view)
-        )
-        
-        # 显示菜单
         menu.post(event.x_root, event.y_root)
 
-    def _set_default_view(self, db_name, collection_name, view_type):
-        """设置集合的默认视图类型"""
-        self.collection_views.set_default_view(db_name, collection_name, view_type)
-        # 立即应用新的视图设置
-        if (self.current_db == db_name and 
-            self.current_collection == collection_name):
-            self._switch_view(db_name, collection_name, view_type)
-
     def _switch_view(self, db_name, collection_name, view_type):
-        """切换集合的视图类型"""
-        # 保存新的视图设置
+        """Switch collection view type"""
         self.collection_views.set_view(db_name, collection_name, view_type)
+        self.collection_views.set_default_view(db_name, collection_name, view_type)
         
-        # 如果是当前显示的集合，立即切换视图
-        if (self.current_db == db_name and 
-            self.current_collection == collection_name):
-            # 强制刷新当前视图
+        if self.current_db == db_name and self.current_collection == collection_name:
             self.paginated_grid.current_view = view_type
             if view_type == "grid":
                 self.paginated_grid.list_frame.pack_forget()
@@ -1166,4 +1095,6 @@ class MongoDBViewer(tk.Tk):
             else:
                 self.paginated_grid.grid_frame.pack_forget()
                 self.paginated_grid.list_frame.pack(fill=tk.BOTH, expand=True)
-                self.paginated_grid.refresh_list() 
+                self.paginated_grid.refresh_list()
+            
+            self.update_status(f"Switched to {view_type.capitalize()} View") 

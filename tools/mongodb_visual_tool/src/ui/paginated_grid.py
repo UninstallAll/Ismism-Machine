@@ -105,23 +105,47 @@ class PaginatedGrid(ttk.Frame):
         self.shift_pressed = False
     
     def _select_all_shortcut(self, event):
+        """Handle Ctrl+A shortcut"""
         if self.selection_mode == "multi":
-            for card in self.displayed_cards:
-                card.set_selected(True)
+            if self.current_view == "grid":
+                for card in self.displayed_cards:
+                    card.set_selected(True)
+            else:
+                # 列表模式下选择所有项
+                self.list_view.selection_set(*self.list_view.get_children())
+                self._on_list_selection_changed()
             self._update_selection_ui()
         return "break"
     
     def _deselect_all_shortcut(self, event):
+        """Handle Ctrl+D shortcut"""
         if self.selection_mode == "multi":
-            for card in self.displayed_cards:
-                card.set_selected(False)
+            if self.current_view == "grid":
+                for card in self.displayed_cards:
+                    card.set_selected(False)
+            else:
+                # 列表模式下取消所有选择
+                self.list_view.selection_remove(*self.list_view.get_children())
+                self._on_list_selection_changed()
             self._update_selection_ui()
         return "break"
     
     def _invert_selection_shortcut(self, event):
+        """Handle Ctrl+I shortcut"""
         if self.selection_mode == "multi":
-            for card in self.displayed_cards:
-                card.set_selected(not card.is_selected)
+            if self.current_view == "grid":
+                for card in self.displayed_cards:
+                    card.set_selected(not card.is_selected)
+            else:
+                # 列表模式下反转选择
+                all_items = self.list_view.get_children()
+                selected_items = self.list_view.selection()
+                for item in all_items:
+                    if item in selected_items:
+                        self.list_view.selection_remove(item)
+                    else:
+                        self.list_view.selection_add(item)
+                self._on_list_selection_changed()
             self._update_selection_ui()
         return "break"
         
