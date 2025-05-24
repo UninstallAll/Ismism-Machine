@@ -36,4 +36,9 @@ logs
 # 操作系统文件
 Thumbs.db
 ehthumbs.db
-Desktop.ini 
+Desktop.ini
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class 

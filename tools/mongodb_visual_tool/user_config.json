@@ -1,7 +1,12 @@
 {
   "last_db": "IsmismMachine",
-  "last_collection": "artworks",
+  "last_collection": "artists",
   "auto_connect": true,
   "mongodb_uri": "mongodb://localhost:27017/",
-  "grid_columns": 4
+  "grid_columns": 4,
+  "collection_views": {
+    "IsmismMachine.artworks": "grid",
+    "IsmismMachine.artists": "list",
+    "IsmismMachine.art_movements": "list"
+  }
 }

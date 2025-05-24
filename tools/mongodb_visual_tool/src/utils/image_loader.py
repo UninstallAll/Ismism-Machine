@@ -6,116 +6,120 @@ import threading
 import queue
 import time
 import tkinter as tk
+import os
+from PIL import Image, ImageTk
 
 class ImageLoader:
-    """Asynchronous image loader using thread pool to load images"""
+    """Image loader with thread pool"""
     
     def __init__(self, callback, num_workers=4):
         """Initialize image loader
         
         Args:
-            callback (callable): Callback function when image loading completes
+            callback (callable): Callback function when image is loaded
             num_workers (int): Number of worker threads
         """
-        self.queue = queue.Queue()
-        self.running = True
         self.callback = callback
-        self.threads = []
-        self.num_workers = num_workers
-        for _ in range(self.num_workers):
-            t = threading.Thread(target=self._process_queue)
-            t.daemon = True
-            t.start()
-            self.threads.append(t)
+        self.queue = queue.Queue()
+        self.workers = []
+        self.running = True
+        self.current_batch_id = None
+        
+        # 创建工作线程
+        for _ in range(num_workers):
+            worker = threading.Thread(target=self._worker_thread)
+            worker.daemon = True
+            worker.start()
+            self.workers.append(worker)
     
-    def add_task(self, card):
+    def add_task(self, card, batch_id=None):
         """Add image loading task
         
         Args:
-            card: Card object containing the image
+            card: Image card object
+            batch_id: Batch ID for task grouping
         """
-        if self._is_widget_valid(card):
-            self.queue.put(card)
+        self.queue.put((card, batch_id))
     
-    def queue_image(self, card):
-        """Add image loading task (alias for add_task)
-        
-        Args:
-            card: Card object containing the image
-        """
-        self.add_task(card)
+    def clear_queue(self):
+        """Clear pending tasks"""
+        try:
+            while True:
+                self.queue.get_nowait()
+                self.queue.task_done()
+        except queue.Empty:
+            pass
     
-    def _process_queue(self):
-        """Process image loading tasks from queue"""
+    def wait_pending(self):
+        """Wait for all pending tasks to complete"""
+        self.queue.join()
+    
+    def _worker_thread(self):
+        """Worker thread function"""
         while self.running:
             try:
-                # Get card from queue
-                card = self.queue.get(timeout=0.5)
+                card, batch_id = self.queue.get(timeout=1)
                 
-                # Check if card is still valid (not destroyed)
-                if not self._is_widget_valid(card):
-                    print("Card has been destroyed, skipping loading")
+                # 如果卡片已销毁或批次ID不匹配，跳过加载
+                if not card.winfo_exists() or (batch_id and batch_id != getattr(card, 'batch_id', None)):
                     self.queue.task_done()
                     continue
                 
-                # Load image
                 try:
-                    success = card.load_image()
+                    # 获取图片路径
+                    image_path = None
+                    if hasattr(card.doc, 'get'):
+                        if 'filePath' in card.doc:
+                            image_path = card.doc['filePath']
+                        elif 'imageUrl' in card.doc:
+                            image_path = card.doc['imageUrl']
+                        elif 'portrait_url' in card.doc:
+                            image_path = card.doc['portrait_url']
                     
-                    # Call callback (if card and callback are still valid)
-                    if self.callback and self._is_widget_valid(card):
-                        self.callback(card, success)
-                except tk.TclError as e:
-                    if "invalid command name" in str(e):
-                        print("UI component has been destroyed, skipping update")
+                    if image_path and os.path.exists(image_path):
+                        # 加载并调整图片大小
+                        image = Image.open(image_path)
+                        image.thumbnail((200, 200))  # 调整到合适大小
+                        photo = ImageTk.PhotoImage(image)
+                        
+                        # 更新UI（在主线程中）
+                        card.after(0, lambda: self._update_card(card, photo, True))
                     else:
-                        print(f"Tkinter error: {str(e)}")
+                        # 更新UI（在主线程中）
+                        card.after(0, lambda: self._update_card(card, None, False))
+                        
                 except Exception as e:
-                    print(f"Error occurred during image loading: {str(e)}")
-                
-                # Mark task as done
-                self.queue.task_done()
-                
-                # Brief pause to reduce CPU load
-                time.sleep(0.005)
+                    print(f"Error loading image: {e}")
+                    # 更新UI（在主线程中）
+                    card.after(0, lambda: self._update_card(card, None, False))
+                    
+                finally:
+                    self.queue.task_done()
+                    
             except queue.Empty:
-                # Queue empty, wait for new tasks
-                time.sleep(0.05)
+                continue
             except Exception as e:
-                print(f"Image loading error: {str(e)}")
-                # Continue processing next task
+                print(f"Worker thread error: {e}")
                 continue
     
-    def _is_widget_valid(self, widget):
-        """Check if widget is still valid (not destroyed)
+    def _update_card(self, card, photo, success):
+        """Update card UI in main thread
         
         Args:
-            widget: Tkinter widget
-            
-        Returns:
-            bool: Whether valid
+            card: Image card object
+            photo: PhotoImage object
+            success (bool): Whether loading was successful
         """
         try:
-            return widget is not None and widget.winfo_exists()
-        except:
-            return False
+            if card.winfo_exists():
+                if success and photo:
+                    card.set_image(photo)
+                self.callback(card, success)
+        except Exception as e:
+            print(f"Error updating card: {e}")
     
     def stop(self):
-        """Stop the image loader"""
+        """Stop worker threads"""
         self.running = False
-        for t in self.threads:
-            if t.is_alive():
-                t.join(timeout=1.0)
-            
-    def clear_queue(self):
-        """Clear all tasks from the queue"""
-        with self.queue.mutex:
-            self.queue.queue.clear()
-            
-    def get_queue_size(self):
-        """Get number of pending tasks in the queue
-        
-        Returns:
-            int: Queue size
-        """
-        return self.queue.qsize() 
+        for worker in self.workers:
+            worker.join() 

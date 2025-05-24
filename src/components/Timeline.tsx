@@ -624,9 +624,21 @@ const Timeline: React.FC = () => {
     
     // 没有缓存，尝试使用节点的图片
     if (node.images && node.images.length > 0 && node.images[imgIndex]) {
-      const imgUrl = node.images[imgIndex];
-      imgCache.current.set(nodeImgKey, imgUrl);
-      return imgUrl;
+      // 处理图片URL
+      let imgUrl = node.images[imgIndex];
+      
+      // 如果是对象，提取URL属性
+      if (typeof imgUrl === 'object' && imgUrl !== null && 'url' in imgUrl) {
+        imgUrl = (imgUrl as any).url;
+      }
+      
+      // 处理相对路径
+      if (typeof imgUrl === 'string' && !imgUrl.startsWith('http') && !imgUrl.startsWith('/')) {
+        imgUrl = `/assets/${imgUrl}`;
+      }
+      
+      imgCache.current.set(nodeImgKey, imgUrl as string);
+      return imgUrl as string;
     }
     
     // 使用备用图片
