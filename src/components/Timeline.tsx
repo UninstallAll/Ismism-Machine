@@ -96,7 +96,7 @@ const Timeline: React.FC = () => {
       node.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       node.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       node.artists.some(artist => artist.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      node.styleMovement.toLowerCase().includes(searchTerm.toLowerCase())
+      node.styleMovement?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     // 排序节点
@@ -209,7 +209,7 @@ const Timeline: React.FC = () => {
       setTimeout(() => {
         const targetNode = timelineNodes.find(node => 
           node.title.toLowerCase() === styleParam.toLowerCase() || 
-          node.styleMovement.toLowerCase() === styleParam.toLowerCase()
+          node.styleMovement?.toLowerCase() === styleParam.toLowerCase()
         );
         
         if (targetNode) {
@@ -458,21 +458,26 @@ const Timeline: React.FC = () => {
       const centerOffset = 50 - yearPosition;
       setTimelinePosition(centerOffset);
       
-      // 滚动到合适位置的代码保持不变
+      // 添加高亮效果
+      setHighlightedNodeId(node.id);
+      
+      // 3秒后取消高亮
+      setTimeout(() => {
+        setHighlightedNodeId(null);
+      }, 3000);
+      
+      // 滚动到合适位置
       setTimeout(() => {
         if (nodeRefs.current[node.id]) {
           nodeRefs.current[node.id]?.scrollIntoView({
-            block: 'center'
+            block: 'center',
+            behavior: 'smooth'
           });
         }
       }, 300);
     } catch (error) {
       console.error('Failed to fetch art movement details:', error);
-      toast({
-        title: "获取艺术主义详情失败",
-        description: "请稍后重试",
-        variant: "destructive"
-      });
+      toast("获取艺术主义详情失败", "error", 3000);
     }
   };
   
@@ -771,8 +776,20 @@ const Timeline: React.FC = () => {
               >
                 {/* 艺术主义时间轴位置标记 */}
                 <div className="w-full relative h-12 overflow-hidden">
-                  {/* 内容容器，用于横向滚动时间轴 */}
-                  <div className="w-full h-full relative">
+                  {/* 固定在左侧的标签 */}
+                  <div 
+                    className="absolute left-0 top-1/2 transform -translate-y-1/2 z-20 bg-black/60 backdrop-blur-sm px-4 py-2 rounded-r-lg border-r border-t border-b border-white/10 flex items-center gap-3 shadow-lg cursor-pointer hover:bg-black/80 transition-colors group"
+                    onClick={(e) => handleTimePointClick(node, e)}
+                  >
+                    <span className="font-medium text-white group-hover:text-blue-300 transition-colors flex items-center gap-1">
+                      {node.title}
+                      <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-all" />
+                    </span>
+                    <span className="text-sm text-blue-300 bg-blue-500/20 px-2 py-0.5 rounded-full group-hover:bg-blue-500/30 transition-colors">{node.year}</span>
+                  </div>
+                  
+                  {/* 内容容器，用于横向滚动时间轴，添加左边距给固定标签留出空间 */}
+                  <div className="w-full h-full relative pl-[200px]">
                     {/* 蓝色线 */}
                     <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-blue-500/20 transform -translate-y-1/2"></div>
                     
@@ -839,60 +856,26 @@ const Timeline: React.FC = () => {
                   </div>
                 </div>
                 
-                {/* 艺术主义名称和信息 - 仅显示名称和年份，位置不变 */}
+                {/* 艺术主义名称和信息 */}
                 <div className="w-full pl-4 relative">
-                  {/* 名称和年份行 */}
                   <div 
-                    className="flex items-center gap-3 relative group px-3 py-2 hover:bg-blue-500/10 rounded-md transition-colors cursor-pointer hover-trigger"
-                    onClick={(e) => {
-                      // 点击整行时在页面内显示详情
-                      // 除非点击的是年份按钮
-                      if (!(e.target as HTMLElement).closest('.year-btn')) {
-                        handleArtMovementLineClick(node, e);
-                      }
-                    }}
+                    className="flex items-center gap-3 relative group px-3 py-2 hover:bg-blue-500/10 rounded-md transition-colors cursor-pointer"
+                    onClick={(e) => handleTimePointClick(node, e)}
                   >
-                    <Button 
-                      variant="link" 
-                      className="p-0 h-auto text-lg font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent hover:from-blue-300 hover:to-purple-300 flex items-center gap-1"
-                      onClick={(e) => {
-                        e.stopPropagation(); // 防止触发父元素的点击事件
-                        handleArtMovementLineClick(node, e);
-                      }}
-                    >
-                      {node.title}
-                      <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    </Button>
-                    
-                    <div 
-                      className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-sm cursor-pointer year-btn"
-                      onClick={(e) => {
-                        e.stopPropagation(); // 防止触发父元素的点击事件
-                        // 点击年份，同步调整时间轴位置
-                        if (timelineContainerRef.current) {
-                          const containerWidth = timelineContainerRef.current.clientWidth;
-                          const yearPosition = ((node.year - minYear) / timeRange) * 100;
-                          // 计算需要的偏移量使点击的年份居中
-                          const centerOffset = 50 - yearPosition;
-                          setTimelinePosition(centerOffset);
-                        }
-                      }}
-                    >
-                      {node.year}
-                    </div>
+                    <div className="h-4"></div>
                   </div>
                   
-                  {/* 艺术主义详情展开区 - 仅当选中时显示 */}
+                  {/* 艺术主义详情展开区 */}
                   {selectedNode && selectedNode.id === node.id && (
                     <motion.div 
-                      key={`detail-inline`}
+                      key={`detail-${node.id}`}
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={{ duration: 0.3 }}
                       className="mt-2 mb-4 w-full"
                     >
-                      <div className="bg-black/30 rounded-lg overflow-hidden">
+                      <div className="bg-black/30 backdrop-blur-sm rounded-lg overflow-hidden border border-white/10 shadow-lg">
                         <ArtMovementDetail artStyle={selectedNode} onClose={handleCloseDetail} />
                       </div>
                     </motion.div>

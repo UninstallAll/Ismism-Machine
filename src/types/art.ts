@@ -33,4 +33,8 @@ export interface IArtStyle {
   };
   artworks?: IArtwork[];
   keyArtists?: IArtist[];
+  styleMovement?: string;
+  influences?: string[];
+  influencedBy?: string[];
+  tags?: string[];
 } 
