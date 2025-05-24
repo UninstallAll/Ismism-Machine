@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const artMovementRoutes = require('./routes/artMovementRoutes');
+const movementsRoutes = require('./routes/movements');
 
 // 连接数据库
 connectDB();
@@ -14,6 +15,7 @@ app.use(express.json());
 
 // 路由
 app.use('/api', artMovementRoutes);
+app.use('/api/movements', movementsRoutes);
 
 const PORT = process.env.PORT || 5000;
 

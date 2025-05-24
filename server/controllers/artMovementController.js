@@ -17,18 +17,41 @@ exports.getAllArtMovements = async (req, res) => {
         _id: { $in: movement.notable_artworks }
       });
 
+      // 返回与IArtStyle接口匹配的数据结构
       return {
         id: movement._id,
         title: movement.name,
         year: movement.start_year,
         description: movement.description,
+        characteristics: [], // 默认为空数组
         artists: artists.map(artist => artist.name),
+        images: artworks.reduce((acc, artwork) => [...acc, ...(artwork.images || [])], []),
+        period: {
+          start: movement.start_year,
+          end: movement.end_year || new Date().getFullYear()
+        },
         artworks: artworks.map(artwork => ({
+          id: artwork._id,
           title: artwork.title,
-          imageUrl: artwork.images[0] || null
+          year: artwork.year_created || movement.start_year,
+          artist: artists.find(a => a._id.toString() === artwork.artist_id?.toString())?.name || '未知艺术家',
+          imageUrl: artwork.images?.[0] || '',
+          description: artwork.description,
+          medium: artwork.medium,
+          location: artwork.location
+        })),
+        keyArtists: artists.map(artist => ({
+          id: artist._id,
+          name: artist.name,
+          birthYear: artist.birth_year,
+          deathYear: artist.death_year,
+          nationality: artist.nationality,
+          biography: artist.biography
         })),
         styleMovement: movement.name,
-        images: artworks.reduce((acc, artwork) => [...acc, ...(artwork.images || [])], [])
+        influences: [],
+        influencedBy: [],
+        tags: []
       };
     }));
 
