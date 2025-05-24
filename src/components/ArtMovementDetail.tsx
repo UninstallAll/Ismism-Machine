@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { IArtStyle } from '../types/art';
-import { X, User, Image, Info } from 'lucide-react';
+import { X, User, Image, Info, Palette } from 'lucide-react';
 
 interface ArtMovementDetailProps {
   artStyle: IArtStyle;
@@ -9,6 +9,11 @@ interface ArtMovementDetailProps {
 }
 
 const ArtMovementDetail: React.FC<ArtMovementDetailProps> = ({ artStyle, onClose }) => {
+  // 获取艺术家头像
+  const getArtistAvatar = (artistName: string, index: number) => {
+    return `/TestData/artist${(index % 5) + 1}.jpg`;
+  };
+
   return (
     <div className="p-6 space-y-6">
       {/* 头部信息 */}
@@ -41,6 +46,24 @@ const ArtMovementDetail: React.FC<ArtMovementDetailProps> = ({ artStyle, onClose
               <h3 className="font-semibold text-lg">简介</h3>
             </div>
             <p className="text-gray-300 leading-relaxed">{artStyle.description}</p>
+          </div>
+
+          {/* 代表艺术家 */}
+          <div className="bg-white/5 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Palette className="h-5 w-5 text-blue-400" />
+              <h3 className="font-semibold text-lg">代表艺术家</h3>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {artStyle.artists && artStyle.artists.map((artist, index) => (
+                <span 
+                  key={index} 
+                  className="inline-block px-3 py-1 bg-white/5 rounded-md hover:bg-white/10 transition-colors text-blue-300"
+                >
+                  {artist}
+                </span>
+              ))}
+            </div>
           </div>
 
           {artStyle.characteristics && artStyle.characteristics.length > 0 && (
