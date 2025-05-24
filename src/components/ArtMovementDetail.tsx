@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { IArtStyle } from '../types/art';
-import { X, User, Image, Info, Palette } from 'lucide-react';
+import { X, User, Image, Info, Palette, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ArtMovementDetailProps {
   artStyle: IArtStyle;
@@ -9,9 +9,45 @@ interface ArtMovementDetailProps {
 }
 
 const ArtMovementDetail: React.FC<ArtMovementDetailProps> = ({ artStyle, onClose }) => {
+  // 当前显示的作品索引
+  const [currentArtworkIndex, setCurrentArtworkIndex] = useState(0);
+  
   // 获取艺术家头像
   const getArtistAvatar = (artistName: string, index: number) => {
     return `/TestData/artist${(index % 5) + 1}.jpg`;
+  };
+
+  // 处理图片URL
+  const getImageUrl = (url: string) => {
+    // 如果是完整URL或以/开头的路径，直接使用
+    if (url.startsWith('http') || url.startsWith('/')) {
+      return url;
+    }
+    // 否则添加基础路径
+    return `/assets/${url}`;
+  };
+
+  // 处理图片加载错误
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const target = e.target as HTMLImageElement;
+    const index = parseInt(target.dataset.index || '0');
+    target.src = `/TestData/1004${index % 10}.jpg`;
+  };
+  
+  // 获取展示的作品
+  const artworksToShow = artStyle.artworks || [];
+  
+  // 处理翻页
+  const handlePrevArtwork = () => {
+    setCurrentArtworkIndex(prev => 
+      prev === 0 ? artworksToShow.length - 1 : prev - 1
+    );
+  };
+  
+  const handleNextArtwork = () => {
+    setCurrentArtworkIndex(prev => 
+      prev === artworksToShow.length - 1 ? 0 : prev + 1
+    );
   };
 
   return (
@@ -81,32 +117,85 @@ const ArtMovementDetail: React.FC<ArtMovementDetailProps> = ({ artStyle, onClose
           )}
         </div>
 
-        {/* 右侧：艺术家和作品 */}
+        {/* 右侧：艺术作品展示 */}
         <div className="space-y-4">
-          {/* 代表艺术家 */}
-          {artStyle.keyArtists && artStyle.keyArtists.length > 0 && (
-            <div className="bg-white/5 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <User className="h-5 w-5 text-purple-400" />
-                <h3 className="font-semibold text-lg">代表艺术家</h3>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                {artStyle.keyArtists.map((artist) => (
-                  <div key={artist.id} className="p-3 bg-white/5 rounded-lg">
-                    <h4 className="font-medium text-purple-300">{artist.name}</h4>
-                    <p className="text-sm text-gray-400">
-                      {artist.birthYear} - {artist.deathYear || '现在'}
-                    </p>
-                    {artist.nationality && (
-                      <p className="text-sm text-gray-400">{artist.nationality}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
+          {/* 艺术作品展示模块 - 替换原来的代表艺术家模块 */}
+          <div className="bg-white/5 rounded-lg p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Image className="h-5 w-5 text-purple-400" />
+              <h3 className="font-semibold text-lg">艺术作品展示</h3>
             </div>
-          )}
+            
+            {artworksToShow.length > 0 ? (
+              <div className="relative">
+                {/* 作品图片 */}
+                <div className="aspect-square overflow-hidden rounded-lg bg-black/20">
+                  <img
+                    src={artworksToShow[currentArtworkIndex]?.imageUrl || '/TestData/10040.jpg'}
+                    alt={artworksToShow[currentArtworkIndex]?.title || artStyle.title}
+                    className="w-full h-full object-contain"
+                    data-index={currentArtworkIndex}
+                    onError={handleImageError}
+                  />
+                </div>
+                
+                {/* 作品信息 */}
+                <div className="mt-3 p-3 bg-black/30 rounded-lg">
+                  <h4 className="font-medium text-purple-300">
+                    {artworksToShow[currentArtworkIndex]?.title || '未知作品'}
+                  </h4>
+                  <p className="text-sm text-gray-400">
+                    {artworksToShow[currentArtworkIndex]?.artist || '未知艺术家'} 
+                    {artworksToShow[currentArtworkIndex]?.year ? ` (${artworksToShow[currentArtworkIndex].year})` : ''}
+                  </p>
+                  {artworksToShow[currentArtworkIndex]?.description && (
+                    <p className="text-sm text-gray-300 mt-2">
+                      {artworksToShow[currentArtworkIndex].description}
+                    </p>
+                  )}
+                </div>
+                
+                {/* 翻页按钮 */}
+                {artworksToShow.length > 1 && (
+                  <div className="flex justify-between absolute top-1/2 -translate-y-1/2 left-0 right-0 px-2">
+                    <button 
+                      onClick={handlePrevArtwork}
+                      className="bg-black/50 hover:bg-black/70 p-2 rounded-full text-white transition-colors"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    <button 
+                      onClick={handleNextArtwork}
+                      className="bg-black/50 hover:bg-black/70 p-2 rounded-full text-white transition-colors"
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </button>
+                  </div>
+                )}
+                
+                {/* 页码指示器 */}
+                {artworksToShow.length > 1 && (
+                  <div className="flex justify-center gap-1 mt-2">
+                    {artworksToShow.map((_, index) => (
+                      <button
+                        key={index}
+                        className={`w-2 h-2 rounded-full ${
+                          index === currentArtworkIndex ? 'bg-purple-400' : 'bg-white/30'
+                        }`}
+                        onClick={() => setCurrentArtworkIndex(index)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-gray-400">
+                暂无作品展示
+              </div>
+            )}
+          </div>
 
-          {/* 代表作品 */}
+          {/* 代表作品列表 */}
           {artStyle.artworks && artStyle.artworks.length > 0 && (
             <div className="bg-white/5 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-3">
@@ -114,22 +203,23 @@ const ArtMovementDetail: React.FC<ArtMovementDetailProps> = ({ artStyle, onClose
                 <h3 className="font-semibold text-lg">代表作品</h3>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                {artStyle.artworks.map((artwork) => (
+                {artStyle.artworks.map((artwork, index) => (
                   <motion.div
-                    key={artwork.id}
-                    className="group relative overflow-hidden rounded-lg"
+                    key={artwork.id || index}
+                    className="group relative overflow-hidden rounded-lg cursor-pointer"
                     whileHover={{ scale: 1.02 }}
                     transition={{ duration: 0.2 }}
+                    onClick={() => setCurrentArtworkIndex(index)}
                   >
                     <img
                       src={artwork.imageUrl}
                       alt={artwork.title}
-                      className="w-full h-40 object-cover"
+                      className="w-full h-24 object-cover"
+                      data-index={index}
+                      onError={handleImageError}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-3 flex flex-col justify-end">
-                      <h4 className="font-medium text-white">{artwork.title}</h4>
-                      <p className="text-sm text-gray-300">{artwork.artist}</p>
-                      <p className="text-sm text-gray-400">{artwork.year}</p>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-end">
+                      <h4 className="font-medium text-white text-sm">{artwork.title}</h4>
                     </div>
                   </motion.div>
                 ))}
