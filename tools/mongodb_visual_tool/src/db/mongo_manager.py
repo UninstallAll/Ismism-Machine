@@ -235,7 +235,7 @@ class MongoDBManager:
         return result.modified_count > 0
     
     def delete_document(self, database, collection, document_id):
-        """Delete document
+        """Delete document and handle related documents
         
         Args:
             database (str): Database name
@@ -248,8 +248,53 @@ class MongoDBManager:
         if not self.client:
             raise ConnectionError("Not connected to MongoDB")
             
-        result = self.client[database][collection].delete_one({'_id': ObjectId(document_id)})
-        return result.deleted_count > 0
+        try:
+            # 转换document_id为ObjectId
+            doc_id = ObjectId(document_id) if isinstance(document_id, str) else document_id
+            
+            # 获取要删除的文档
+            doc = self.client[database][collection].find_one({'_id': doc_id})
+            if not doc:
+                print(f"Document not found: {document_id}")
+                return False
+
+            print(f"[DEBUG] Deleting document: {doc}")
+
+            # 如果是艺术家文档，需要处理关联
+            if collection == 'artists':
+                # 从movements中移除该艺术家的引用
+                if 'movements' in doc:
+                    for movement_id in doc['movements']:
+                        try:
+                            print(f"[DEBUG] Removing artist from movement: {movement_id}")
+                            self.client[database]['art_movements'].update_many(
+                                {'_id': movement_id},
+                                {'$pull': {'representative_artists': doc_id}}
+                            )
+                        except Exception as e:
+                            print(f"Error updating movement {movement_id}: {e}")
+
+                # 处理艺术家的作品
+                if 'notable_works' in doc:
+                    for work_id in doc['notable_works']:
+                        try:
+                            print(f"[DEBUG] Deleting artwork: {work_id}")
+                            self.client[database]['artworks'].delete_one({'_id': work_id})
+                        except Exception as e:
+                            print(f"Error deleting artwork {work_id}: {e}")
+
+            # 删除主文档
+            print(f"[DEBUG] Deleting main document with id: {doc_id}")
+            result = self.client[database][collection].delete_one({'_id': doc_id})
+            success = result.deleted_count > 0
+            print(f"[DEBUG] Deletion result: {success}")
+            return success
+            
+        except Exception as e:
+            print(f"Delete document error: {e}")
+            if hasattr(e, 'details'):
+                print(f"Error details: {e.details}")
+            return False
     
     def close(self):
         """Close database connection"""
