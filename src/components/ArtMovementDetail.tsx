@@ -21,13 +21,22 @@ const ArtMovementDetail: React.FC<ArtMovementDetailProps> = ({ artStyle, onClose
     return `/TestData/artist${(index % 5) + 1}.jpg`;
   };
 
-  // 处理图片URL
+  // 处理图片URL，确保能够正确获取数据库指向的图片
   const getImageUrl = (url: string) => {
+    if (!url) return '/TestData/10040.jpg'; // 如果URL为空，返回默认图片
+    
     // 如果是完整URL或以/开头的路径，直接使用
     if (url.startsWith('http') || url.startsWith('/')) {
       return url;
     }
-    // 否则添加基础路径
+    
+    // 处理相对路径，根据实际情况调整
+    // 1. 如果是数据库图片路径，可能需要添加API前缀
+    if (url.startsWith('db/') || url.startsWith('uploads/')) {
+      return `/api/images/${url}`; // 假设有一个图片API路径
+    }
+    
+    // 2. 其他资源文件
     return `/assets/${url}`;
   };
 
@@ -35,8 +44,14 @@ const ArtMovementDetail: React.FC<ArtMovementDetailProps> = ({ artStyle, onClose
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const target = e.target as HTMLImageElement;
     const index = parseInt(target.dataset.index || '0');
+    
+    // 尝试获取原始图片URL
+    const originalUrl = target.getAttribute('data-original-url') || '';
+    console.log('Image load error for:', originalUrl);
+    
     // 使用固定的备用图片路径
     target.src = `/TestData/10040.jpg`;
+    
     // 防止循环触发错误
     target.onerror = null;
   };
@@ -182,6 +197,7 @@ const ArtMovementDetail: React.FC<ArtMovementDetailProps> = ({ artStyle, onClose
                     alt={artworksToShow[currentArtworkIndex]?.title || artStyle.title}
                     className="w-full h-full object-contain"
                     data-index={currentArtworkIndex}
+                    data-original-url={artworksToShow[currentArtworkIndex]?.imageUrl || ''}
                     onError={handleImageError}
                   />
                 </div>
@@ -263,6 +279,7 @@ const ArtMovementDetail: React.FC<ArtMovementDetailProps> = ({ artStyle, onClose
                       alt={artwork.title}
                       className="w-full h-24 object-cover"
                       data-index={index}
+                      data-original-url={artwork.imageUrl}
                       onError={handleImageError}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-end">
