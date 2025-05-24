@@ -7,7 +7,6 @@ import { useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import ArtMovementDetail from './ArtMovementDetail';
 import { useToast } from "../components/ui/use-toast";
 import { IArtStyle } from '../types/art';
-import { artMovementService } from '../services/artMovementService';
 
 // 开发模式下启用性能分析
 const isDev = import.meta.env.DEV;
@@ -429,7 +428,7 @@ const Timeline: React.FC = () => {
   };
 
   // 处理艺术主义时间线点击
-  const handleArtMovementLineClick = async (node: IArtStyle, e: React.MouseEvent) => {
+  const handleArtMovementLineClick = (node: IArtStyle, e: React.MouseEvent) => {
     e.stopPropagation();
     
     // 拖动过程中不触发点击
@@ -437,42 +436,76 @@ const Timeline: React.FC = () => {
       return;
     }
     
-    try {
-      // 如果是取消选中，直接关闭详情
-      if (node.id === selectedNode?.id) {
-        setSelectedNode(null);
-        return;
-      }
-
-      // 获取艺术主义详情
-      const artMovementDetail = await artMovementService.getArtMovementDetail(node.id);
-      
-      // 设置当前选中节点
-      setSelectedNode(artMovementDetail);
-      
-      // 保存当前位置
-      savePositions();
-      
-      // 调整时间轴位置
+    // 设置当前选中节点
+    const isSelecting = node.id !== selectedNode?.id;
+    setSelectedNode(isSelecting ? node : null);
+    
+    // 保存当前位置
+    savePositions();
+    
+    // 如果是选中了节点，调整时间轴位置使得节点的年份点位于时间轴上并滚动到合适位置
+    if (isSelecting) {
+      // 计算需要的偏移量使该艺术主义的年份点位于时间轴可见位置
       const yearPosition = ((node.year - minYear) / timeRange) * 100;
       const centerOffset = 50 - yearPosition;
       setTimelinePosition(centerOffset);
       
-      // 滚动到合适位置的代码保持不变
+      // 等待详情渲染和时间轴位置调整完成后滚动到理想位置
       setTimeout(() => {
-        if (nodeRefs.current[node.id]) {
-          nodeRefs.current[node.id]?.scrollIntoView({
-            block: 'center'
+        // 获取所需的DOM元素
+        const timePointElement = document.getElementById(`year-${node.year}`);
+        const timelineContainer = timelineRef.current;
+        const nodeElement = nodeRefs.current[node.id];
+        
+        if (timePointElement && timelineContainer && nodeElement) {
+          // 获取时间轴线元素
+          const timelineTrack = document.querySelector('.absolute.top-1\\/2.left-0.right-0.h-0\\.5.bg-white\\/5');
+          if (!timelineTrack) return;
+          
+          // 获取所有元素的位置和尺寸信息
+          const timelineRect = timelineContainer.getBoundingClientRect();
+          const timePointRect = timePointElement.getBoundingClientRect();
+          const nodeRect = nodeElement.getBoundingClientRect();
+          const trackRect = timelineTrack.getBoundingClientRect();
+          const viewportHeight = window.innerHeight;
+          
+          // 计算将详情内容居中所需的滚动位置
+          // 我们需要考虑:
+          // 1. 详情内容的中心应该在视口中心
+          // 2. 时间点应该与时间轴线对齐
+          // 3. 艺术主义名称不应高于时间轴
+          
+          // 计算详情内容中心位置（考虑实际展开高度）
+          const nodeCenter = nodeRect.top + nodeRect.height / 2;
+          const viewportCenter = window.innerHeight / 2;
+          
+          // 计算需要的滚动位置使详情内容居中
+          let requiredScrollForCenter = window.scrollY + (nodeCenter - viewportCenter);
+          
+          // 计算时间点与时间轴对齐所需的最小滚动位置
+          const timelineAlignmentPosition = window.scrollY + (trackRect.top - timePointRect.height/2 - timePointRect.top);
+          
+          // 计算名称顶部到时间轴底部的距离
+          const nameElement = nodeElement.querySelector('.text-lg.font-semibold');
+          if (nameElement) {
+            const nameRect = nameElement.getBoundingClientRect();
+            const minDistanceToTimeline = 20; // 最小间距20px
+            const nameToTimelineDistance = nameRect.top - timelineRect.bottom;
+            
+            // 如果居中会导致名称太靠近时间轴，调整滚动位置
+            if (nameToTimelineDistance - (nodeCenter - viewportCenter) < minDistanceToTimeline) {
+              const safeScrollPosition = window.scrollY + (nameRect.top - timelineRect.bottom - minDistanceToTimeline);
+              requiredScrollForCenter = Math.max(requiredScrollForCenter, safeScrollPosition);
+            }
+          }
+          
+          // 使用平滑滚动到计算出的最终位置
+          window.scrollTo({
+            top: Math.max(requiredScrollForCenter, 0), // 确保不会滚动到负值位置
+            behavior: 'smooth'
           });
         }
-      }, 300);
-    } catch (error) {
-      console.error('Failed to fetch art movement details:', error);
-      toast({
-        title: "获取艺术主义详情失败",
-        description: "请稍后重试",
-        variant: "destructive"
-      });
+      }, 300); // 使用足够的延迟确保详情完全展开
     }
   };
   
