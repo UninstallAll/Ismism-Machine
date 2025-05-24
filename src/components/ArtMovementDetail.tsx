@@ -119,7 +119,7 @@ const ArtMovementDetail: React.FC<ArtMovementDetailProps> = ({ artStyle, onClose
 
         {/* 右侧：艺术作品展示 */}
         <div className="space-y-4">
-          {/* 艺术作品展示模块 - 替换原来的代表艺术家模块 */}
+          {/* 艺术作品展示模块 - 使用数据库提供的图片 */}
           <div className="bg-white/5 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-3">
               <Image className="h-5 w-5 text-purple-400" />
@@ -131,7 +131,7 @@ const ArtMovementDetail: React.FC<ArtMovementDetailProps> = ({ artStyle, onClose
                 {/* 作品图片 */}
                 <div className="aspect-square overflow-hidden rounded-lg bg-black/20">
                   <img
-                    src={artworksToShow[currentArtworkIndex]?.imageUrl || '/TestData/10040.jpg'}
+                    src={getImageUrl(artworksToShow[currentArtworkIndex]?.imageUrl || '')}
                     alt={artworksToShow[currentArtworkIndex]?.title || artStyle.title}
                     className="w-full h-full object-contain"
                     data-index={currentArtworkIndex}
@@ -212,7 +212,7 @@ const ArtMovementDetail: React.FC<ArtMovementDetailProps> = ({ artStyle, onClose
                     onClick={() => setCurrentArtworkIndex(index)}
                   >
                     <img
-                      src={artwork.imageUrl}
+                      src={getImageUrl(artwork.imageUrl)}
                       alt={artwork.title}
                       className="w-full h-24 object-cover"
                       data-index={index}
