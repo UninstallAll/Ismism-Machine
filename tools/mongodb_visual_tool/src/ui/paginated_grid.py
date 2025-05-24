@@ -459,13 +459,22 @@ class PaginatedGrid(ttk.Frame):
         selected_ids = set(str(doc.get('_id')) for doc in self.selected_docs)
         id_to_iid = {}  # 用于存储 _id 到 Treeview item ID 的映射
         
+        # 获取当前列配置
+        columns = self.list_view["columns"]
+        
         for item in current_page_items:
             item_id = str(item.get('_id'))
-            values = (
-                item.get('filename', item.get('title', str(item.get('_id', 'Unknown')))),
-                item.get('type', 'Unknown'),
-                str(item.get('size', 'N/A'))
-            )
+            # 构建每个字段的值
+            values = []
+            for col in columns:
+                value = item.get(col)
+                if isinstance(value, (list, dict)):
+                    # 如果是列表或字典，转换为字符串
+                    value = str(value)
+                elif value is None:
+                    value = ""
+                values.append(str(value))
+            
             # 插入项目并获取 Treeview 生成的 item ID
             iid = self.list_view.insert('', 'end', values=values)
             id_to_iid[item_id] = iid
@@ -1085,36 +1094,47 @@ class PaginatedGrid(ttk.Frame):
 
     def _update_list_columns(self):
         """根据schema更新列表视图的列"""
-        if not self.current_schema:
-            # 默认列
-            columns = ("Filename", "Type", "Size")
+        if not self.current_schema or 'properties' not in self.current_schema:
+            # 如果没有schema，使用默认列
+            columns = ["_id", "filename", "title", "type", "size", "importedAt"]
         else:
-            # 从schema中获取字段
-            properties = self.current_schema.get('properties', {})
-            columns = []
-            for field, schema in properties.items():
-                # 跳过ObjectId类型的字段和数组字段
-                field_type = schema.get('bsonType')
-                if isinstance(field_type, list):
-                    field_type = [t for t in field_type if t != 'null'][0] if [t for t in field_type if t != 'null'] else None
-                if field_type not in ['objectId', 'array']:
-                    columns.append(field.capitalize())
-            if not columns:
-                columns = ["ID"]
+            # 使用schema中定义的所有字段
+            properties = self.current_schema['properties']
+            columns = list(properties.keys())
+            
+            # 确保重要字段在前面
+            for field in ["_id", "filename", "title"]:
+                if field in columns:
+                    columns.remove(field)
+                    columns.insert(0, field)
 
         # 重新配置列表视图
         self.list_view["columns"] = columns
+        
+        # 设置列标题和宽度
         for col in columns:
-            self.list_view.heading(col, text=col)
-            self.list_view.column(col, width=100)
+            # 标题首字母大写
+            display_name = col.replace('_', ' ').title()
+            self.list_view.heading(col, text=display_name)
+            
+            # 根据字段类型设置列宽
+            if col == '_id':
+                width = 250  # ObjectId需要更宽的显示空间
+            elif col in ['description', 'content', 'tags']:
+                width = 200  # 长文本字段需要更宽的显示空间
+            elif col in ['filename', 'title', 'filePath']:
+                width = 180  # 文件名和标题需要适中的显示空间
+            elif col.endswith('At'):  # 如created_at, updated_at, importedAt等
+                width = 150  # 日期时间字段
+            else:
+                width = 120  # 其他字段使用默认宽度
+            
+            self.list_view.column(col, width=width)
 
         # 更新排序下拉框的值
-        if self.current_schema:
-            sort_fields = [field for field, schema in self.current_schema.get('properties', {}).items()
-                         if schema.get('bsonType') not in ['objectId', 'array']]
-            self.sort_field_combo['values'] = sort_fields
-            if sort_fields:
-                self.sort_field_var.set(sort_fields[0])
+        self.sort_field_combo['values'] = columns
+        if columns:
+            self.sort_field_var.set(columns[0])
 
     def _on_linux_scroll(self, event):
         """Handle Linux scroll events"""

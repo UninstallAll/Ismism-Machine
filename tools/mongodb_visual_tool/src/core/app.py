@@ -265,18 +265,10 @@ class MongoDBViewer(tk.Tk):
             return
         
         try:
-            # 获取集合的验证规则
-            collection_info = self.db_manager.get_collection_info(self.current_db, self.current_collection)
-            validation = collection_info.get('options', {}).get('validator', {})
-            
-            if validation:
-                # 存储当前集合的字段结构，供其他功能使用
-                self.current_schema = validation.get('$jsonSchema', {})
-                # 更新UI显示
-                self.paginated_grid.set_schema(self.current_schema)
-            else:
-                self.current_schema = None
-                self.paginated_grid.set_schema(None)
+            # 使用新的方法获取实际的字段结构
+            self.current_schema = self.db_manager.get_collection_schema(self.current_db, self.current_collection)
+            # 更新UI显示
+            self.paginated_grid.set_schema(self.current_schema)
         except Exception as e:
             self.current_schema = None
             self.paginated_grid.set_schema(None)

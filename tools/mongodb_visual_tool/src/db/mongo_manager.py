@@ -110,6 +110,64 @@ class MongoDBManager:
         result = self.client[database][collection].insert_one(document)
         return str(result.inserted_id)
     
+    def get_collection_schema(self, database, collection):
+        """获取集合的实际字段结构
+        
+        通过采样分析集合中的文档来获取实际的字段结构
+        
+        Args:
+            database (str): 数据库名
+            collection (str): 集合名
+            
+        Returns:
+            dict: 字段结构信息
+        """
+        if not self.client:
+            raise ConnectionError("Not connected to MongoDB")
+            
+        try:
+            # 获取集合中的一个样本文档
+            sample_doc = self.client[database][collection].find_one()
+            if not sample_doc:
+                return {
+                    "properties": {
+                        "_id": {"bsonType": "objectId"},
+                        "name": {"bsonType": "string"},
+                        "description": {"bsonType": "string"},
+                        "type": {"bsonType": "string"},
+                        "tags": {"bsonType": "array"},
+                        "created_at": {"bsonType": "date"},
+                        "updated_at": {"bsonType": "date"}
+                    }
+                }
+                
+            # 分析文档结构
+            properties = {}
+            for field, value in sample_doc.items():
+                if field == '_id':
+                    properties[field] = {"bsonType": "objectId"}
+                    continue
+                    
+                if isinstance(value, str):
+                    properties[field] = {"bsonType": "string"}
+                elif isinstance(value, int):
+                    properties[field] = {"bsonType": "int"}
+                elif isinstance(value, float):
+                    properties[field] = {"bsonType": "double"}
+                elif isinstance(value, bool):
+                    properties[field] = {"bsonType": "bool"}
+                elif isinstance(value, list):
+                    properties[field] = {"bsonType": "array"}
+                elif isinstance(value, dict):
+                    properties[field] = {"bsonType": "object"}
+                else:
+                    properties[field] = {"bsonType": "string"}  # 默认类型
+                    
+            return {"properties": properties}
+        except Exception as e:
+            print(f"Failed to get collection schema: {e}")
+            return {"properties": {}}
+
     def insert_many(self, database, collection, documents):
         """Insert multiple documents
         
@@ -125,10 +183,8 @@ class MongoDBManager:
             raise ConnectionError("Not connected to MongoDB")
             
         try:
-            # 获取集合信息和验证规则
-            collection_info = self.get_collection_info(database, collection)
-            validation = collection_info.get('options', {}).get('validator', {})
-            schema = validation.get('$jsonSchema', {})
+            # 获取集合的实际字段结构
+            schema = self.get_collection_schema(database, collection)
             
             if schema:
                 print(f"[DEBUG] Processing documents with schema: {schema}")
