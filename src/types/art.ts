@@ -29,6 +29,11 @@ export interface IArtwork {
   medium?: string;
   location?: string;
   fullImages?: IArtworkImage[];
+  images?: (string | IArtworkImage)[];
+  artist_id?: string;
+  movement_id?: string;
+  year_created?: number;
+  dimensions?: string;
 }
 
 export interface IArtStyle {

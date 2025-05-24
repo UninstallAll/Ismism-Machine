@@ -22,22 +22,41 @@ const ArtMovementDetail: React.FC<ArtMovementDetailProps> = ({ artStyle, onClose
   };
 
   // 处理图片URL，确保能够正确获取数据库指向的图片
-  const getImageUrl = (url: string) => {
-    if (!url) return '/TestData/10040.jpg'; // 如果URL为空，返回默认图片
+  const getImageUrl = (artwork: IArtwork | undefined) => {
+    // 如果没有作品数据，返回默认图片
+    if (!artwork) return '/TestData/10040.jpg';
     
-    // 如果是完整URL或以/开头的路径，直接使用
-    if (url.startsWith('http') || url.startsWith('/')) {
-      return url;
+    // 1. 优先使用作品的images数组中的图片
+    if (artwork.images && artwork.images.length > 0) {
+      const image = artwork.images[0];
+      // 如果是对象，提取URL属性
+      if (typeof image === 'object' && image !== null && 'url' in image) {
+        return (image as any).url;
+      }
+      // 如果是字符串，直接使用
+      if (typeof image === 'string') {
+        return image;
+      }
     }
     
-    // 处理相对路径，根据实际情况调整
-    // 1. 如果是数据库图片路径，可能需要添加API前缀
-    if (url.startsWith('db/') || url.startsWith('uploads/')) {
-      return `/api/images/${url}`; // 假设有一个图片API路径
+    // 2. 其次使用作品的imageUrl属性
+    if (artwork.imageUrl) {
+      // 如果是完整URL或以/开头的路径，直接使用
+      if (artwork.imageUrl.startsWith('http') || artwork.imageUrl.startsWith('/')) {
+        return artwork.imageUrl;
+      }
+      // 否则添加基础路径
+      return `/assets/${artwork.imageUrl}`;
     }
     
-    // 2. 其他资源文件
-    return `/assets/${url}`;
+    // 3. 如果作品有MongoDB ID，使用ID构建图片路径
+    if (artwork.id && artwork.id.length === 24 && artwork.id.match(/^[0-9a-f]{24}$/i)) {
+      // 这里假设MongoDB ID可以用于构建图片路径
+      return `/api/artworks/${artwork.id}/image`;
+    }
+    
+    // 4. 使用备用图片
+    return '/TestData/10040.jpg';
   };
 
   // 处理图片加载错误
@@ -193,7 +212,7 @@ const ArtMovementDetail: React.FC<ArtMovementDetailProps> = ({ artStyle, onClose
                 {/* 作品图片 */}
                 <div className="aspect-square overflow-hidden rounded-lg bg-black/20">
                   <img
-                    src={getImageUrl(artworksToShow[currentArtworkIndex]?.imageUrl || '')}
+                    src={getImageUrl(artworksToShow[currentArtworkIndex])}
                     alt={artworksToShow[currentArtworkIndex]?.title || artStyle.title}
                     className="w-full h-full object-contain"
                     data-index={currentArtworkIndex}
@@ -275,7 +294,7 @@ const ArtMovementDetail: React.FC<ArtMovementDetailProps> = ({ artStyle, onClose
                     onClick={() => setCurrentArtworkIndex(index)}
                   >
                     <img
-                      src={getImageUrl(artwork.imageUrl)}
+                      src={getImageUrl(artwork)}
                       alt={artwork.title}
                       className="w-full h-24 object-cover"
                       data-index={index}
