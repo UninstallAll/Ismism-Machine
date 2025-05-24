@@ -35,7 +35,10 @@ const ArtMovementDetail: React.FC<ArtMovementDetailProps> = ({ artStyle, onClose
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const target = e.target as HTMLImageElement;
     const index = parseInt(target.dataset.index || '0');
-    target.src = `/TestData/1004${index % 10}.jpg`;
+    // 使用固定的备用图片路径
+    target.src = `/TestData/10040.jpg`;
+    // 防止循环触发错误
+    target.onerror = null;
   };
   
   // 获取当前艺术主义相关的艺术作品
