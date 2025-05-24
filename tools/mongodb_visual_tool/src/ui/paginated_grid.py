@@ -360,82 +360,59 @@ class PaginatedGrid(ttk.Frame):
             card: Image card object
             success (bool): Whether loading was successful
         """
-        # 避免UI已销毁时更新
         if not card or not card.winfo_exists():
             return
-        # 这里可以做图片加载完成后的UI刷新（如需要）
-        pass
+        
+        # 更新卡片状态
+        if success:
+            card.update_status("Ready")
+        else:
+            card.update_status("Failed to load")
+        
+        # 刷新UI
+        self.update()
     
     def refresh_grid(self):
-        """Refresh grid view (重写选择逻辑，完全复刻list模式)"""
-        self.image_loader.clear_queue()
+        """Refresh grid view"""
+        # 清除现有卡片
         for card in self.displayed_cards:
             card.destroy()
-        self.displayed_cards = []
-
+        self.displayed_cards.clear()
+        
+        # 计算当前页要显示的项目
         start_index = (self.current_page - 1) * self.page_size
         end_index = min(start_index + self.page_size, len(self.filtered_items))
+        
+        # 确保起始索引有效
         if start_index >= len(self.filtered_items) and self.current_page > 1:
             self.current_page = max(1, self.current_page - 1)
             start_index = (self.current_page - 1) * self.page_size
             end_index = min(start_index + self.page_size, len(self.filtered_items))
+        
+        # 当前页的项目
         current_page_items = self.filtered_items[start_index:end_index]
-
+        
+        # 创建新卡片
         row = 0
         col = 0
-        selected_ids = set(str(doc.get('_id')) for doc in self.selected_docs)
         for item in current_page_items:
-            card = ImageCard(self.cards_frame, item)
+            # 创建卡片
+            card = ImageCard(self.grid_frame, doc=item, on_select_callback=self._on_card_selected)
             card.grid(row=row, column=col, padx=5, pady=5, sticky="nsew")
-            card.bind_select_callback(self._on_card_selected)
-            if self.context_menu_callback:
-                card.setup_context_menu(self.context_menu_callback)
-            # 同步选中状态
-            if str(item.get('_id')) in selected_ids:
-                card.set_selected(True)
+            
+            # 添加到显示列表
             self.displayed_cards.append(card)
-            self.image_loader.add_task(card)
+            
+            # 更新行列位置
             col += 1
             if col >= self.columns:
                 col = 0
                 row += 1
-
-        # 绑定卡片点击事件，完全复刻list模式的多选逻辑
-        for idx, card in enumerate(self.displayed_cards):
-            def make_on_click(c, i):
-                def _on_click(event):
-                    if self.selection_mode == "single":
-                        for cc in self.displayed_cards:
-                            cc.set_selected(False)
-                        c.set_selected(True)
-                        self.last_selected_index = i if c.is_selected else None
-                    else:
-                        shift_pressed = (event.state & 0x0001) != 0
-                        ctrl_pressed = (event.state & 0x0004) != 0
-                        if shift_pressed and self.last_selected_index is not None:
-                            start = min(self.last_selected_index, i)
-                            end = max(self.last_selected_index, i)
-                            for j in range(start, end + 1):
-                                self.displayed_cards[j].set_selected(True)
-                        elif ctrl_pressed:
-                            c.set_selected(not c.is_selected)
-                            self.last_selected_index = i if c.is_selected else self.last_selected_index
-                        else:
-                            for cc in self.displayed_cards:
-                                cc.set_selected(False)
-                            c.set_selected(True)
-                            self.last_selected_index = i if c.is_selected else None
-                    self._update_selection_ui()
-                    if self.on_show_details:
-                        try:
-                            self.on_show_details(c.doc)
-                        except Exception as e:
-                            print(f"Auto show details error: {e}")
-                return _on_click
-            card.bind("<Button-1>", make_on_click(card, idx))
-
+        
+        # 更新分页控件
         self._update_pagination_controls()
         self._update_select_all_btn()
+        self._update_status_bar()
     
     def refresh_list(self):
         """Refresh list view"""

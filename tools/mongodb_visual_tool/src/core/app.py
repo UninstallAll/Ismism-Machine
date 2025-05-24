@@ -293,7 +293,7 @@ class MongoDBViewer(tk.Tk):
             docs = self.db_manager.get_documents(self.current_db, self.current_collection, limit=500)
             
             # Validate documents
-            valid_docs, inconsistencies = DataValidator.validate_documents_with_files(docs)
+            valid_docs, inconsistencies = self.validate_documents_with_files(docs)
             
             # If there are inconsistencies, log them
             if inconsistencies:
@@ -314,40 +314,8 @@ class MongoDBViewer(tk.Tk):
         Returns:
             tuple: (valid documents, inconsistency list)
         """
-        valid_docs = []
-        inconsistencies = []
-        
-        for doc in docs:
-            # Copy document to avoid modifying original data
-            doc_copy = dict(doc)
-            
-            # Check file path
-            file_missing = False
-            file_path = None
-            
-            # Extract file path
-            if 'filePath' in doc:
-                file_path = doc['filePath']
-            elif 'imageUrl' in doc:
-                file_path = doc['imageUrl']
-                
-            # Check if file exists
-            if file_path:
-                if not os.path.exists(file_path):
-                    file_missing = True
-                    inconsistencies.append({
-                        'document_id': str(doc.get('_id')),
-                        'issue': 'file_missing',
-                        'path': file_path
-                    })
-            
-            # Mark file missing
-            if file_missing:
-                doc_copy['_file_missing'] = True
-                
-            valid_docs.append(doc_copy)
-            
-        return valid_docs, inconsistencies
+        # 使用DataValidator类进行验证
+        return DataValidator.validate_documents_with_files(docs)
     
     def log_inconsistencies(self, inconsistencies):
         """Log inconsistencies
@@ -873,20 +841,14 @@ class MongoDBViewer(tk.Tk):
         Args:
             doc: Document object
         """
-        if not self.current_db or not self.current_collection:
-            messagebox.showwarning("No Collection Selected", "No collection is currently selected.")
+        if not self._validate_collection_selected():
             return
-            
-        # Confirm deletion
-        confirm = messagebox.askyesno("Confirm Deletion", 
-                                     f"Are you sure you want to delete this document?\n\n" +
-                                     f"Filename: {doc.get('filename', 'Unknown')}\n" +
-                                     f"ID: {doc.get('_id', 'Unknown')}")
-        if not confirm:
+        
+        # 确认删除
+        if not self._confirm_deletion([doc]):
             return
-            
+        
         try:
-            # Delete document from database
             success = self.db_manager.delete_document(
                 self.current_db, 
                 self.current_collection,
@@ -894,60 +856,95 @@ class MongoDBViewer(tk.Tk):
             )
             
             if success:
-                self.update_status(f"Document deleted successfully")
+                self.update_status("Document deleted successfully")
                 messagebox.showinfo("Delete Successful", "Document has been deleted successfully.")
-                
-                # Refresh collection data
                 self.load_collection_data()
             else:
-                self.update_status("Failed to delete document")
-                messagebox.showerror("Delete Failed", "Failed to delete the document.")
+                self._handle_delete_error("Failed to delete the document.")
         except Exception as e:
-            self.update_status(f"Delete failed: {str(e)}")
-            messagebox.showerror("Delete Error", f"Failed to delete document: {str(e)}")
+            self._handle_delete_error(f"Failed to delete document: {str(e)}")
     
     def delete_documents(self, docs):
-        """Delete multiple documents and their associated files"""
-        print(f"[DEBUG] Entering delete_documents. Docs count: {len(docs)}")
-        if not self.current_db or not self.current_collection:
-            messagebox.showwarning("未选择集合", "请先在左侧选择目标数据库和集合！")
-            print("[DEBUG] No database or collection selected.")
+        """Delete multiple documents
+        
+        Args:
+            docs (list): List of documents to delete
+        """
+        if not self._validate_collection_selected() or not docs:
             return
-        if not docs:
-            print("[DEBUG] Docs list is empty.")
+        
+        # 确认删除
+        if not self._confirm_deletion(docs):
             return
-        # 确认
-        confirm = messagebox.askyesno(
-            "Confirm Deletion",
-            f"Are you sure you want to delete {len(docs)} documents?\n\n" +
-            "\n".join([str(doc.get('filename', doc.get('_id', 'Unknown'))) for doc in docs[:5]]) +
-            ("\n..." if len(docs) > 5 else "")
-        )
-        if not confirm:
-            return
+        
         success_count = 0
         failed_docs = []
+        
         for doc in docs:
-            print(f"[DEBUG] Processing doc: {doc.get('_id')}")
-            print(f"[DEBUG] Doc content: {doc}")
             try:
-                ok = self.db_manager.delete_document(
+                if self.db_manager.delete_document(
                     self.current_db,
                     self.current_collection,
                     str(doc.get('_id'))
-                )
-                if ok:
+                ):
                     success_count += 1
+                else:
+                    failed_docs.append(doc)
             except Exception as e:
                 print(f"Delete failed: {doc.get('_id')}, {e}")
                 failed_docs.append(doc)
+        
         if success_count:
             self.update_status(f"Deleted {success_count} documents successfully")
             messagebox.showinfo("Delete Successful", f"Deleted {success_count} documents successfully.")
             self.load_collection_data()
         else:
-            self.update_status("Failed to delete documents")
-            messagebox.showerror("Delete Failed", "Failed to delete the selected documents.")
+            self._handle_delete_error("Failed to delete the selected documents.")
+        
+        if failed_docs:
+            failed_ids = [str(doc.get('_id')) for doc in failed_docs]
+            print(f"Failed to delete documents: {', '.join(failed_ids)}")
+    
+    def _validate_collection_selected(self):
+        """验证是否已选择集合
+        
+        Returns:
+            bool: 是否已选择集合
+        """
+        if not self.current_db or not self.current_collection:
+            messagebox.showwarning("No Collection Selected", "No collection is currently selected.")
+            return False
+        return True
+    
+    def _confirm_deletion(self, docs):
+        """确认删除操作
+        
+        Args:
+            docs (list): 要删除的文档列表
+        
+        Returns:
+            bool: 用户是否确认删除
+        """
+        if len(docs) == 1:
+            doc = docs[0]
+            message = (f"Are you sure you want to delete this document?\n\n" +
+                      f"Filename: {doc.get('filename', 'Unknown')}\n" +
+                      f"ID: {doc.get('_id', 'Unknown')}")
+        else:
+            message = (f"Are you sure you want to delete {len(docs)} documents?\n\n" +
+                      "\n".join([str(doc.get('filename', doc.get('_id', 'Unknown'))) for doc in docs[:5]]) +
+                      ("\n..." if len(docs) > 5 else ""))
+        
+        return messagebox.askyesno("Confirm Deletion", message)
+    
+    def _handle_delete_error(self, message):
+        """处理删除错误
+        
+        Args:
+            message (str): 错误信息
+        """
+        self.update_status(message)
+        messagebox.showerror("Delete Failed", message)
     
     def on_close(self):
         """Handle window close event"""
