@@ -8,7 +8,6 @@ import math
 import os
 from PIL import Image, ImageTk
 from rapidfuzz import fuzz
-import datetime
 
 from ..config.settings import DEFAULT_PAGE_SIZE
 from .image_card import ImageCard
@@ -334,31 +333,17 @@ class PaginatedGrid(ttk.Frame):
             card: Image card object
             success (bool): Whether loading was successful
         """
-        # 检查卡片是否还存在且属于当前批次
+        # 避免UI已销毁时更新
         if not card or not card.winfo_exists():
             return
-            
-        if not hasattr(card, 'batch_id') or card.batch_id != self.current_batch_id:
-            return
-            
         # 这里可以做图片加载完成后的UI刷新（如需要）
-        try:
-            card.update_idletasks()
-        except Exception:
-            pass  # 忽略更新失败
+        pass
     
     def refresh_grid(self):
         """Refresh grid view (重写选择逻辑，完全复刻list模式)"""
-        # 清除现有的加载任务
         self.image_loader.clear_queue()
-        
-        # 等待所有正在进行的加载任务完成
-        self.image_loader.wait_pending()
-        
-        # 销毁现有卡片
         for card in self.displayed_cards:
-            if card.winfo_exists():
-                card.destroy()
+            card.destroy()
         self.displayed_cards = []
 
         start_index = (self.current_page - 1) * self.page_size
@@ -372,46 +357,29 @@ class PaginatedGrid(ttk.Frame):
         row = 0
         col = 0
         selected_ids = set(str(doc.get('_id')) for doc in self.selected_docs)
-        
-        # 创建新的卡片批次ID
-        self.current_batch_id = datetime.datetime.now().timestamp()
-        
         for item in current_page_items:
-            try:
-                card = ImageCard(self.cards_frame, item)
-                card.grid(row=row, column=col, padx=5, pady=5, sticky="nsew")
-                card.bind_select_callback(self._on_card_selected)
-                if self.context_menu_callback:
-                    card.setup_context_menu(self.context_menu_callback)
-                # 同步选中状态
-                if str(item.get('_id')) in selected_ids:
-                    card.set_selected(True)
-                self.displayed_cards.append(card)
-                
-                # 添加批次ID到卡片
-                card.batch_id = self.current_batch_id
-                
-                # 添加图片加载任务
-                self.image_loader.add_task(card, self.current_batch_id)
-                
-                col += 1
-                if col >= self.columns:
-                    col = 0
-                    row += 1
-            except Exception as e:
-                print(f"Error creating card: {e}")
-                continue
+            card = ImageCard(self.cards_frame, item)
+            card.grid(row=row, column=col, padx=5, pady=5, sticky="nsew")
+            card.bind_select_callback(self._on_card_selected)
+            if self.context_menu_callback:
+                card.setup_context_menu(self.context_menu_callback)
+            # 同步选中状态
+            if str(item.get('_id')) in selected_ids:
+                card.set_selected(True)
+            self.displayed_cards.append(card)
+            self.image_loader.add_task(card)
+            col += 1
+            if col >= self.columns:
+                col = 0
+                row += 1
 
-        # 绑定卡片点击事件
+        # 绑定卡片点击事件，完全复刻list模式的多选逻辑
         for idx, card in enumerate(self.displayed_cards):
             def make_on_click(c, i):
                 def _on_click(event):
-                    if not c.winfo_exists():
-                        return
                     if self.selection_mode == "single":
                         for cc in self.displayed_cards:
-                            if cc.winfo_exists():
-                                cc.set_selected(False)
+                            cc.set_selected(False)
                         c.set_selected(True)
                         self.last_selected_index = i if c.is_selected else None
                     else:
@@ -421,15 +389,13 @@ class PaginatedGrid(ttk.Frame):
                             start = min(self.last_selected_index, i)
                             end = max(self.last_selected_index, i)
                             for j in range(start, end + 1):
-                                if j < len(self.displayed_cards) and self.displayed_cards[j].winfo_exists():
-                                    self.displayed_cards[j].set_selected(True)
+                                self.displayed_cards[j].set_selected(True)
                         elif ctrl_pressed:
                             c.set_selected(not c.is_selected)
                             self.last_selected_index = i if c.is_selected else self.last_selected_index
                         else:
                             for cc in self.displayed_cards:
-                                if cc.winfo_exists():
-                                    cc.set_selected(False)
+                                cc.set_selected(False)
                             c.set_selected(True)
                             self.last_selected_index = i if c.is_selected else None
                     self._update_selection_ui()
@@ -488,14 +454,7 @@ class PaginatedGrid(ttk.Frame):
         
         # Update pagination controls
         self._update_pagination_controls()
-        self._update_select_all_btn()
-        
-        # 如果有选中项，显示第一个选中项的详情
-        if self.selected_docs and self.on_show_details:
-            try:
-                self.on_show_details(self.selected_docs[0])
-            except Exception as e:
-                print(f"Show details error: {e}")
+        self._update_select_all_btn()  # 新增：刷新全选按钮
     
     def _on_card_selected(self, card, is_selected, event=None):
         try:
@@ -988,24 +947,15 @@ class PaginatedGrid(ttk.Frame):
         self._update_selection_ui()
 
     def _on_list_selection_changed(self, event=None):
-        """处理列表视图选择变更事件"""
         # 只要列表选择变更，selected_docs就同步
         selected_ids = set(self.list_view.item(i, 'text') for i in self.list_view.selection())
         # 用_id查找doc
         self.selected_docs = [item for item in self.filtered_items if str(item.get('_id')) in selected_ids]
         self._update_status_bar()
         self._update_select_all_btn()
-        
         # 如果当前是grid模式，也刷新grid同步选中
         if self.current_view == "grid":
             self.refresh_grid()
-            
-        # 显示选中文档的详情
-        if self.selected_docs and self.on_show_details:
-            try:
-                self.on_show_details(self.selected_docs[0])  # 显示第一个选中的文档
-            except Exception as e:
-                print(f"Show details error: {e}")
 
     def _show_list_context_menu(self, event):
         """显示列表视图的右键菜单
@@ -1088,26 +1038,3 @@ class PaginatedGrid(ttk.Frame):
             self.sort_field_combo['values'] = sort_fields
             if sort_fields:
                 self.sort_field_var.set(sort_fields[0])
-
-    def switch_to_view(self, view_type):
-        """切换视图类型
-        
-        Args:
-            view_type (str): 视图类型 ('grid' 或 'list')
-        """
-        if view_type not in ["grid", "list"]:
-            return
-            
-        if view_type != self.current_view:
-            self.current_view = view_type
-            if view_type == "grid":
-                self.list_frame.pack_forget()
-                self.grid_frame.pack(fill=tk.BOTH, expand=True)
-                self.refresh_grid()
-            else:
-                self.grid_frame.pack_forget()
-                self.list_frame.pack(fill=tk.BOTH, expand=True)
-                self.refresh_list()
-            
-            # 更新按钮文本
-            self.view_button.config(text="Switch to " + ("List" if view_type == "grid" else "Grid"))

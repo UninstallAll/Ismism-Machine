@@ -37,8 +37,6 @@ class MongoDBViewer(tk.Tk):
         self.current_db = None
         self.current_collection = None
         self.current_docs = []
-        self.current_schema = None
-        self._last_schema_update = None  # 添加：记录最后一次schema更新的集合
         
         # Create UI
         self.create_ui()
@@ -81,21 +79,9 @@ class MongoDBViewer(tk.Tk):
         connect_button = ttk.Button(conn_frame, text="Connect", command=self.connect_mongodb)
         connect_button.pack(fill=tk.X, padx=5, pady=5)
 
-        # 导入功能按钮框架
-        import_frame = ttk.LabelFrame(self.left_frame, text="导入功能")
-        import_frame.pack(fill=tk.X, padx=5, pady=5)
-        
-        # 导入图片按钮
-        import_image_btn = ttk.Button(import_frame, text="导入图片", command=self.import_images)
-        import_image_btn.pack(fill=tk.X, padx=5, pady=2)
-        
-        # 添加词条按钮
-        add_entry_btn = ttk.Button(import_frame, text="添加词条", command=self.import_entry)
-        add_entry_btn.pack(fill=tk.X, padx=5, pady=2)
-        
-        # 批量导入词条按钮
-        bulk_import_btn = ttk.Button(import_frame, text="批量导入词条", command=self.import_entries_from_json)
-        bulk_import_btn.pack(fill=tk.X, padx=5, pady=2)
+        # --- 新增：导入按钮 ---
+        import_button = ttk.Button(conn_frame, text="导入图片/词条", command=self.show_import_menu)
+        import_button.pack(fill=tk.X, padx=5, pady=5)
         
         # Database and collection tree view
         tree_frame = ttk.LabelFrame(self.left_frame, text="Databases and Collections")
@@ -104,8 +90,6 @@ class MongoDBViewer(tk.Tk):
         self.db_tree = ttk.Treeview(tree_frame)
         self.db_tree.pack(fill=tk.BOTH, expand=True)
         self.db_tree.bind("<<TreeviewSelect>>", self.on_tree_select)
-        # 添加右键菜单绑定
-        self.db_tree.bind("<Button-3>", self.show_tree_context_menu)
         
         # Status bar
         self.status_var = tk.StringVar(value="Ready")
@@ -250,10 +234,6 @@ class MongoDBViewer(tk.Tk):
             # Get collection schema and update UI
             self.update_collection_schema()
             
-            # 应用默认视图
-            default_view = self.get_collection_default_view(item)
-            self.paginated_grid.switch_to_view(default_view)
-            
             # Load collection data
             self.load_collection_data()
         else:  # Otherwise it's a database
@@ -273,11 +253,6 @@ class MongoDBViewer(tk.Tk):
         if not self.current_db or not self.current_collection:
             return
             
-        # 检查是否需要更新schema
-        current_key = f"{self.current_db}.{self.current_collection}"
-        if self._last_schema_update == current_key:
-            return
-            
         try:
             # 获取集合的验证规则
             collection_info = self.db_manager.get_collection_info(self.current_db, self.current_collection)
@@ -286,20 +261,16 @@ class MongoDBViewer(tk.Tk):
             if validation:
                 # 存储当前集合的字段结构，供其他功能使用
                 self.current_schema = validation.get('$jsonSchema', {})
+                print(f"[DEBUG] Current schema: {self.current_schema}")
                 # 更新UI显示
                 self.paginated_grid.set_schema(self.current_schema)
             else:
                 self.current_schema = None
                 self.paginated_grid.set_schema(None)
-                
-            # 记录这次更新
-            self._last_schema_update = current_key
-            
         except Exception as e:
             print(f"[DEBUG] Failed to get collection schema: {e}")
             self.current_schema = None
             self.paginated_grid.set_schema(None)
-            self._last_schema_update = None
     
     def load_collection_data(self):
         """Load collection data"""
@@ -1121,81 +1092,4 @@ class MongoDBViewer(tk.Tk):
         except json.JSONDecodeError:
             messagebox.showerror("格式错误", "JSON文件格式不正确")
         except Exception as e:
-            messagebox.showerror("导入失败", f"导入词条失败: {e}")
-
-    def show_tree_context_menu(self, event):
-        """显示树形视图的右键菜单"""
-        # 获取点击的item
-        item = self.db_tree.identify_row(event.y)
-        if not item:
-            return
-            
-        # 选中被点击的item
-        self.db_tree.selection_set(item)
-        
-        # 创建右键菜单
-        menu = tk.Menu(self, tearoff=0)
-        
-        # 获取item的类型（数据库或集合）
-        is_collection = bool(self.db_tree.parent(item))
-        
-        if is_collection:
-            # 集合的右键菜单
-            menu.add_command(label="设为默认网格视图", 
-                           command=lambda: self.set_collection_default_view(item, "grid"))
-            menu.add_command(label="设为默认列表视图", 
-                           command=lambda: self.set_collection_default_view(item, "list"))
-            menu.add_separator()
-            # 显示当前默认视图
-            current_view = self.get_collection_default_view(item)
-            menu.add_command(label=f"当前默认视图: {current_view}", state="disabled")
-        
-        # 显示菜单
-        try:
-            menu.tk_popup(event.x_root, event.y_root)
-        finally:
-            menu.grab_release()
-    
-    def set_collection_default_view(self, item, view_type):
-        """设置集合的默认视图
-        
-        Args:
-            item: 树形视图中的item ID
-            view_type (str): 视图类型 ('grid' 或 'list')
-        """
-        if not item:
-            return
-            
-        db_name = self.db_tree.item(self.db_tree.parent(item), "text")
-        collection_name = self.db_tree.item(item, "text")
-        
-        # 更新配置
-        if "collection_views" not in self.user_config:
-            self.user_config["collection_views"] = {}
-            
-        collection_key = f"{db_name}.{collection_name}"
-        self.user_config["collection_views"][collection_key] = view_type
-        ConfigManager.save_config(self.user_config)
-        
-        # 如果是当前选中的集合，立即切换视图
-        if (self.current_db == db_name and 
-            self.current_collection == collection_name):
-            self.paginated_grid.switch_to_view(view_type)
-    
-    def get_collection_default_view(self, item):
-        """获取集合的默认视图
-        
-        Args:
-            item: 树形视图中的item ID
-            
-        Returns:
-            str: 默认视图类型 ('grid' 或 'list')
-        """
-        if not item:
-            return "grid"  # 默认网格视图
-            
-        db_name = self.db_tree.item(self.db_tree.parent(item), "text")
-        collection_name = self.db_tree.item(item, "text")
-        
-        collection_key = f"{db_name}.{collection_name}"
-        return self.user_config.get("collection_views", {}).get(collection_key, "grid") 
+            messagebox.showerror("导入失败", f"导入词条失败: {e}") 
