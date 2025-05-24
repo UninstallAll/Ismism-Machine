@@ -110,6 +110,109 @@ class MongoDBManager:
         result = self.client[database][collection].insert_one(document)
         return str(result.inserted_id)
     
+    def insert_many(self, database, collection, documents):
+        """Insert multiple documents
+        
+        Args:
+            database (str): Database name
+            collection (str): Collection name
+            documents (list): List of documents to insert
+            
+        Returns:
+            bool: Returns True if insertion successful
+        """
+        if not self.client:
+            raise ConnectionError("Not connected to MongoDB")
+            
+        try:
+            # 获取集合信息和验证规则
+            collection_info = self.get_collection_info(database, collection)
+            validation = collection_info.get('options', {}).get('validator', {})
+            schema = validation.get('$jsonSchema', {})
+            
+            if schema:
+                print(f"[DEBUG] Processing documents with schema: {schema}")
+                processed_docs = []
+                for doc in documents:
+                    processed_doc = self._process_document_for_schema(doc, schema)
+                    processed_docs.append(processed_doc)
+                    print(f"[DEBUG] Original doc: {doc}")
+                    print(f"[DEBUG] Processed doc: {processed_doc}")
+                documents = processed_docs
+            
+            result = self.client[database][collection].insert_many(documents)
+            return bool(result.inserted_ids)
+        except Exception as e:
+            print(f"Failed to insert documents: {e}")
+            if hasattr(e, 'details'):
+                print(f"Error details: {e.details}")
+            return False
+    
+    def _process_document_for_schema(self, doc, schema):
+        """处理文档以符合schema要求
+        
+        Args:
+            doc (dict): 原始文档
+            schema (dict): JSON Schema
+        
+        Returns:
+            dict: 处理后的文档
+        """
+        processed = doc.copy()
+        properties = schema.get('properties', {})
+        
+        for field, field_schema in properties.items():
+            if field not in processed:
+                continue
+                
+            # 处理字段类型可能是数组的情况
+            field_types = field_schema.get('bsonType')
+            if isinstance(field_types, list):
+                field_types = [t for t in field_types if t != 'null']
+                if field_types:
+                    field_type = field_types[0]
+                else:
+                    continue
+            else:
+                field_type = field_types
+
+            if field_type == 'objectId' and isinstance(processed[field], str):
+                try:
+                    processed[field] = ObjectId(processed[field])
+                except Exception as e:
+                    print(f"Failed to convert {field} to ObjectId: {e}")
+            elif field_type == 'array':
+                items_schema = field_schema.get('items', {})
+                item_type = items_schema.get('bsonType')
+                if item_type == 'objectId' and isinstance(processed[field], list):
+                    try:
+                        processed[field] = [ObjectId(item) if isinstance(item, str) else item 
+                                         for item in processed[field]]
+                    except Exception as e:
+                        print(f"Failed to convert items in {field} to ObjectId: {e}")
+        
+        return processed
+
+    def get_collection_info(self, database, collection):
+        """Get collection information including validation rules
+        
+        Args:
+            database (str): Database name
+            collection (str): Collection name
+            
+        Returns:
+            dict: Collection information
+        """
+        if not self.client:
+            raise ConnectionError("Not connected to MongoDB")
+            
+        try:
+            collections = list(self.client[database].list_collections(filter={'name': collection}))
+            return collections[0] if collections else {}
+        except Exception as e:
+            print(f"Failed to get collection info: {e}")
+            return {}
+    
     def update_document(self, database, collection, document_id, update_data):
         """Update document
         

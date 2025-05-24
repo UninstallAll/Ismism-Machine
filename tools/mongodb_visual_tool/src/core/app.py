@@ -231,6 +231,9 @@ class MongoDBViewer(tk.Tk):
             self.current_db = db_name
             self.current_collection = collection_name
             
+            # Get collection schema and update UI
+            self.update_collection_schema()
+            
             # Load collection data
             self.load_collection_data()
         else:  # Otherwise it's a database
@@ -244,6 +247,30 @@ class MongoDBViewer(tk.Tk):
             # Record current selected database
             self.current_db = db_name
             self.current_collection = None
+    
+    def update_collection_schema(self):
+        """获取并更新集合的字段结构"""
+        if not self.current_db or not self.current_collection:
+            return
+            
+        try:
+            # 获取集合的验证规则
+            collection_info = self.db_manager.get_collection_info(self.current_db, self.current_collection)
+            validation = collection_info.get('options', {}).get('validator', {})
+            
+            if validation:
+                # 存储当前集合的字段结构，供其他功能使用
+                self.current_schema = validation.get('$jsonSchema', {})
+                print(f"[DEBUG] Current schema: {self.current_schema}")
+                # 更新UI显示
+                self.paginated_grid.set_schema(self.current_schema)
+            else:
+                self.current_schema = None
+                self.paginated_grid.set_schema(None)
+        except Exception as e:
+            print(f"[DEBUG] Failed to get collection schema: {e}")
+            self.current_schema = None
+            self.paginated_grid.set_schema(None)
     
     def load_collection_data(self):
         """Load collection data"""
@@ -933,7 +960,8 @@ class MongoDBViewer(tk.Tk):
     def show_import_menu(self):
         menu = tk.Menu(self, tearoff=0)
         menu.add_command(label="导入图片", command=self.import_images)
-        menu.add_command(label="导入词条", command=self.import_entry)
+        menu.add_command(label="添加词条", command=self.import_entry)
+        menu.add_command(label="批量导入词条", command=self.import_entries_from_json)
         try:
             menu.tk_popup(self.winfo_pointerx(), self.winfo_pointery())
         finally:
@@ -969,40 +997,99 @@ class MongoDBViewer(tk.Tk):
         if not self.current_db or not self.current_collection:
             messagebox.showwarning("未选择集合", "请先在左侧选择目标数据库和集合！")
             return
-        entry = self.simple_input_dialog("导入词条", "请输入词条内容：")
-        if not entry:
-            return
-        doc = {
-            "entry": entry,
-            "importedAt": datetime.datetime.now()
-        }
-        try:
-            self.db_manager.insert_document(self.current_db, self.current_collection, doc)
-            self.update_status("成功导入词条")
-            self.load_collection_data()
-        except Exception as e:
-            messagebox.showerror("导入失败", f"导入词条失败: {e}")
-
-    def simple_input_dialog(self, title, prompt):
         dialog = tk.Toplevel(self)
-        dialog.title(title)
+        dialog.title("添加词条")
         dialog.grab_set()
-        tk.Label(dialog, text=prompt).pack(padx=10, pady=10)
-        entry_var = tk.StringVar()
-        entry = ttk.Entry(dialog, textvariable=entry_var, width=40)
-        entry.pack(padx=10, pady=5)
-        entry.focus()
-        result = {'value': None}
+        dialog.resizable(False, False)
+        
+        main_frame = ttk.Frame(dialog, padding=10)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        ttk.Label(main_frame, text="词条内容:").pack(padx=10, pady=(10,5))
+        entry_text = tk.Text(main_frame, width=40, height=5)
+        entry_text.pack(padx=10, pady=5)
+        entry_text.focus()
+        
+        btn_frame = ttk.Frame(main_frame)
+        btn_frame.pack(pady=10)
+        
         def on_ok():
-            result['value'] = entry_var.get()
-            dialog.destroy()
+            content = entry_text.get("1.0", tk.END).strip()
+            if not content:
+                return
+            doc = {
+                "entry": content,
+                "importedAt": datetime.datetime.now()
+            }
+            try:
+                self.db_manager.insert_document(self.current_db, self.current_collection, doc)
+                self.update_status("成功添加词条")
+                self.load_collection_data()
+                dialog.destroy()
+            except Exception as e:
+                messagebox.showerror("添加失败", f"添加词条失败: {e}")
+        
         def on_cancel():
             dialog.destroy()
-        btn_frame = ttk.Frame(dialog)
-        btn_frame.pack(pady=10)
+        
         ttk.Button(btn_frame, text="确定", command=on_ok).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="取消", command=on_cancel).pack(side=tk.LEFT, padx=5)
-        dialog.bind('<Return>', lambda e: on_ok())
+        
         dialog.bind('<Escape>', lambda e: on_cancel())
+        
+        # 居中显示对话框
+        dialog.update_idletasks()
+        width = dialog.winfo_width()
+        height = dialog.winfo_height()
+        x = (dialog.winfo_screenwidth() // 2) - (width // 2)
+        y = (dialog.winfo_screenheight() // 2) - (height // 2)
+        dialog.geometry(f'{width}x{height}+{x}+{y}')
+        
         self.wait_window(dialog)
-        return result['value'] 
+
+    def import_entries_from_json(self):
+        """从JSON文件批量导入词条"""
+        if not self.current_db or not self.current_collection:
+            messagebox.showwarning("未选择集合", "请先在左侧选择目标数据库和集合！")
+            return
+            
+        file_path = filedialog.askopenfilename(
+            title="选择JSON文件",
+            filetypes=[("JSON文件", "*.json"), ("所有文件", "*.*")]
+        )
+        
+        if not file_path:
+            return
+            
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                entries = json.load(f)
+            
+            if not isinstance(entries, (list, dict)):
+                messagebox.showerror("格式错误", "JSON文件格式不正确，应为数组或对象格式")
+                return
+                
+            # 如果是字典，转换为列表
+            if isinstance(entries, dict):
+                entries = [entries]
+                
+            # 添加导入时间
+            for entry in entries:
+                if isinstance(entry, (str, int, float)):
+                    # 如果是基本类型，转换为词条对象
+                    entry = {"entry": str(entry)}
+                entry["importedAt"] = datetime.datetime.now()
+                
+            # 批量插入
+            result = self.db_manager.insert_many(self.current_db, self.current_collection, entries)
+            
+            if result:
+                messagebox.showinfo("导入成功", f"成功导入 {len(entries)} 个词条")
+                self.load_collection_data()
+            else:
+                messagebox.showerror("导入失败", "导入过程中发生错误")
+                
+        except json.JSONDecodeError:
+            messagebox.showerror("格式错误", "JSON文件格式不正确")
+        except Exception as e:
+            messagebox.showerror("导入失败", f"导入词条失败: {e}") 

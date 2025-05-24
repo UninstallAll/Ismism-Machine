@@ -28,8 +28,8 @@ class PaginatedGrid(ttk.Frame):
         
         # Basic properties
         self.parent = parent
-        self.page_size = 50  # 默认每页50个
-        self.columns = 3     # 初始列数，后续自动调整
+        self.page_size = 50  # Default 50 items per page
+        self.columns = 3     # Initial column count, will be adjusted automatically
         self.current_page = 1
         self.total_pages = 1
         self.all_items = []  # All items
@@ -39,6 +39,7 @@ class PaginatedGrid(ttk.Frame):
         self.context_menu_callback = None
         self.current_view = "grid"  # Default view mode (grid or list)
         self.on_show_details = on_show_details
+        self.current_schema = None  # 添加：当前集合的schema
         
         # Control key states
         self.ctrl_pressed = False
@@ -53,7 +54,7 @@ class PaginatedGrid(ttk.Frame):
         # Search history
         self.search_history = []
         
-        # 排序相关属性
+        # Sorting related properties
         self.sort_field = "filename"
         self.sort_reverse = False
         
@@ -61,7 +62,7 @@ class PaginatedGrid(ttk.Frame):
         self.last_selected_index = None
         
         # Selection mode
-        self.selection_mode = "multi"  # multi(多选)/single(单选)
+        self.selection_mode = "multi"  # multi/single selection mode
         
         # Create UI
         self._create_ui()
@@ -160,7 +161,7 @@ class PaginatedGrid(ttk.Frame):
         self.view_button = ttk.Button(self.toolbar, text="Switch View", command=self._switch_view_mode)
         self.view_button.pack(side=tk.LEFT, padx=5)
         
-        # --- 新增：排序控件 ---
+        # --- Sorting controls ---
         ttk.Label(self.toolbar, text="Sort by:").pack(side=tk.LEFT, padx=(20, 2))
         self.sort_field_var = tk.StringVar(value="filename")
         self.sort_field_combo = ttk.Combobox(
@@ -172,18 +173,18 @@ class PaginatedGrid(ttk.Frame):
         )
         self.sort_field_combo.pack(side=tk.LEFT, padx=2)
         self.sort_field_combo.bind("<<ComboboxSelected>>", self._on_sort_changed)
-        # --- 新增：双排序按钮 ---
+        # --- Double sorting buttons ---
         self.asc_button = ttk.Button(self.toolbar, text="↑", width=2, command=lambda: self._set_sort_order(False))
         self.desc_button = ttk.Button(self.toolbar, text="↓", width=2, command=lambda: self._set_sort_order(True))
         self.asc_button.pack(side=tk.LEFT, padx=0)
         self.desc_button.pack(side=tk.LEFT, padx=(0, 8))
         self._update_sort_buttons()
-        # --- 排序控件结束 ---
+        # --- End of sorting controls ---
         
         # Bulk operations buttons
         self.operations_frame = ttk.Frame(self.toolbar)
         self.operations_frame.pack(side=tk.RIGHT)
-        self.select_all_btn = ttk.Button(self.operations_frame, text="全选", command=self._toggle_select_all)
+        self.select_all_btn = ttk.Button(self.operations_frame, text="Select All", command=self._toggle_select_all)
         self.select_all_btn.pack(side=tk.LEFT, padx=2)
         ttk.Button(self.operations_frame, text="Bulk Export", command=self._bulk_export).pack(side=tk.LEFT, padx=2)
         ttk.Button(self.operations_frame, text="Create Relation", command=self._bulk_create_relation).pack(side=tk.LEFT, padx=2)
@@ -210,7 +211,7 @@ class PaginatedGrid(ttk.Frame):
         hsb.pack(side=tk.BOTTOM, fill=tk.X)
         self.list_view.pack(fill=tk.BOTH, expand=True)
         self.list_view.bind("<<TreeviewSelect>>", self._on_list_selection_changed)
-        self.list_view.bind("<Button-3>", self._show_list_context_menu)  # 绑定右键菜单事件
+        self.list_view.bind("<Button-3>", self._show_list_context_menu)  # Bind right-click menu event
         
         # Grid view - Canvas + Frame
         self.grid_frame = ttk.Frame(self.view_container)
@@ -271,13 +272,13 @@ class PaginatedGrid(ttk.Frame):
         self.canvas.bind("<B1-Motion>", self._on_mouse_drag)
         self.canvas.bind("<ButtonRelease-1>", self._on_mouse_release)
         
-        # --- 新增：底部状态栏 ---
+        # --- Bottom status bar ---
         self.status_frame = ttk.Frame(self.main_frame)
         self.status_frame.pack(fill=tk.X, padx=5, pady=(0, 5), side=tk.BOTTOM)
         self.status_var = tk.StringVar(value="Total: 0, Selected: 0")
         self.status_label = ttk.Label(self.status_frame, textvariable=self.status_var, anchor="w")
         self.status_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        # --- 新增：列数设置控件 ---
+        # --- Column count settings ---
         ttk.Label(self.status_frame, text="Columns:").pack(side=tk.RIGHT, padx=(2, 0))
         self.columns_var = tk.StringVar(value=str(self.columns))
         self.columns_combo = ttk.Combobox(
@@ -289,19 +290,19 @@ class PaginatedGrid(ttk.Frame):
         )
         self.columns_combo.pack(side=tk.RIGHT, padx=(0, 8))
         self.columns_combo.bind("<<ComboboxSelected>>", self._on_columns_changed)
-        # --- 状态栏结束 ---
-        # --- 新增：快捷键说明栏 ---
+        # --- End of status bar ---
+        # --- Shortcut key instructions ---
         self.shortcut_frame = ttk.Frame(self.main_frame)
         self.shortcut_frame.pack(fill=tk.X, padx=5, pady=(0, 0), side=tk.BOTTOM)
         shortcut_text = (
-            "快捷键： Ctrl+A 全选   Ctrl+D 全不选   Ctrl+I 反选   Shift+点击 连续多选   Ctrl+点击 断续多选"
+            "Shortcuts: Ctrl+A Select All   Ctrl+D Deselect All   Ctrl+I Invert Selection   Shift+Click Range Select   Ctrl+Click Multi Select"
         )
         self.shortcut_label = ttk.Label(self.shortcut_frame, text=shortcut_text, anchor="w", foreground="#666666")
         self.shortcut_label.pack(fill=tk.X)
-        # --- 说明栏结束 ---
+        # --- End of shortcut instructions ---
         
         # 新增：选择模式切换按钮
-        self.select_mode_btn = ttk.Button(self.toolbar, text="切换为单选", command=self._toggle_selection_mode)
+        self.select_mode_btn = ttk.Button(self.toolbar, text="Switch to Single Selection", command=self._toggle_selection_mode)
         self.select_mode_btn.pack(side=tk.LEFT, padx=5)
     
     def _switch_view_mode(self):
@@ -430,10 +431,23 @@ class PaginatedGrid(ttk.Frame):
         # Add items to list view
         selected_ids = set(str(doc.get('_id')) for doc in self.selected_docs)
         for item in current_page_items:
-            filename = item.get('filename', 'Unknown')
-            filetype = os.path.splitext(filename)[1] if 'filename' in item else 'Unknown'
-            size = f"{int(item.get('size', 0) / 1024)} KB" if 'size' in item else 'Unknown'
-            row_id = self.list_view.insert("", "end", text=str(item.get('_id', '')), values=(filename, filetype, size))
+            if not self.current_schema:
+                # 使用默认显示方式
+                filename = item.get('filename', 'Unknown')
+                filetype = os.path.splitext(filename)[1] if 'filename' in item else 'Unknown'
+                size = f"{int(item.get('size', 0) / 1024)} KB" if 'size' in item else 'Unknown'
+                values = (filename, filetype, size)
+            else:
+                # 根据schema显示字段
+                values = []
+                for field in self.list_view["columns"]:
+                    field_name = field.lower()
+                    field_value = item.get(field_name, '')
+                    if isinstance(field_value, (list, dict)):
+                        field_value = str(field_value)
+                    values.append(field_value or 'Unknown')
+            
+            row_id = self.list_view.insert("", "end", text=str(item.get('_id', '')), values=values)
             # 同步选中状态
             if str(item.get('_id')) in selected_ids:
                 self.list_view.selection_add(row_id)
@@ -526,7 +540,7 @@ class PaginatedGrid(ttk.Frame):
         self.canvas.itemconfig(self.canvas_window, width=event.width)
     
     def _on_mousewheel(self, event):
-        print("滚轮事件", event)
+        print("Mouse wheel event:", event)
         delta = -1 * (event.delta // 120) if hasattr(event, 'delta') else 1 if event.num == 5 else -1
         self.canvas.yview_scroll(delta, "units")
     
@@ -829,7 +843,7 @@ class PaginatedGrid(ttk.Frame):
         if self.current_view == "grid":
             self.refresh_grid()
     
-    # --- 新增：排序相关方法 ---
+    # --- Sorting related methods ---
     def _sort_items(self):
         field = self.sort_field_var.get()
         reverse = self.sort_reverse
@@ -882,7 +896,7 @@ class PaginatedGrid(ttk.Frame):
         else:
             self.asc_button.state(["pressed"])
             self.desc_button.state(["!pressed"])
-    # --- 排序相关方法结束 --- 
+    # --- End of sorting methods --- 
 
     def _update_status_bar(self):
         """更新底部状态栏信息"""
@@ -916,17 +930,17 @@ class PaginatedGrid(ttk.Frame):
         """根据当前页选择状态切换按钮文本"""
         all_selected = all(card.is_selected for card in self.displayed_cards) and len(self.displayed_cards) > 0
         if all_selected:
-            self.select_all_btn.config(text="全不选")
+            self.select_all_btn.config(text="Deselect All")
         else:
-            self.select_all_btn.config(text="全选")
+            self.select_all_btn.config(text="Select All")
 
     def _toggle_selection_mode(self):
         if self.selection_mode == "multi":
             self.selection_mode = "single"
-            self.select_mode_btn.config(text="切换为多选")
+            self.select_mode_btn.config(text="Switch to Multi Selection")
         else:
             self.selection_mode = "multi"
-            self.select_mode_btn.config(text="切换为单选")
+            self.select_mode_btn.config(text="Switch to Single Selection")
         for card in self.displayed_cards:
             card.set_selected(False)
         self.last_selected_index = None
@@ -980,3 +994,47 @@ class PaginatedGrid(ttk.Frame):
             
         # 显示菜单
         context_menu.post(event.x_root, event.y_root)
+
+    def set_schema(self, schema):
+        """设置当前集合的schema
+        
+        Args:
+            schema (dict): JSON Schema
+        """
+        self.current_schema = schema
+        self._update_list_columns()
+        if self.current_view == "list":
+            self.refresh_list()
+
+    def _update_list_columns(self):
+        """根据schema更新列表视图的列"""
+        if not self.current_schema:
+            # 默认列
+            columns = ("Filename", "Type", "Size")
+        else:
+            # 从schema中获取字段
+            properties = self.current_schema.get('properties', {})
+            columns = []
+            for field, schema in properties.items():
+                # 跳过ObjectId类型的字段和数组字段
+                field_type = schema.get('bsonType')
+                if isinstance(field_type, list):
+                    field_type = [t for t in field_type if t != 'null'][0] if [t for t in field_type if t != 'null'] else None
+                if field_type not in ['objectId', 'array']:
+                    columns.append(field.capitalize())
+            if not columns:
+                columns = ["ID"]
+
+        # 重新配置列表视图
+        self.list_view["columns"] = columns
+        for col in columns:
+            self.list_view.heading(col, text=col)
+            self.list_view.column(col, width=100)
+
+        # 更新排序下拉框的值
+        if self.current_schema:
+            sort_fields = [field for field, schema in self.current_schema.get('properties', {}).items()
+                         if schema.get('bsonType') not in ['objectId', 'array']]
+            self.sort_field_combo['values'] = sort_fields
+            if sort_fields:
+                self.sort_field_var.set(sort_fields[0])
