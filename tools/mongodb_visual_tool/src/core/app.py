@@ -17,6 +17,8 @@ from ..config.config_manager import ConfigManager
 from ..db.mongo_manager import MongoDBManager
 from ..db.validator import DataValidator
 from ..ui.paginated_grid import PaginatedGrid
+from .view_settings import ViewSettings
+from .collection_views import CollectionViews
 
 class MongoDBViewer(tk.Tk):
     """MongoDB Visual Tool Main Application"""
@@ -37,6 +39,9 @@ class MongoDBViewer(tk.Tk):
         self.current_db = None
         self.current_collection = None
         self.current_docs = []
+        
+        # Initialize collection views manager
+        self.collection_views = CollectionViews()
         
         # Create UI
         self.create_ui()
@@ -87,9 +92,11 @@ class MongoDBViewer(tk.Tk):
         tree_frame = ttk.LabelFrame(self.left_frame, text="Databases and Collections")
         tree_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         
-        self.db_tree = ttk.Treeview(tree_frame)
+        self.db_tree = ttk.Treeview(tree_frame, show="tree")
         self.db_tree.pack(fill=tk.BOTH, expand=True)
         self.db_tree.bind("<<TreeviewSelect>>", self.on_tree_select)
+        # 添加右键菜单绑定
+        self.db_tree.bind("<Button-3>", self._show_collection_menu)
         
         # Status bar
         self.status_var = tk.StringVar(value="Ready")
@@ -210,7 +217,7 @@ class MongoDBViewer(tk.Tk):
             messagebox.showerror("Error", f"Failed to get database list: {str(e)}")
     
     def on_tree_select(self, event):
-        """Handle tree node selection event"""
+        """处理树节点选择事件"""
         selection = self.db_tree.selection()
         if not selection:
             return
@@ -218,33 +225,37 @@ class MongoDBViewer(tk.Tk):
         item = selection[0]
         parent = self.db_tree.parent(item)
         
-        if parent:  # If has parent, it's a collection
+        if parent:  # 选择的是集合
             db_name = self.db_tree.item(parent, "text")
             collection_name = self.db_tree.item(item, "text")
             
-            # Update configuration
+            # 更新配置
             self.user_config["last_db"] = db_name
             self.user_config["last_collection"] = collection_name
             ConfigManager.save_config(self.user_config)
             
-            # Record current selected database and collection
+            # 更新当前选择
             self.current_db = db_name
             self.current_collection = collection_name
             
-            # Get collection schema and update UI
+            # 更新集合模式
             self.update_collection_schema()
             
-            # Load collection data
+            # 应用该集合保存的视图类型
+            saved_view_type = self.collection_views.get_view(db_name, collection_name)
+            self._switch_view(db_name, collection_name, saved_view_type)
+            
+            # 加载数据
             self.load_collection_data()
-        else:  # Otherwise it's a database
+        else:  # 选择的是数据库
             db_name = self.db_tree.item(item, "text")
             
-            # Update configuration
+            # 更新配置
             self.user_config["last_db"] = db_name
             self.user_config["last_collection"] = ""
             ConfigManager.save_config(self.user_config)
             
-            # Record current selected database
+            # 更新当前选择
             self.current_db = db_name
             self.current_collection = None
     
@@ -252,7 +263,7 @@ class MongoDBViewer(tk.Tk):
         """获取并更新集合的字段结构"""
         if not self.current_db or not self.current_collection:
             return
-            
+        
         try:
             # 获取集合的验证规则
             collection_info = self.db_manager.get_collection_info(self.current_db, self.current_collection)
@@ -261,16 +272,15 @@ class MongoDBViewer(tk.Tk):
             if validation:
                 # 存储当前集合的字段结构，供其他功能使用
                 self.current_schema = validation.get('$jsonSchema', {})
-                print(f"[DEBUG] Current schema: {self.current_schema}")
                 # 更新UI显示
                 self.paginated_grid.set_schema(self.current_schema)
             else:
                 self.current_schema = None
                 self.paginated_grid.set_schema(None)
         except Exception as e:
-            print(f"[DEBUG] Failed to get collection schema: {e}")
             self.current_schema = None
             self.paginated_grid.set_schema(None)
+            self.update_status(f"获取集合结构失败: {e}")
     
     def load_collection_data(self):
         """Load collection data"""
@@ -1092,4 +1102,68 @@ class MongoDBViewer(tk.Tk):
         except json.JSONDecodeError:
             messagebox.showerror("格式错误", "JSON文件格式不正确")
         except Exception as e:
-            messagebox.showerror("导入失败", f"导入词条失败: {e}") 
+            messagebox.showerror("导入失败", f"导入词条失败: {e}")
+
+    def _show_collection_menu(self, event):
+        """显示集合的右键菜单"""
+        # 获取点击的项
+        item = self.db_tree.identify_row(event.y)
+        if not item:
+            return
+            
+        # 获取父节点（数据库节点）
+        parent = self.db_tree.parent(item)
+        if not parent:  # 如果点击的是数据库节点，不显示菜单
+            return
+            
+        # 获取数据库和集合名称
+        db_name = self.db_tree.item(parent, "text")
+        collection_name = self.db_tree.item(item, "text")
+        
+        # 获取当前视图类型
+        current_view = self.collection_views.get_view(db_name, collection_name)
+        
+        # 创建右键菜单
+        menu = tk.Menu(self, tearoff=0)
+        
+        # 切换视图选项
+        menu.add_command(
+            label="切换视图" if current_view == "grid" else "切换视图",
+            command=lambda: self._switch_view(db_name, collection_name, "list" if current_view == "grid" else "grid")
+        )
+        
+        # 设为默认视图选项
+        menu.add_command(
+            label="设为默认视图",
+            command=lambda: self._set_default_view(db_name, collection_name, current_view)
+        )
+        
+        # 显示菜单
+        menu.post(event.x_root, event.y_root)
+
+    def _set_default_view(self, db_name, collection_name, view_type):
+        """设置集合的默认视图类型"""
+        self.collection_views.set_default_view(db_name, collection_name, view_type)
+        # 立即应用新的视图设置
+        if (self.current_db == db_name and 
+            self.current_collection == collection_name):
+            self._switch_view(db_name, collection_name, view_type)
+
+    def _switch_view(self, db_name, collection_name, view_type):
+        """切换集合的视图类型"""
+        # 保存新的视图设置
+        self.collection_views.set_view(db_name, collection_name, view_type)
+        
+        # 如果是当前显示的集合，立即切换视图
+        if (self.current_db == db_name and 
+            self.current_collection == collection_name):
+            # 强制刷新当前视图
+            self.paginated_grid.current_view = view_type
+            if view_type == "grid":
+                self.paginated_grid.list_frame.pack_forget()
+                self.paginated_grid.grid_frame.pack(fill=tk.BOTH, expand=True)
+                self.paginated_grid.refresh_grid()
+            else:
+                self.paginated_grid.grid_frame.pack_forget()
+                self.paginated_grid.list_frame.pack(fill=tk.BOTH, expand=True)
+                self.paginated_grid.refresh_list() 

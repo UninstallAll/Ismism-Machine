@@ -212,6 +212,7 @@ class PaginatedGrid(ttk.Frame):
         self.list_view.pack(fill=tk.BOTH, expand=True)
         self.list_view.bind("<<TreeviewSelect>>", self._on_list_selection_changed)
         self.list_view.bind("<Button-3>", self._show_list_context_menu)  # Bind right-click menu event
+        self.list_view.bind("<Double-1>", self._on_list_item_double_click)  # 添加双击事件绑定
         
         # Grid view - Canvas + Frame
         self.grid_frame = ttk.Frame(self.view_container)
@@ -263,9 +264,9 @@ class PaginatedGrid(ttk.Frame):
         self.canvas.bind("<Configure>", self._on_canvas_configure)
         
         # Bind mouse events
-        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)  # Windows
-        self.canvas.bind_all("<Button-4>", self._on_mousewheel)    # Linux scroll up
-        self.canvas.bind_all("<Button-5>", self._on_mousewheel)    # Linux scroll down
+        self.canvas.bind_all("<MouseWheel>", self._on_mouse_wheel)  # Windows
+        self.canvas.bind_all("<Button-4>", self._on_linux_scroll)   # Linux scroll up
+        self.canvas.bind_all("<Button-5>", self._on_linux_scroll)   # Linux scroll down
         
         # Bind mouse drag events
         self.canvas.bind("<ButtonPress-1>", self._on_mouse_down)
@@ -311,12 +312,14 @@ class PaginatedGrid(ttk.Frame):
             self.current_view = "list"
             self.grid_frame.pack_forget()
             self.list_frame.pack(fill=tk.BOTH, expand=True)
-            self.refresh_list()
+            self.view_button.configure(text="列表视图")  # 更新按钮文本
+            self.refresh_list()  # 确保刷新列表视图
         else:
             self.current_view = "grid"
             self.list_frame.pack_forget()
             self.grid_frame.pack(fill=tk.BOTH, expand=True)
-            self.refresh_grid()
+            self.view_button.configure(text="网格视图")  # 更新按钮文本
+            self.refresh_grid()  # 确保刷新网格视图
     
     def set_context_menu_callback(self, callback):
         """Set context menu callback function
@@ -430,31 +433,33 @@ class PaginatedGrid(ttk.Frame):
         
         # Add items to list view
         selected_ids = set(str(doc.get('_id')) for doc in self.selected_docs)
+        id_to_iid = {}  # 用于存储 _id 到 Treeview item ID 的映射
+        
         for item in current_page_items:
-            if not self.current_schema:
-                # 使用默认显示方式
-                filename = item.get('filename', 'Unknown')
-                filetype = os.path.splitext(filename)[1] if 'filename' in item else 'Unknown'
-                size = f"{int(item.get('size', 0) / 1024)} KB" if 'size' in item else 'Unknown'
-                values = (filename, filetype, size)
-            else:
-                # 根据schema显示字段
-                values = []
-                for field in self.list_view["columns"]:
-                    field_name = field.lower()
-                    field_value = item.get(field_name, '')
-                    if isinstance(field_value, (list, dict)):
-                        field_value = str(field_value)
-                    values.append(field_value or 'Unknown')
+            item_id = str(item.get('_id'))
+            values = (
+                item.get('filename', item.get('title', str(item.get('_id', 'Unknown')))),
+                item.get('type', 'Unknown'),
+                str(item.get('size', 'N/A'))
+            )
+            # 插入项目并获取 Treeview 生成的 item ID
+            iid = self.list_view.insert('', 'end', values=values)
+            id_to_iid[item_id] = iid
             
-            row_id = self.list_view.insert("", "end", text=str(item.get('_id', '')), values=values)
-            # 同步选中状态
-            if str(item.get('_id')) in selected_ids:
-                self.list_view.selection_add(row_id)
+            # 如果该项目应该被选中，使用 Treeview 的 item ID 来选中
+            if item_id in selected_ids:
+                try:
+                    self.list_view.selection_add(iid)
+                except Exception as e:
+                    print(f"Selection error for item {item_id}: {e}")
+        
+        # 更新 _on_list_selection_changed 方法中使用的映射
+        self._id_to_iid_map = id_to_iid
         
         # Update pagination controls
         self._update_pagination_controls()
-        self._update_select_all_btn()  # 新增：刷新全选按钮
+        self._update_select_all_btn()
+        self._update_status_bar()
     
     def _on_card_selected(self, card, is_selected, event=None):
         try:
@@ -502,20 +507,42 @@ class PaginatedGrid(ttk.Frame):
         self._update_select_all_btn()
     
     def _toggle_select_all(self):
-        """全选/全不选当前页（批量静默更新，避免闪烁）"""
-        all_selected = all(card.is_selected for card in self.displayed_cards) and len(self.displayed_cards) > 0
-        # 暂时禁用卡片的回调，批量设置后再统一刷新
-        for card in self.displayed_cards:
-            card.on_select_callback = None
-        if all_selected:
+        """全选/全不选当前页"""
+        if self.current_view == "grid":
+            # 网格视图模式
+            all_selected = all(card.is_selected for card in self.displayed_cards) and len(self.displayed_cards) > 0
+            # 暂时禁用卡片的回调，批量设置后再统一刷新
             for card in self.displayed_cards:
-                card.set_selected(False)
+                card.on_select_callback = None
+            if all_selected:
+                for card in self.displayed_cards:
+                    card.set_selected(False)
+            else:
+                for card in self.displayed_cards:
+                    card.set_selected(True)
+            # 恢复回调
+            for card in self.displayed_cards:
+                card.on_select_callback = self._on_card_selected
         else:
-            for card in self.displayed_cards:
-                card.set_selected(True)
-        # 恢复回调
-        for card in self.displayed_cards:
-            card.on_select_callback = self._on_card_selected
+            # 列表视图模式
+            all_items = self.list_view.get_children()
+            if not all_items:
+                return
+            
+            # 检查是否全部选中
+            all_selected = len(self.list_view.selection()) == len(all_items)
+            
+            if all_selected:
+                # 如果全部选中，则取消全选
+                self.list_view.selection_remove(*all_items)
+            else:
+                # 如果未全选，则全选
+                self.list_view.selection_set(*all_items)
+            
+            # 触发选择变更事件来更新状态
+            self._on_list_selection_changed()
+        
+        # 更新UI状态
         self._update_selection_ui()
         self._update_select_all_btn()
     
@@ -539,16 +566,20 @@ class PaginatedGrid(ttk.Frame):
         # Update internal frame width to match canvas
         self.canvas.itemconfig(self.canvas_window, width=event.width)
     
-    def _on_mousewheel(self, event):
-        print("Mouse wheel event:", event)
-        delta = -1 * (event.delta // 120) if hasattr(event, 'delta') else 1 if event.num == 5 else -1
-        self.canvas.yview_scroll(delta, "units")
+    def _on_mouse_wheel(self, event):
+        """Handle mouse wheel event"""
+        if self.current_view == "grid":
+            # Scroll grid view
+            self.canvas.yview_scroll(-1 * (event.delta // 120), "units")
+        else:
+            # Scroll list view
+            self.list_view.yview_scroll(-1 * (event.delta // 120), "units")
     
     def bind_mousewheel(self):
         """Bind mouse wheel event (when mouse hovers over component)"""
-        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)  # Windows
-        self.canvas.bind_all("<Button-4>", self._on_mousewheel)    # Linux scroll up
-        self.canvas.bind_all("<Button-5>", self._on_mousewheel)    # Linux scroll down
+        self.canvas.bind_all("<MouseWheel>", self._on_mouse_wheel)  # Windows
+        self.canvas.bind_all("<Button-4>", self._on_linux_scroll)   # Linux scroll up
+        self.canvas.bind_all("<Button-5>", self._on_linux_scroll)   # Linux scroll down
     
     def unbind_mousewheel(self):
         """Unbind mouse wheel event (when mouse leaves component)"""
@@ -947,15 +978,39 @@ class PaginatedGrid(ttk.Frame):
         self._update_selection_ui()
 
     def _on_list_selection_changed(self, event=None):
-        # 只要列表选择变更，selected_docs就同步
-        selected_ids = set(self.list_view.item(i, 'text') for i in self.list_view.selection())
-        # 用_id查找doc
-        self.selected_docs = [item for item in self.filtered_items if str(item.get('_id')) in selected_ids]
-        self._update_status_bar()
-        self._update_select_all_btn()
-        # 如果当前是grid模式，也刷新grid同步选中
-        if self.current_view == "grid":
-            self.refresh_grid()
+        """处理列表选择变更事件"""
+        try:
+            # 获取当前选中的 Treeview item IDs
+            selected_iids = self.list_view.selection()
+            
+            # 通过当前页的映射找到对应的文档
+            self.selected_docs = []
+            current_page_start = (self.current_page - 1) * self.page_size
+            current_page_end = min(current_page_start + self.page_size, len(self.filtered_items))
+            current_page_items = self.filtered_items[current_page_start:current_page_end]
+            
+            for item in current_page_items:
+                item_id = str(item.get('_id'))
+                if item_id in self._id_to_iid_map:
+                    iid = self._id_to_iid_map[item_id]
+                    if iid in selected_iids:
+                        self.selected_docs.append(item)
+            
+            # 更新文档详情显示
+            if self.selected_docs and self.on_show_details:
+                try:
+                    self.on_show_details(self.selected_docs[0])
+                except Exception as e:
+                    print(f"Show details error: {e}")
+            
+            self._update_status_bar()
+            self._update_select_all_btn()
+            
+            # 如果当前是grid模式，也刷新grid同步选中
+            if self.current_view == "grid":
+                self.refresh_grid()
+        except Exception as e:
+            print(f"List selection change error: {e}")
 
     def _show_list_context_menu(self, event):
         """显示列表视图的右键菜单
@@ -964,33 +1019,31 @@ class PaginatedGrid(ttk.Frame):
             event: 鼠标事件
         """
         # 获取点击位置的行ID
-        row_id = self.list_view.identify_row(event.y)
-        if not row_id:
+        iid = self.list_view.identify_row(event.y)
+        if not iid:
             return
             
         # 如果点击的行没有被选中，则选中它
-        if row_id not in self.list_view.selection():
-            self.list_view.selection_set(row_id)
+        if iid not in self.list_view.selection():
+            self.list_view.selection_set(iid)
             
         # 获取对应的文档
-        doc_id = self.list_view.item(row_id, 'text')
-        doc = next((d for d in self.filtered_items if str(d.get('_id')) == doc_id), None)
-        
-        if not doc:
+        selected_docs = self.selected_docs
+        if not selected_docs:
             return
             
         # 创建右键菜单
         context_menu = tk.Menu(self, tearoff=0)
-        context_menu.add_command(label="Edit Details", command=lambda: self.context_menu_callback("view", doc))
-        context_menu.add_command(label="Export", command=lambda: self.context_menu_callback("export", doc))
-        context_menu.add_command(label="Create Relationship", command=lambda: self.context_menu_callback("relate", doc))
+        context_menu.add_command(label="Edit Details", command=lambda: self.context_menu_callback("view", selected_docs[0]))
+        context_menu.add_command(label="Export", command=lambda: self.context_menu_callback("export", selected_docs[0]))
+        context_menu.add_command(label="Create Relationship", command=lambda: self.context_menu_callback("relate", selected_docs[0]))
         context_menu.add_separator()
         
         # 根据是否有多选来决定删除操作传递的参数
-        if len(self.selected_docs) > 0:
-            context_menu.add_command(label="Delete", command=lambda: self.context_menu_callback("delete", self.selected_docs))
+        if len(selected_docs) > 1:
+            context_menu.add_command(label="Delete Selected", command=lambda: self.context_menu_callback("delete", selected_docs))
         else:
-            context_menu.add_command(label="Delete", command=lambda: self.context_menu_callback("delete", doc))
+            context_menu.add_command(label="Delete", command=lambda: self.context_menu_callback("delete", selected_docs[0]))
             
         # 显示菜单
         context_menu.post(event.x_root, event.y_root)
@@ -1038,3 +1091,31 @@ class PaginatedGrid(ttk.Frame):
             self.sort_field_combo['values'] = sort_fields
             if sort_fields:
                 self.sort_field_var.set(sort_fields[0])
+
+    def _on_linux_scroll(self, event):
+        """Handle Linux scroll events"""
+        if self.current_view == "grid":
+            # Scroll grid view
+            delta = -1 if event.num == 5 else 1
+            self.canvas.yview_scroll(delta, "units")
+        else:
+            # Scroll list view
+            delta = -1 if event.num == 5 else 1
+            self.list_view.yview_scroll(delta, "units")
+
+    def _on_list_item_double_click(self, event):
+        """处理列表项的双击事件"""
+        iid = self.list_view.identify_row(event.y)
+        if not iid:
+            return
+            
+        # 获取对应的文档
+        for item in self.filtered_items:
+            item_id = str(item.get('_id'))
+            if item_id in self._id_to_iid_map and self._id_to_iid_map[item_id] == iid:
+                if self.on_show_details:
+                    try:
+                        self.on_show_details(item)
+                    except Exception as e:
+                        print(f"Show details error on double click: {e}")
+                break

@@ -54,7 +54,7 @@ class ImageLoader:
                 
                 # Check if card is still valid (not destroyed)
                 if not self._is_widget_valid(card):
-                    print("Card has been destroyed, skipping loading")
+                    # Silently skip destroyed cards
                     self.queue.task_done()
                     continue
                 
@@ -66,12 +66,10 @@ class ImageLoader:
                     if self.callback and self._is_widget_valid(card):
                         self.callback(card, success)
                 except tk.TclError as e:
-                    if "invalid command name" in str(e):
-                        print("UI component has been destroyed, skipping update")
-                    else:
+                    if "invalid command name" not in str(e):
                         print(f"Tkinter error: {str(e)}")
                 except Exception as e:
-                    print(f"Error occurred during image loading: {str(e)}")
+                    print(f"Error loading image: {str(e)}")
                 
                 # Mark task as done
                 self.queue.task_done()
