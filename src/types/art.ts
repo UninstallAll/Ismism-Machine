@@ -8,6 +8,17 @@ export interface IArtist {
   biography?: string;
 }
 
+export interface IArtworkImage {
+  url: string;
+  title?: string;
+  caption?: string;
+  photographer?: string;
+  date_taken?: string;
+  resolution?: string;
+  color_space?: string;
+  copyright?: string;
+}
+
 export interface IArtwork {
   id: string;
   title: string;
@@ -17,6 +28,7 @@ export interface IArtwork {
   description?: string;
   medium?: string;
   location?: string;
+  fullImages?: IArtworkImage[];
 }
 
 export interface IArtStyle {
@@ -26,7 +38,7 @@ export interface IArtStyle {
   description: string;
   characteristics: string[];
   artists: string[];
-  images?: string[];
+  images?: (string | IArtworkImage)[];
   period?: {
     start: number;
     end: number;

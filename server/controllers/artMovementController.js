@@ -17,6 +17,16 @@ exports.getAllArtMovements = async (req, res) => {
         _id: { $in: movement.notable_artworks }
       });
 
+      // 处理新的images数据结构
+      const processedImages = artworks.reduce((acc, artwork) => {
+        if (artwork.images && artwork.images.length > 0) {
+          // 如果images是对象数组，提取url属性
+          const imageUrls = artwork.images.map(img => typeof img === 'object' && img.url ? img.url : img);
+          return [...acc, ...imageUrls];
+        }
+        return acc;
+      }, []);
+
       // 返回与IArtStyle接口匹配的数据结构
       return {
         id: movement._id,
@@ -25,7 +35,7 @@ exports.getAllArtMovements = async (req, res) => {
         description: movement.description,
         characteristics: [], // 默认为空数组
         artists: artists.map(artist => artist.name),
-        images: artworks.reduce((acc, artwork) => [...acc, ...(artwork.images || [])], []),
+        images: processedImages, // 使用处理后的图片URL数组
         period: {
           start: movement.start_year,
           end: movement.end_year || new Date().getFullYear()
@@ -35,10 +45,13 @@ exports.getAllArtMovements = async (req, res) => {
           title: artwork.title,
           year: artwork.year_created || movement.start_year,
           artist: artists.find(a => a._id.toString() === artwork.artist_id?.toString())?.name || '未知艺术家',
-          imageUrl: artwork.images?.[0] || '',
+          imageUrl: artwork.images && artwork.images.length > 0 ? 
+            (typeof artwork.images[0] === 'object' ? artwork.images[0].url : artwork.images[0]) : '',
           description: artwork.description,
           medium: artwork.medium,
-          location: artwork.location
+          location: artwork.location,
+          // 添加完整的图片信息
+          fullImages: artwork.images
         })),
         keyArtists: artists.map(artist => ({
           id: artist._id,
