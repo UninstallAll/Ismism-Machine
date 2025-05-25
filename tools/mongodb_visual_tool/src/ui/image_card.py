@@ -123,11 +123,26 @@ class ImageCard(ttk.Frame):
             
         # Extract image path
         if 'filePath' in self.doc:
-            self.image_path = self.doc['filePath']
-            self.metadata['filepath'] = self.image_path
+            path = self.doc['filePath']
+            # 处理相对路径
+            if not os.path.isabs(path):
+                # 尝试在项目根目录下查找
+                project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+                path = os.path.join(project_root, path)
+            self.image_path = path
+            self.metadata['filepath'] = path
+            print(f"Found filePath: {self.image_path} (Absolute: {os.path.isabs(self.image_path)})")
         elif 'imageUrl' in self.doc:
-            self.image_path = self.doc['imageUrl']
-            self.metadata['imageurl'] = self.image_path
+            path = self.doc['imageUrl']
+            # 处理相对路径
+            if not os.path.isabs(path):
+                project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+                path = os.path.join(project_root, path)
+            self.image_path = path
+            self.metadata['imageurl'] = path
+            print(f"Found imageUrl: {self.image_path} (Absolute: {os.path.isabs(self.image_path)})")
+        else:
+            print(f"No image path found in document: {self.doc.get('_id')}")
                 
         # Extract other metadata
         if 'filename' in self.doc:
@@ -237,15 +252,48 @@ class ImageCard(ttk.Frame):
     
     def load_image(self):
         """Load and display image"""
-        if not self.image_path or not os.path.exists(self.image_path):
-            # If image doesn't exist, show placeholder
-            self.image_label.configure(text="Image not found")
-            return False
-            
         try:
+            if not self.image_path:
+                print(f"No image path available for document: {self.doc.get('_id')}")
+                self.image_label.configure(text="No image path")
+                return False
+            
+            # 尝试不同的路径组合
+            paths_to_try = [
+                self.image_path,  # 原始路径
+                os.path.abspath(self.image_path),  # 绝对路径
+            ]
+            
+            # 如果是相对路径，尝试在不同的基准目录下查找
+            if not os.path.isabs(self.image_path):
+                project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+                paths_to_try.extend([
+                    os.path.join(project_root, self.image_path),  # 项目根目录
+                    os.path.join(project_root, 'public', self.image_path),  # public目录
+                    os.path.join(project_root, 'data', self.image_path),  # data目录
+                ])
+            
+            # 尝试所有可能的路径
+            image_found = False
+            for path in paths_to_try:
+                print(f"Trying path: {path}")
+                if os.path.exists(path):
+                    print(f"Found image at: {path}")
+                    self.image_path = path
+                    image_found = True
+                    break
+            
+            if not image_found:
+                print(f"Image not found in any of these locations: {paths_to_try}")
+                self.image_label.configure(text="Image not found")
+                return False
+            
+            print(f"Loading image from: {self.image_path}")
+            
             # Open and resize image
             img = Image.open(self.image_path)
             img_width, img_height = img.size
+            print(f"Original image size: {img_width}x{img_height}")
             
             # Calculate aspect ratio
             aspect_ratio = img_width / img_height
@@ -262,6 +310,7 @@ class ImageCard(ttk.Frame):
                     new_height = frame_height
                     new_width = int(frame_height * aspect_ratio)
                     
+                print(f"Resizing image to: {new_width}x{new_height}")
                 img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
             
             # Convert to Tkinter format
@@ -269,8 +318,13 @@ class ImageCard(ttk.Frame):
             
             # Update image label
             self.image_label.configure(image=self.image, text="")
+            print(f"Successfully loaded image for document: {self.doc.get('_id')}")
             return True
+            
         except Exception as e:
+            print(f"Error loading image for document {self.doc.get('_id')}: {str(e)}")
+            import traceback
+            traceback.print_exc()
             # Show error message
             self.image_label.configure(text=f"Error: {str(e)}")
             return False

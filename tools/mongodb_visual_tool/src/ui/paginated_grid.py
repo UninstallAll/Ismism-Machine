@@ -8,6 +8,7 @@ import math
 import os
 from PIL import Image, ImageTk
 from rapidfuzz import fuzz
+import json
 
 from ..config.settings import DEFAULT_PAGE_SIZE
 from .image_card import ImageCard
@@ -185,6 +186,10 @@ class PaginatedGrid(ttk.Frame):
         self.view_button = ttk.Button(self.toolbar, text="Switch View", command=self._switch_view_mode)
         self.view_button.pack(side=tk.LEFT, padx=5)
         
+        # Column settings button
+        self.column_settings_button = ttk.Button(self.toolbar, text="Columns", command=self._show_column_settings)
+        self.column_settings_button.pack(side=tk.LEFT, padx=5)
+        
         # --- Sorting controls ---
         ttk.Label(self.toolbar, text="Sort by:").pack(side=tk.LEFT, padx=(20, 2))
         self.sort_field_var = tk.StringVar(value="filename")
@@ -220,12 +225,13 @@ class PaginatedGrid(ttk.Frame):
         # List view - Tree view
         self.list_frame = ttk.Frame(self.view_container)
         
-        columns = ("Filename", "Type", "Size")
-        self.list_view = ttk.Treeview(self.list_frame, columns=columns, show="headings", selectmode="extended")
+        # 创建Treeview时不指定columns，后面动态设置
+        self.list_view = ttk.Treeview(self.list_frame, show="headings", selectmode="extended")
         
-        for col in columns:
-            self.list_view.heading(col, text=col)
-            self.list_view.column(col, width=100)
+        # 绑定列头拖动事件
+        self.list_view.bind('<Button-1>', self._on_column_click)
+        self.list_view.bind('<B1-Motion>', self._on_column_drag)
+        self.list_view.bind('<ButtonRelease-1>', self._on_column_drop)
         
         vsb = ttk.Scrollbar(self.list_frame, orient="vertical", command=self.list_view.yview)
         hsb = ttk.Scrollbar(self.list_frame, orient="horizontal", command=self.list_view.xview)
@@ -235,25 +241,41 @@ class PaginatedGrid(ttk.Frame):
         hsb.pack(side=tk.BOTTOM, fill=tk.X)
         self.list_view.pack(fill=tk.BOTH, expand=True)
         self.list_view.bind("<<TreeviewSelect>>", self._on_list_selection_changed)
-        self.list_view.bind("<Button-3>", self._show_list_context_menu)  # Bind right-click menu event
-        self.list_view.bind("<Double-1>", self._on_list_item_double_click)  # 添加双击事件绑定
+        self.list_view.bind("<Button-3>", self._show_list_context_menu)
+        self.list_view.bind("<Double-1>", self._on_list_item_double_click)
+        
+        # 初始化列拖动变量
+        self._drag_column = None
+        self._drag_position = None
+        
+        # 初始化列配置
+        self.column_config = {}
+        self.load_column_config()
         
         # Grid view - Canvas + Frame
         self.grid_frame = ttk.Frame(self.view_container)
         
-        # Use canvas to support scrolling
+        # 使用canvas支持滚动
         self.canvas = tk.Canvas(self.grid_frame, borderwidth=0, highlightthickness=0)
         self.scrollbar = ttk.Scrollbar(self.grid_frame, orient=tk.VERTICAL, command=self.canvas.yview)
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
         
+        # 设置最小尺寸
+        self.canvas.configure(width=400, height=300)
+        
+        # 正确的布局顺序
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
-        # Inner frame for placing cards
+        # 内部frame用于放置卡片
         self.cards_frame = ttk.Frame(self.canvas)
-        self.canvas_window = self.canvas.create_window((0, 0), window=self.cards_frame, anchor=tk.NW)
+        self.canvas_window = self.canvas.create_window((0, 0), window=self.cards_frame, anchor=tk.NW, width=self.canvas.winfo_width())
         
-        # Set grid view as default
+        # 绑定canvas大小变化事件
+        self.canvas.bind('<Configure>', self._on_canvas_configure)
+        self.cards_frame.bind('<Configure>', self._on_frame_configure)
+        
+        # 设置网格视图为默认
         self.grid_frame.pack(fill=tk.BOTH, expand=True)
         
         # Pagination frame
@@ -332,18 +354,25 @@ class PaginatedGrid(ttk.Frame):
     
     def _switch_view_mode(self):
         """Switch view mode (grid/list)"""
-        if self.current_view == "grid":
-            self.current_view = "list"
-            self.grid_frame.pack_forget()
-            self.list_frame.pack(fill=tk.BOTH, expand=True)
-            self.view_button.configure(text="列表视图")  # 更新按钮文本
-            self.refresh_list()  # 确保刷新列表视图
-        else:
-            self.current_view = "grid"
-            self.list_frame.pack_forget()
-            self.grid_frame.pack(fill=tk.BOTH, expand=True)
-            self.view_button.configure(text="网格视图")  # 更新按钮文本
-            self.refresh_grid()  # 确保刷新网格视图
+        try:
+            if self.current_view == "grid":
+                self.current_view = "list"
+                self.grid_frame.pack_forget()
+                self.list_frame.pack(fill=tk.BOTH, expand=True)
+                self.view_button.configure(text="Switch to Grid View")
+                self.refresh_list()
+            else:
+                self.current_view = "grid"
+                self.list_frame.pack_forget()
+                self.grid_frame.pack(fill=tk.BOTH, expand=True)
+                self.view_button.configure(text="Switch to List View")
+                # 确保清理旧的部件
+                for widget in self.cards_frame.winfo_children():
+                    widget.destroy()
+                self.refresh_grid()
+        except Exception as e:
+            print(f"Error switching view mode: {e}")
+            messagebox.showerror("Error", f"Failed to switch view mode: {str(e)}")
     
     def set_context_menu_callback(self, callback):
         """Set context menu callback function
@@ -374,45 +403,99 @@ class PaginatedGrid(ttk.Frame):
     
     def refresh_grid(self):
         """Refresh grid view"""
-        # 清除现有卡片
-        for card in self.displayed_cards:
-            card.destroy()
-        self.displayed_cards.clear()
-        
-        # 计算当前页要显示的项目
-        start_index = (self.current_page - 1) * self.page_size
-        end_index = min(start_index + self.page_size, len(self.filtered_items))
-        
-        # 确保起始索引有效
-        if start_index >= len(self.filtered_items) and self.current_page > 1:
-            self.current_page = max(1, self.current_page - 1)
+        try:
+            # 清除现有卡片
+            for card in self.displayed_cards:
+                if card.winfo_exists():
+                    card.destroy()
+            self.displayed_cards.clear()
+            
+            # 清理cards_frame中的所有部件
+            for widget in self.cards_frame.winfo_children():
+                widget.destroy()
+            
+            # 计算当前页要显示的项目
             start_index = (self.current_page - 1) * self.page_size
             end_index = min(start_index + self.page_size, len(self.filtered_items))
-        
-        # 当前页的项目
-        current_page_items = self.filtered_items[start_index:end_index]
-        
-        # 创建新卡片
-        row = 0
-        col = 0
-        for item in current_page_items:
-            # 创建卡片
-            card = ImageCard(self.grid_frame, doc=item, on_select_callback=self._on_card_selected)
-            card.grid(row=row, column=col, padx=5, pady=5, sticky="nsew")
             
-            # 添加到显示列表
-            self.displayed_cards.append(card)
+            # 确保起始索引有效
+            if start_index >= len(self.filtered_items) and self.current_page > 1:
+                self.current_page = max(1, self.current_page - 1)
+                start_index = (self.current_page - 1) * self.page_size
+                end_index = min(start_index + self.page_size, len(self.filtered_items))
             
-            # 更新行列位置
-            col += 1
-            if col >= self.columns:
-                col = 0
-                row += 1
-        
-        # 更新分页控件
-        self._update_pagination_controls()
-        self._update_select_all_btn()
-        self._update_status_bar()
+            # 当前页的项目
+            current_page_items = self.filtered_items[start_index:end_index]
+            
+            # 重置网格配置
+            for i in range(self.columns):
+                self.cards_frame.grid_columnconfigure(i, weight=1)
+            
+            # 创建新卡片
+            row = 0
+            col = 0
+            for item in current_page_items:
+                try:
+                    # 检查文档是否包含必要的字段
+                    if not item:
+                        print("Warning: Empty document encountered")
+                        continue
+                    
+                    # 打印调试信息
+                    print(f"Processing document: {item.get('_id')}")
+                    print(f"File path: {item.get('filePath')}")
+                    print(f"Filename: {item.get('filename')}")
+                    
+                    # 创建卡片并传递完整的文档
+                    card = ImageCard(self.cards_frame, doc=item, on_select_callback=self._on_card_selected)
+                    
+                    # 设置网格位置
+                    card.grid(row=row, column=col, padx=5, pady=5, sticky="nsew")
+                    
+                    # 添加到显示列表
+                    self.displayed_cards.append(card)
+                    
+                    # 加载图片
+                    card.load_image()
+                    
+                    # 设置右键菜单
+                    if self.context_menu_callback:
+                        card.setup_context_menu(self.context_menu_callback)
+                    
+                    # 更新行列位置
+                    col += 1
+                    if col >= self.columns:
+                        col = 0
+                        row += 1
+                        self.cards_frame.grid_rowconfigure(row, weight=1)
+                    
+                except Exception as e:
+                    print(f"Error creating card for document {item.get('_id')}: {e}")
+                    import traceback
+                    traceback.print_exc()
+            
+            # 确保最后一行也配置了权重
+            if row > 0:
+                self.cards_frame.grid_rowconfigure(row, weight=1)
+            
+            # 更新canvas的滚动区域
+            self.cards_frame.update_idletasks()
+            bbox = self.canvas.bbox("all")
+            if bbox:
+                self.canvas.configure(scrollregion=bbox)
+            
+            # 更新分页控件
+            self._update_pagination_controls()
+            self._update_select_all_btn()
+            self._update_status_bar()
+            
+            # 强制更新显示
+            self.update_idletasks()
+            
+        except Exception as e:
+            print(f"Error in refresh_grid: {e}")
+            import traceback
+            traceback.print_exc()
     
     def refresh_list(self):
         """Refresh list view"""
@@ -567,14 +650,18 @@ class PaginatedGrid(ttk.Frame):
             self.context_menu_callback("bulk_relate", self.selected_docs)
     
     def _on_frame_configure(self, event):
-        """Handle internal frame resize event"""
+        """处理内部frame大小变化"""
+        # 更新canvas的滚动区域
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        # 自动调整列数
         self._auto_adjust_columns()
     
     def _on_canvas_configure(self, event):
-        """Handle canvas resize event"""
-        # Update internal frame width to match canvas
+        """处理canvas大小变化"""
+        # 更新内部frame的宽度以匹配canvas
         self.canvas.itemconfig(self.canvas_window, width=event.width)
+        # 重新计算滚动区域
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
     
     def _on_mouse_wheel(self, event):
         """Handle mouse wheel event"""
@@ -863,16 +950,28 @@ class PaginatedGrid(ttk.Frame):
         Args:
             items (list): Items list
         """
-        self.all_items = items or []
-        self._sort_items()  # 新增：每次设置数据时先排序
-        self.filtered_items = self.all_items[:]
-        self._sort_items()  # 新增：filtered_items也排序
-        self.current_page = 1
-        if self.current_view == "grid":
-            self.refresh_grid()
-        else:
-            self.refresh_list()
-        self._update_status_bar()  # 新增：刷新状态栏
+        try:
+            print(f"Setting {len(items) if items else 0} items")
+            if items:
+                print(f"Sample item: {items[0]}")
+            
+            self.all_items = items or []
+            self._sort_items()  # 新增：每次设置数据时先排序
+            self.filtered_items = self.all_items[:]
+            self._sort_items()  # 新增：filtered_items也排序
+            self.current_page = 1
+            
+            if self.current_view == "grid":
+                self.refresh_grid()
+            else:
+                self.refresh_list()
+            
+            self._update_status_bar()
+            
+        except Exception as e:
+            print(f"Error in set_items: {e}")
+            import traceback
+            traceback.print_exc()
     
     def set_columns(self, columns):
         """Set grid column count
@@ -1085,6 +1184,24 @@ class PaginatedGrid(ttk.Frame):
                     columns.remove(field)
                     columns.insert(0, field)
 
+        # 加载保存的列配置
+        self.load_column_config()
+        
+        # 应用保存的列顺序和显示状态
+        if self.column_config:
+            # 过滤出要显示的列
+            visible_columns = [col for col in columns if self.column_config.get(col, {}).get('visible', True)]
+            # 按保存的顺序排序
+            ordered_columns = []
+            saved_order = {col: idx for idx, col in enumerate(self.column_config.get('order', []))}
+            for col in visible_columns:
+                if col in saved_order:
+                    ordered_columns.append((saved_order[col], col))
+                else:
+                    ordered_columns.append((len(columns), col))
+            ordered_columns.sort()
+            columns = [col for _, col in ordered_columns]
+        
         # 重新配置列表视图
         self.list_view["columns"] = columns
         
@@ -1094,20 +1211,22 @@ class PaginatedGrid(ttk.Frame):
             display_name = col.replace('_', ' ').title()
             self.list_view.heading(col, text=display_name)
             
-            # 根据字段类型设置列宽
-            if col == '_id':
-                width = 250  # ObjectId需要更宽的显示空间
-            elif col in ['description', 'content', 'tags']:
-                width = 200  # 长文本字段需要更宽的显示空间
-            elif col in ['filename', 'title', 'filePath']:
-                width = 180  # 文件名和标题需要适中的显示空间
-            elif col.endswith('At'):  # 如created_at, updated_at, importedAt等
-                width = 150  # 日期时间字段
-            else:
-                width = 120  # 其他字段使用默认宽度
+            # 使用保存的宽度或默认宽度
+            width = self.column_config.get(col, {}).get('width', None)
+            if width is None:
+                if col == '_id':
+                    width = 250
+                elif col in ['description', 'content', 'tags']:
+                    width = 200
+                elif col in ['filename', 'title', 'filePath']:
+                    width = 180
+                elif col.endswith('At'):
+                    width = 150
+                else:
+                    width = 120
             
             self.list_view.column(col, width=width)
-
+        
         # 更新排序下拉框的值
         self.sort_field_combo['values'] = columns
         if columns:
@@ -1140,3 +1259,186 @@ class PaginatedGrid(ttk.Frame):
                     except Exception as e:
                         print(f"Show details error on double click: {e}")
                 break
+
+    def _on_column_click(self, event):
+        """处理列头点击事件"""
+        region = self.list_view.identify('region', event.x, event.y)
+        if region == "heading":
+            column = self.list_view.identify_column(event.x)
+            if column:  # column will be like '#1', '#2', etc.
+                # 保存拖动开始的列信息
+                self._drag_column = column
+                self._drag_position = event.x
+                # 保存开始拖动的列的所有信息
+                col_index = int(column[1]) - 1
+                columns = self.list_view["columns"]
+                if 0 <= col_index < len(columns):
+                    col_name = columns[col_index]
+                    self._drag_column_info = {
+                        'name': col_name,
+                        'width': self.list_view.column(col_name, 'width'),
+                        'heading': self.list_view.heading(col_name)
+                    }
+
+    def _on_column_drag(self, event):
+        """处理列头拖动事件"""
+        if self._drag_column:
+            # 显示拖动光标
+            self.list_view.configure(cursor='exchange')
+
+    def _on_column_drop(self, event):
+        """处理列头释放事件"""
+        if self._drag_column and hasattr(self, '_drag_column_info'):
+            target_column = self.list_view.identify_column(event.x)
+            if target_column and target_column != self._drag_column:
+                try:
+                    # 获取列名而不是列索引
+                    columns = list(self.list_view["columns"])
+                    from_idx = int(self._drag_column[1]) - 1
+                    to_idx = int(target_column[1]) - 1
+                    
+                    if 0 <= from_idx < len(columns) and 0 <= to_idx < len(columns):
+                        # 保存所有列的当前数据
+                        items_data = []
+                        for item in self.list_view.get_children():
+                            values = {}
+                            for col in columns:
+                                values[col] = self.list_view.set(item, col)
+                            items_data.append(values)
+                        
+                        # 重新排序列
+                        col = columns.pop(from_idx)
+                        columns.insert(to_idx, col)
+                        
+                        # 更新列顺序
+                        self.list_view["columns"] = columns
+                        
+                        # 重新设置列标题和属性
+                        for col in columns:
+                            # 设置列标题
+                            display_name = col.replace('_', ' ').title()
+                            self.list_view.heading(col, text=display_name)
+                            
+                            # 设置列宽度（使用保存的配置或默认值）
+                            width = self.column_config.get(col, {}).get('width')
+                            if width:
+                                self.list_view.column(col, width=width)
+                        
+                        # 重新填充数据
+                        self.list_view.delete(*self.list_view.get_children())
+                        for item_data in items_data:
+                            values = []
+                            for col in columns:
+                                values.append(item_data.get(col, ''))
+                            self.list_view.insert('', 'end', values=values)
+                        
+                        # 保存新的列顺序
+                        self.column_config['order'] = columns
+                        self.save_column_config()
+                
+                except Exception as e:
+                    print(f"Error during column swap: {e}")
+                    # 发生错误时刷新显示
+                    self._update_list_columns()
+            
+            # 重置拖动状态
+            self._drag_column = None
+            self._drag_position = None
+            if hasattr(self, '_drag_column_info'):
+                del self._drag_column_info
+            self.list_view.configure(cursor='')
+
+    def _show_column_settings(self):
+        """显示列设置对话框"""
+        dialog = tk.Toplevel(self)
+        dialog.title("Column Settings")
+        dialog.grab_set()
+        dialog.transient(self)
+        
+        # 创建复选框框架
+        frame = ttk.Frame(dialog, padding="10")
+        frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 获取所有列
+        columns = self.list_view["columns"]
+        checkboxes = {}
+        
+        # 为每个列创建复选框
+        for i, col in enumerate(columns):
+            var = tk.BooleanVar(value=True)  # 默认显示
+            if col in self.column_config:
+                var.set(self.column_config[col].get('visible', True))
+            
+            cb = ttk.Checkbutton(
+                frame,
+                text=col.replace('_', ' ').title(),
+                variable=var,
+                command=lambda c=col, v=var: self._toggle_column(c, v.get())
+            )
+            cb.grid(row=i//2, column=i%2, sticky='w', padx=5, pady=2)
+            checkboxes[col] = var
+        
+        # 按钮框架
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(fill=tk.X, padx=10, pady=5)
+        
+        ttk.Button(btn_frame, text="Select All", 
+                   command=lambda: self._select_all_columns(checkboxes)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Deselect All", 
+                   command=lambda: self._deselect_all_columns(checkboxes)).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Close", 
+                   command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
+        
+        # 居中显示对话框
+        dialog.update_idletasks()
+        width = dialog.winfo_width()
+        height = dialog.winfo_height()
+        x = (dialog.winfo_screenwidth() // 2) - (width // 2)
+        y = (dialog.winfo_screenheight() // 2) - (height // 2)
+        dialog.geometry(f'{width}x{height}+{x}+{y}')
+
+    def _toggle_column(self, column, show):
+        """切换列的显示状态"""
+        if not self.column_config.get(column):
+            self.column_config[column] = {}
+        self.column_config[column]['visible'] = show
+        self.save_column_config()
+        self._update_list_columns()
+
+    def _select_all_columns(self, checkboxes):
+        """选择所有列"""
+        for col, var in checkboxes.items():
+            var.set(True)
+            self._toggle_column(col, True)
+
+    def _deselect_all_columns(self, checkboxes):
+        """取消选择所有列"""
+        for col, var in checkboxes.items():
+            var.set(False)
+            self._toggle_column(col, False)
+
+    def load_column_config(self):
+        """加载列配置"""
+        try:
+            config_file = os.path.join(os.path.dirname(__file__), 'column_config.json')
+            if os.path.exists(config_file):
+                with open(config_file, 'r', encoding='utf-8') as f:
+                    self.column_config = json.load(f)
+        except Exception as e:
+            print(f"Error loading column config: {e}")
+            self.column_config = {}
+
+    def save_column_config(self):
+        """保存列配置"""
+        try:
+            config_file = os.path.join(os.path.dirname(__file__), 'column_config.json')
+            # 保存列宽度
+            for col in self.list_view["columns"]:
+                if col not in self.column_config:
+                    self.column_config[col] = {}
+                self.column_config[col]['width'] = self.list_view.column(col, 'width')
+            
+            with open(config_file, 'w', encoding='utf-8') as f:
+                json.dump(self.column_config, f, indent=2)
+        except Exception as e:
+            print(f"Error saving column config: {e}")

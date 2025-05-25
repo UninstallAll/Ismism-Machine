@@ -1,0 +1,67 @@
+{
+  "order": [
+    "_id",
+    "__v",
+    "name",
+    "biography",
+    "birth_year",
+    "death_year",
+    "movements",
+    "nationality",
+    "notable_works",
+    "portrait_url"
+  ],
+  "name": {
+    "width": 200,
+    "visible": true
+  },
+  "_id": {
+    "width": 200,
+    "visible": true
+  },
+  "start_year": {
+    "width": 200,
+    "visible": true
+  },
+  "end_year": {
+    "width": 200,
+    "visible": true
+  },
+  "description": {
+    "width": 200,
+    "visible": true
+  },
+  "representative_artists": {
+    "width": 200,
+    "visible": true
+  },
+  "notable_artworks": {
+    "width": 200,
+    "visible": true
+  },
+  "__v": {
+    "width": 200,
+    "visible": true
+  },
+  "biography": {
+    "width": 200
+  },
+  "birth_year": {
+    "width": 200
+  },
+  "death_year": {
+    "width": 200
+  },
+  "movements": {
+    "width": 200
+  },
+  "nationality": {
+    "width": 200
+  },
+  "notable_works": {
+    "width": 200
+  },
+  "portrait_url": {
+    "width": 200
+  }
+}
