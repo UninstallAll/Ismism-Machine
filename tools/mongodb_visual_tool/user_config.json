@@ -1,6 +1,6 @@
 {
   "last_db": "IsmismMachine",
-  "last_collection": "artists",
+  "last_collection": "artworks",
   "auto_connect": true,
   "mongodb_uri": "mongodb://localhost:27017/",
   "grid_columns": 4
