@@ -4,6 +4,11 @@ MongoDB Visual Tool - MongoDB Manager
 """
 import pymongo
 from bson.objectid import ObjectId
+import json
+import hashlib
+import time
+
+from ..utils.cache_manager import CacheManager
 
 class MongoDBManager:
     """MongoDB Database Manager"""
@@ -16,6 +21,8 @@ class MongoDBManager:
         """
         self.uri = uri
         self.client = None
+        self.cache_manager = CacheManager()
+        self.use_cache = True  # 是否使用缓存，默认启用
     
     def connect(self):
         """Connect to MongoDB server
@@ -39,9 +46,30 @@ class MongoDBManager:
         """
         if not self.client:
             raise ConnectionError("Not connected to MongoDB")
+        
+        # 生成缓存键
+        cache_key = f"db_list_{hashlib.md5(self.uri.encode()).hexdigest()}"
+        
+        # 如果启用缓存，尝试从缓存获取
+        if self.use_cache:
+            cached_data = self.cache_manager.get_cache_entry(cache_key)
+            if cached_data and "timestamp" in cached_data:
+                # 检查缓存是否有效（10分钟内）
+                if time.time() - cached_data["timestamp"] < 600:
+                    return cached_data["data"]
+        
+        # 从数据库获取
+        db_list = sorted([db for db in self.client.list_database_names() 
+                       if db not in ['admin', 'local', 'config']])
+        
+        # 如果启用缓存，保存到缓存
+        if self.use_cache:
+            self.cache_manager.set_cache_entry(cache_key, {
+                "timestamp": time.time(),
+                "data": db_list
+            })
             
-        return sorted([db for db in self.client.list_database_names() 
-                      if db not in ['admin', 'local', 'config']])
+        return db_list
     
     def list_collections(self, database):
         """Get collection list
@@ -54,8 +82,29 @@ class MongoDBManager:
         """
         if not self.client:
             raise ConnectionError("Not connected to MongoDB")
+        
+        # 生成缓存键
+        cache_key = f"coll_list_{database}_{hashlib.md5(self.uri.encode()).hexdigest()}"
+        
+        # 如果启用缓存，尝试从缓存获取
+        if self.use_cache:
+            cached_data = self.cache_manager.get_cache_entry(cache_key)
+            if cached_data and "timestamp" in cached_data:
+                # 检查缓存是否有效（5分钟内）
+                if time.time() - cached_data["timestamp"] < 300:
+                    return cached_data["data"]
+        
+        # 从数据库获取
+        collection_list = sorted(self.client[database].list_collection_names())
+        
+        # 如果启用缓存，保存到缓存
+        if self.use_cache:
+            self.cache_manager.set_cache_entry(cache_key, {
+                "timestamp": time.time(),
+                "data": collection_list
+            })
             
-        return sorted(self.client[database].list_collection_names())
+        return collection_list
     
     def get_documents(self, database, collection, limit=100, skip=0, query=None):
         """Get documents
@@ -74,7 +123,58 @@ class MongoDBManager:
             raise ConnectionError("Not connected to MongoDB")
             
         query = query or {}
-        return list(self.client[database][collection].find(query).limit(limit).skip(skip))
+        
+        # 生成缓存键（包含查询条件、限制和偏移）
+        query_str = json.dumps(query, sort_keys=True)
+        cache_key = f"docs_{database}_{collection}_{limit}_{skip}_{hashlib.md5(query_str.encode()).hexdigest()}"
+        
+        # 如果启用缓存，尝试从缓存获取
+        if self.use_cache:
+            cached_data = self.cache_manager.get_cache_entry(cache_key)
+            if cached_data and "timestamp" in cached_data:
+                # 检查缓存是否有效（2分钟内）
+                if time.time() - cached_data["timestamp"] < 120:
+                    return cached_data["data"]
+        
+        # 从数据库获取
+        docs = list(self.client[database][collection].find(query).limit(limit).skip(skip))
+        
+        # 序列化文档，确保可以缓存
+        docs_serializable = self.bson_to_json(docs)
+        
+        # 如果启用缓存，保存到缓存
+        if self.use_cache:
+            self.cache_manager.set_cache_entry(cache_key, {
+                "timestamp": time.time(),
+                "data": docs_serializable
+            })
+            
+        return docs
+    
+    def bson_to_json(self, data):
+        """将BSON数据转换为可JSON序列化的格式
+        
+        Args:
+            data: BSON数据（文档或文档列表）
+            
+        Returns:
+            dict or list: 可JSON序列化的数据
+        """
+        if isinstance(data, list):
+            return [self.bson_to_json(item) for item in data]
+        
+        if isinstance(data, dict):
+            result = {}
+            for key, value in data.items():
+                if isinstance(value, ObjectId):
+                    result[key] = str(value)
+                elif isinstance(value, (list, dict)):
+                    result[key] = self.bson_to_json(value)
+                else:
+                    result[key] = value
+            return result
+        
+        return data
     
     def count_documents(self, database, collection, query=None):
         """Count documents
@@ -91,7 +191,30 @@ class MongoDBManager:
             raise ConnectionError("Not connected to MongoDB")
             
         query = query or {}
-        return self.client[database][collection].count_documents(query)
+        
+        # 生成缓存键（包含查询条件）
+        query_str = json.dumps(query, sort_keys=True)
+        cache_key = f"count_{database}_{collection}_{hashlib.md5(query_str.encode()).hexdigest()}"
+        
+        # 如果启用缓存，尝试从缓存获取
+        if self.use_cache:
+            cached_data = self.cache_manager.get_cache_entry(cache_key)
+            if cached_data and "timestamp" in cached_data:
+                # 检查缓存是否有效（2分钟内）
+                if time.time() - cached_data["timestamp"] < 120:
+                    return cached_data["data"]
+        
+        # 从数据库获取
+        count = self.client[database][collection].count_documents(query)
+        
+        # 如果启用缓存，保存到缓存
+        if self.use_cache:
+            self.cache_manager.set_cache_entry(cache_key, {
+                "timestamp": time.time(),
+                "data": count
+            })
+            
+        return count
     
     def insert_document(self, database, collection, document):
         """Insert document
@@ -108,7 +231,30 @@ class MongoDBManager:
             raise ConnectionError("Not connected to MongoDB")
             
         result = self.client[database][collection].insert_one(document)
+        
+        # 插入新文档后，使相关缓存失效
+        self._invalidate_collection_cache(database, collection)
+        
         return str(result.inserted_id)
+    
+    def _invalidate_collection_cache(self, database, collection):
+        """使特定集合的缓存失效
+        
+        Args:
+            database (str): 数据库名
+            collection (str): 集合名
+        """
+        # 为简单起见，我们只是清理documents缓存目录
+        # 在实际应用中，可以使用更精确的缓存失效策略
+        self.cache_manager.clear_cache("documents")
+    
+    def set_cache_enabled(self, enabled):
+        """设置是否启用缓存
+        
+        Args:
+            enabled (bool): 是否启用缓存
+        """
+        self.use_cache = enabled
     
     def get_collection_schema(self, database, collection):
         """获取集合的实际字段结构

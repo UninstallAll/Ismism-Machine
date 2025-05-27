@@ -5,7 +5,7 @@ MongoDB Visual Tool - Core Application
 import os
 import sys
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, messagebox, filedialog, Menu
 import json
 import threading
 import queue
@@ -17,6 +17,7 @@ from ..config.config_manager import ConfigManager
 from ..db.mongo_manager import MongoDBManager
 from ..db.validator import DataValidator
 from ..ui.paginated_grid import PaginatedGrid
+from ..utils.cache_manager import CacheManager
 from .view_settings import ViewSettings
 from .collection_views import CollectionViews
 
@@ -43,8 +44,14 @@ class MongoDBViewer(tk.Tk):
         # Initialize collection views manager
         self.collection_views = CollectionViews()
         
+        # Initialize cache manager
+        self.cache_manager = CacheManager()
+        
         # Create UI
         self.create_ui()
+        
+        # Create menu bar
+        self.create_menu_bar()
         
         # Set window close event
         self.protocol("WM_DELETE_WINDOW", self.on_close)
@@ -52,6 +59,62 @@ class MongoDBViewer(tk.Tk):
         # Auto connect
         if self.user_config.get("auto_connect", True):
             self.after(500, self.auto_connect_mongodb)
+    
+    def create_menu_bar(self):
+        """创建菜单栏"""
+        # 创建主菜单栏
+        self.menu_bar = Menu(self)
+        self.config(menu=self.menu_bar)
+        
+        # 文件菜单
+        file_menu = Menu(self.menu_bar, tearoff=0)
+        file_menu.add_command(label="连接数据库", command=self.connect_mongodb)
+        file_menu.add_command(label="导入图片/文件", command=self.show_import_menu)
+        file_menu.add_command(label="导入JSON数据", command=self.import_json)
+        file_menu.add_separator()
+        file_menu.add_command(label="退出", command=self.on_close)
+        self.menu_bar.add_cascade(label="文件", menu=file_menu)
+        
+        # 视图菜单
+        view_menu = Menu(self.menu_bar, tearoff=0)
+        view_menu.add_command(label="刷新数据", command=self.load_collection_data)
+        view_menu.add_command(label="调整网格布局", command=self.update_grid_layout)
+        self.menu_bar.add_cascade(label="视图", menu=view_menu)
+        
+        # 工具菜单
+        tools_menu = Menu(self.menu_bar, tearoff=0)
+        
+        # 缓存管理子菜单
+        cache_menu = Menu(tools_menu, tearoff=0)
+        cache_menu.add_command(label="查看缓存状态", command=self.show_cache_stats)
+        
+        # 缓存启用/禁用选项
+        self.cache_enabled = tk.BooleanVar(value=True)
+        cache_menu.add_checkbutton(label="启用缓存", variable=self.cache_enabled, 
+                                  command=self.toggle_cache)
+        
+        cache_menu.add_separator()
+        cache_menu.add_command(label="清理所有缓存", command=lambda: self.clear_cache())
+        cache_menu.add_command(label="清理图片缓存", command=lambda: self.clear_cache("images"))
+        cache_menu.add_command(label="清理文档缓存", command=lambda: self.clear_cache("documents"))
+        cache_menu.add_command(label="清理缩略图缓存", command=lambda: self.clear_cache("thumbnails"))
+        cache_menu.add_command(label="清理临时缓存", command=lambda: self.clear_cache("temp"))
+        cache_menu.add_separator()
+        cache_menu.add_command(label="清理旧缓存 (7天)", command=lambda: self.cleanup_old_cache(7))
+        cache_menu.add_command(label="清理旧缓存 (30天)", command=lambda: self.cleanup_old_cache(30))
+        
+        tools_menu.add_cascade(label="缓存管理", menu=cache_menu)
+        tools_menu.add_separator()
+        tools_menu.add_command(label="批量导出", command=lambda: self.bulk_export_documents(self.current_docs))
+        tools_menu.add_command(label="批量关联", command=lambda: self.bulk_create_relationships(self.current_docs))
+        
+        self.menu_bar.add_cascade(label="工具", menu=tools_menu)
+        
+        # 帮助菜单
+        help_menu = Menu(self.menu_bar, tearoff=0)
+        help_menu.add_command(label="使用帮助", command=self.show_help)
+        help_menu.add_command(label="关于", command=self.show_about)
+        self.menu_bar.add_cascade(label="帮助", menu=help_menu)
     
     def create_ui(self):
         """Create user interface"""
@@ -1086,4 +1149,136 @@ class MongoDBViewer(tk.Tk):
                 self.paginated_grid.list_frame.pack(fill=tk.BOTH, expand=True)
                 self.paginated_grid.refresh_list()
             
-            self.update_status(f"Switched to {view_type.capitalize()} View") 
+            self.update_status(f"Switched to {view_type.capitalize()} View")
+
+    # 新增的缓存管理相关方法
+    def show_cache_stats(self):
+        """显示缓存统计信息"""
+        # 更新缓存统计
+        self.cache_manager.update_cache_stats()
+        stats = self.cache_manager.get_cache_stats()
+        
+        # 创建统计信息显示窗口
+        stats_window = tk.Toplevel(self)
+        stats_window.title("缓存统计信息")
+        stats_window.geometry("400x300")
+        stats_window.resizable(False, False)
+        stats_window.transient(self)
+        stats_window.grab_set()
+        
+        # 创建统计信息显示框架
+        frame = ttk.Frame(stats_window, padding=10)
+        frame.pack(fill=tk.BOTH, expand=True)
+        
+        # 显示统计信息
+        ttk.Label(frame, text="缓存统计信息", font=("Helvetica", 12, "bold")).grid(row=0, column=0, columnspan=2, pady=10, sticky=tk.W)
+        
+        ttk.Label(frame, text="总大小:").grid(row=1, column=0, sticky=tk.W, pady=2)
+        ttk.Label(frame, text=self.cache_manager.get_cache_size_formatted()).grid(row=1, column=1, sticky=tk.W, pady=2)
+        
+        ttk.Label(frame, text="文件数量:").grid(row=2, column=0, sticky=tk.W, pady=2)
+        ttk.Label(frame, text=str(stats["file_count"])).grid(row=2, column=1, sticky=tk.W, pady=2)
+        
+        ttk.Label(frame, text="缓存命中次数:").grid(row=3, column=0, sticky=tk.W, pady=2)
+        ttk.Label(frame, text=str(stats["cache_hits"])).grid(row=3, column=1, sticky=tk.W, pady=2)
+        
+        ttk.Label(frame, text="缓存未命中次数:").grid(row=4, column=0, sticky=tk.W, pady=2)
+        ttk.Label(frame, text=str(stats["cache_misses"])).grid(row=4, column=1, sticky=tk.W, pady=2)
+        
+        if stats["last_cleanup"]:
+            ttk.Label(frame, text="上次清理时间:").grid(row=5, column=0, sticky=tk.W, pady=2)
+            ttk.Label(frame, text=stats["last_cleanup"]).grid(row=5, column=1, sticky=tk.W, pady=2)
+        
+        # 添加操作按钮
+        button_frame = ttk.Frame(frame)
+        button_frame.grid(row=6, column=0, columnspan=2, pady=20)
+        
+        ttk.Button(button_frame, text="清理所有缓存", command=lambda: [self.clear_cache(), stats_window.destroy()]).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="清理旧缓存", command=lambda: [self.cleanup_old_cache(7), stats_window.destroy()]).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="关闭", command=stats_window.destroy).pack(side=tk.LEFT, padx=5)
+    
+    def clear_cache(self, category=None):
+        """清理缓存"""
+        category_name = "所有" if category is None else category
+        if messagebox.askyesno("确认清理", f"确定要清理{category_name}缓存吗？"):
+            success = self.cache_manager.clear_cache(category)
+            if success:
+                self.update_status(f"已成功清理{category_name}缓存")
+                messagebox.showinfo("清理成功", f"已成功清理{category_name}缓存")
+            else:
+                self.update_status("缓存清理失败")
+                messagebox.showerror("清理失败", "缓存清理失败，请查看日志")
+    
+    def cleanup_old_cache(self, days):
+        """清理旧缓存"""
+        if messagebox.askyesno("确认清理", f"确定要清理{days}天前的旧缓存吗？"):
+            cleaned_count, freed_space = self.cache_manager.cleanup_old_cache(days)
+            if cleaned_count > 0:
+                freed_mb = freed_space / (1024 * 1024)
+                self.update_status(f"已清理{cleaned_count}个缓存文件，释放{freed_mb:.2f}MB空间")
+                messagebox.showinfo("清理成功", f"已清理{cleaned_count}个缓存文件，释放{freed_mb:.2f}MB空间")
+            else:
+                self.update_status(f"没有找到{days}天前的旧缓存")
+                messagebox.showinfo("清理结果", f"没有找到{days}天前的旧缓存")
+    
+    def show_help(self):
+        """显示帮助信息"""
+        help_text = """
+MongoDB可视化工具使用帮助
+
+基本操作:
+- 连接数据库: 输入MongoDB URI并点击"连接"按钮
+- 浏览数据: 在左侧树视图中选择数据库和集合
+- 查看文档: 点击网格中的文档卡片
+- 编辑文档: 右键点击文档卡片并选择"查看/编辑"
+
+导入功能:
+- 导入图片/文件: 使用"文件"菜单中的"导入图片/文件"
+- 导入JSON数据: 使用"文件"菜单中的"导入JSON数据"
+
+缓存管理:
+- 查看缓存状态: 使用"工具"菜单中的"缓存管理"
+- 清理缓存: 可以清理特定类型或所有缓存
+- 清理旧缓存: 自动清理指定天数前的缓存文件
+        """
+        
+        help_window = tk.Toplevel(self)
+        help_window.title("使用帮助")
+        help_window.geometry("600x500")
+        help_window.transient(self)
+        help_window.grab_set()
+        
+        text = tk.Text(help_window, wrap=tk.WORD, padx=10, pady=10)
+        text.pack(fill=tk.BOTH, expand=True)
+        text.insert(tk.END, help_text)
+        text.config(state=tk.DISABLED)
+        
+        ttk.Button(help_window, text="关闭", command=help_window.destroy).pack(pady=10)
+    
+    def show_about(self):
+        """显示关于信息"""
+        about_text = """
+MongoDB可视化工具
+
+版本: 1.0
+描述: 用于查看和管理MongoDB数据库的可视化工具
+
+功能:
+- 数据库浏览和查询
+- 文档编辑和管理
+- 图片和文件导入
+- 缓存管理
+- 批量操作
+
+作者: Ismism-Machine团队
+        """
+        
+        messagebox.showinfo("关于", about_text)
+
+    def toggle_cache(self):
+        """切换缓存启用状态"""
+        if self.db_manager:
+            enabled = self.cache_enabled.get()
+            self.db_manager.set_cache_enabled(enabled)
+            status = "启用" if enabled else "禁用"
+            self.update_status(f"缓存已{status}") 
