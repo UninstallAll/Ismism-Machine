@@ -21,5 +21,19 @@ RELATIONSHIP_TYPES = [
     "Same Art Movement",
     "Same Theme",
     "Same Period",
-    "Same Region"
+    "Same Region",
+    "Influenced By",
+    "Influenced",
+    "Referenced By",
+    "References",
+    "Precedes",
+    "Follows",
+    "Part Of",
+    "Contains",
+    "Created By",
+    "Created",
+    "Related To",
+    "Contrasts With",
+    "Derivative Of",
+    "Inspired By"
 ] 

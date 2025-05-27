@@ -1,0 +1,361 @@
+{
+  "timestamp": 1748362400.4956272,
+  "data": [
+    {
+      "_id": "6830bc9a83a1a567c05d466a",
+      "name": "Jeff Koons",
+      "birth_year": null,
+      "death_year": null,
+      "nationality": null,
+      "biography": "Jeffrey Lynn Koons  (; born January 21, 1955) is an American artist recognized for his work dealing with popular culture and his sculptures depicting everyday objects, including balloon animals produced in stainless steel with mirror-finish surfaces. He lives and works in both New York City and his hometown of York, Pennsylvania. His works have sold for substantial sums, including at least two record auction prices for a work by a living artist: US$58.4 million for Balloon Dog (Orange) in 2013 and US$91.1 million for Rabbit in 2019.",
+      "movements": [
+        "6830bc9983a1a567c05d4669"
+      ],
+      "notable_works": [
+        "6830bc9b83a1a567c05d466b",
+        "6830bc9b83a1a567c05d466c"
+      ],
+      "portrait_url": null,
+      "__v": 0
+    },
+    {
+      "_id": "6830bc9b83a1a567c05d466d",
+      "name": "Cindy Sherman",
+      "birth_year": null,
+      "death_year": null,
+      "nationality": null,
+      "biography": "Cynthia Morris Sherman (born January 19, 1954) is an American artist whose work consists primarily of photographic self-portraits, depicting herself in many different contexts and as various imagined characters.",
+      "movements": [
+        "6830bc9983a1a567c05d4669"
+      ],
+      "notable_works": [
+        "6830bc9c83a1a567c05d466e"
+      ],
+      "portrait_url": null,
+      "__v": 0
+    },
+    {
+      "_id": "6830bc9c83a1a567c05d466f",
+      "name": "Jean-Michel Basquiat",
+      "birth_year": null,
+      "death_year": null,
+      "nationality": null,
+      "biography": "Jean-Michel Basquiat (French pronunciation: [\u0292\u0251\u0303 mi\u0283\u025bl baskja]; December 22, 1960 \u2013 August 12, 1988) was an American artist who rose to success during the 1980s as part of the neo-expressionism movement.",
+      "movements": [
+        "6830bc9983a1a567c05d4669"
+      ],
+      "notable_works": [
+        "6830bc9d83a1a567c05d4670",
+        "6830bc9d83a1a567c05d4671"
+      ],
+      "portrait_url": null,
+      "__v": 0
+    },
+    {
+      "_id": "6830bc9e83a1a567c05d4673",
+      "name": "Julian Schnabel",
+      "birth_year": null,
+      "death_year": null,
+      "nationality": null,
+      "biography": "Julian Schnabel (born October 26, 1951) is an American painter and filmmaker. In the 1980s, he received international attention for his \"plate paintings\"\u2014with broken ceramic plates set onto large-scale paintings. Since the 1990s, he has been a proponent of independent arthouse cinema. Schnabel directed Before Night Falls, which became Javier Bardem's breakthrough Academy Award-nominated role, and The Diving Bell and the Butterfly, which was nominated for four Academy Awards. For the latter, he won the Cannes Film Festival Award for Best Director and the Golden Globe Award for Best Director, as well as receiving nominations for the Academy Award for Best Director and the C\u00e9sar Award for Best Director.",
+      "movements": [
+        "6830bc9d83a1a567c05d4672"
+      ],
+      "notable_works": [
+        "6830bc9e83a1a567c05d4674"
+      ],
+      "portrait_url": null,
+      "__v": 0
+    },
+    {
+      "_id": "6830bc9e83a1a567c05d4675",
+      "name": "Anselm Kiefer",
+      "birth_year": null,
+      "death_year": null,
+      "nationality": null,
+      "biography": "Anselm Kiefer (born 8 March 1945) is a German painter and sculptor. He studied with Peter Dreher and Horst Antes at the end of the 1960s. His works incorporate materials such as straw, ash, clay, lead, and shellac. The poems of Paul Celan have played a role in developing Kiefer's themes of German history and the horrors of the Holocaust, as have the spiritual concepts of Kabbalah.",
+      "movements": [
+        "6830bc9d83a1a567c05d4672"
+      ],
+      "notable_works": [
+        "6830bc9f83a1a567c05d4676"
+      ],
+      "portrait_url": null,
+      "__v": 0
+    },
+    {
+      "_id": "6830bca783a1a567c05d468b",
+      "name": "Joseph Beuys",
+      "birth_year": null,
+      "death_year": null,
+      "nationality": null,
+      "biography": "Joseph Heinrich Beuys ( BOYSS, German: [\u02c8jo\u02d0z\u025bf \u02c8b\u0254\u028fs]; 12 May 1921 \u2013 23 January 1986) was a German artist, teacher, performance artist, and art theorist whose work reflected concepts of humanism and sociology. With Heinrich B\u00f6ll, Johannes St\u00fcttgen, Caroline Tisdall, Robert McDowell, and Enrico Wolleb, Beuys created the Free International University for Creativity & Interdisciplinary Research (FIU). Through his talks and performances, he also formed The Party for Animals and The Organisation for Direct Democracy. He was a member of a Dadaist art movement Fluxus and singularly inspirational in developing of Performance Art, called Kunst Aktionen, alongside Wiener Aktionismus that Allan Kaprow and Carolee Schneemann termed Art Happenings.",
+      "movements": [
+        "6830bca583a1a567c05d4688"
+      ],
+      "notable_works": [
+        "6830bca783a1a567c05d468c"
+      ],
+      "portrait_url": null,
+      "__v": 0
+    },
+    {
+      "_id": "6830bca783a1a567c05d468d",
+      "name": "Yoko Ono",
+      "birth_year": null,
+      "death_year": null,
+      "nationality": null,
+      "biography": "Yoko Ono (Japanese: \u5c0f\u91ce \u6d0b\u5b50, romanized: Ono Y\u014dko, usually spelled in katakana as \u30aa\u30ce\u30fb\u30e8\u30fc\u30b3; born February 18, 1933) is a Japanese multimedia artist, singer, songwriter, and peace activist. Her work also encompasses performance art and filmmaking.",
+      "movements": [
+        "6830bca583a1a567c05d4688"
+      ],
+      "notable_works": [
+        "6830bca883a1a567c05d468e"
+      ],
+      "portrait_url": null,
+      "__v": 0
+    },
+    {
+      "_id": "6830bca983a1a567c05d4690",
+      "name": "Robert Smithson",
+      "birth_year": null,
+      "death_year": null,
+      "nationality": null,
+      "biography": "Robert Smithson (January 2, 1938 \u2013 July 20, 1973) was an American artist known for sculpture and land art who often used drawing and photography in relation to the spatial arts. His work has been internationally exhibited in galleries and museums and is held in public collections. He was one of the founders of the land art movement whose best known work is the Spiral Jetty (1970).",
+      "movements": [
+        "6830bca983a1a567c05d468f"
+      ],
+      "notable_works": [
+        "6830bca983a1a567c05d4691"
+      ],
+      "portrait_url": null,
+      "__v": 0
+    },
+    {
+      "_id": "6830bcaa83a1a567c05d4692",
+      "name": "Christo and Jeanne-Claude",
+      "birth_year": null,
+      "death_year": null,
+      "nationality": null,
+      "biography": "Christo Vladimirov Javacheff (1935\u20132020) and Jeanne-Claude Denat de Guillebon (1935\u20132009), known as Christo and Jeanne-Claude, were artists noted for their large-scale, site-specific environmental installations, often large landmarks and landscape elements wrapped in fabric, including the Wrapped Reichstag, The Pont Neuf Wrapped, Running Fence in California, and The Gates in New York City's Central Park.",
+      "movements": [
+        "6830bca983a1a567c05d468f"
+      ],
+      "notable_works": [
+        "6830bcaa83a1a567c05d4693",
+        "6830bcab83a1a567c05d4694"
+      ],
+      "portrait_url": null,
+      "__v": 0
+    },
+    {
+      "_id": "6830bcab83a1a567c05d4695",
+      "name": "Richard Long",
+      "birth_year": null,
+      "death_year": null,
+      "nationality": null,
+      "biography": "Richard Long (MP for Old Sarum), 15th-century Member of Parliament (MP); see Old Sarum (UK Parliament constituency)",
+      "movements": [
+        "6830bca983a1a567c05d468f"
+      ],
+      "notable_works": [
+        "6830bcab83a1a567c05d4696"
+      ],
+      "portrait_url": null,
+      "__v": 0
+    },
+    {
+      "_id": "6830bcac83a1a567c05d4698",
+      "name": "Bill Viola",
+      "birth_year": null,
+      "death_year": null,
+      "nationality": null,
+      "biography": "William John Viola Jr. (US:  VY-oh-l\u0259, UK:  VEE-oh-l\u0259; January 25, 1951 \u2013 July 12, 2024) was an American video artist whose artistic expression depended upon electronic, sound, and image technology in new media. His works focus on the ideas behind fundamental human experiences such as birth, death, and aspects of consciousness.",
+      "movements": [
+        "6830bcac83a1a567c05d4697"
+      ],
+      "notable_works": [
+        "6830bcad83a1a567c05d4699"
+      ],
+      "portrait_url": null,
+      "__v": 0
+    },
+    {
+      "_id": "6830bcad83a1a567c05d469a",
+      "name": "Nam June Paik",
+      "birth_year": null,
+      "death_year": null,
+      "nationality": null,
+      "biography": "Nam June Paik (Korean: \ubc31\ub0a8\uc900; RR: Baek Namjun; July 20, 1932 \u2013 January 29, 2006) was a South Korean artist. He worked with a variety of media and is considered to be the founder of video art. He is credited with the first use (1974) of the term \"electronic super highway\" to describe the future of telecommunications.",
+      "movements": [
+        "6830bcac83a1a567c05d4697"
+      ],
+      "notable_works": [
+        "6830bcad83a1a567c05d469b"
+      ],
+      "portrait_url": null,
+      "__v": 0
+    },
+    {
+      "_id": "6830bcae83a1a567c05d469c",
+      "name": "Bruce Nauman",
+      "birth_year": null,
+      "death_year": null,
+      "nationality": null,
+      "biography": "Bruce Nauman (born December 6, 1941) is an American artist. His practice spans a broad range of media including sculpture, photography, neon, video, drawing, printmaking, and performance. Nauman lives near Galisteo, New Mexico.",
+      "movements": [
+        "6830bcac83a1a567c05d4697"
+      ],
+      "notable_works": [
+        "6830bcae83a1a567c05d469d"
+      ],
+      "portrait_url": null,
+      "__v": 0
+    },
+    {
+      "_id": "6830bcaf83a1a567c05d469f",
+      "name": "Banksy",
+      "birth_year": null,
+      "death_year": null,
+      "nationality": null,
+      "biography": "Banksy is a pseudonymous England-based street artist, political activist, and film director whose real name and identity remain unconfirmed and the subject of speculation. Active since the 1990s, his satirical street art and subversive epigrams combine dark humour with graffiti executed in a distinctive stenciling technique. His works of political and social commentary have appeared on streets, walls, and bridges throughout the world. His work grew out of the Bristol underground scene, which involved collaborations between artists and musicians. Banksy says that he was inspired by 3D, a graffiti artist and founding member of the musical group Massive Attack.",
+      "movements": [
+        "6830bcaf83a1a567c05d469e"
+      ],
+      "notable_works": [
+        "6830bcb083a1a567c05d46a0",
+        "6830bcb083a1a567c05d46a1"
+      ],
+      "portrait_url": null,
+      "__v": 0
+    },
+    {
+      "_id": "6830bcb083a1a567c05d46a2",
+      "name": "Keith Haring",
+      "birth_year": null,
+      "death_year": null,
+      "nationality": null,
+      "biography": "Keith Allen Haring (May 4, 1958 \u2013 February 16, 1990) was an American artist whose pop art emerged from the New York City graffiti subculture of the 1980s. His animated imagery has \"become a widely recognized visual language\". Much of his work includes sexual allusions that turned into social activism by using the images to advocate for safe sex and AIDS awareness. In addition to solo gallery exhibitions, he participated in renowned national and international group shows such as documenta in Kassel, the Whitney Biennial in New York, the S\u00e3o Paulo Biennial, and the Venice Biennale. The Whitney Museum held a retrospective of his art in 1997.",
+      "movements": [
+        "6830bcaf83a1a567c05d469e"
+      ],
+      "notable_works": [
+        "6830bcb183a1a567c05d46a3"
+      ],
+      "portrait_url": null,
+      "__v": 0
+    },
+    {
+      "_id": "6830bcb183a1a567c05d46a4",
+      "name": "Jean-Michel Basquiat",
+      "birth_year": null,
+      "death_year": null,
+      "nationality": null,
+      "biography": "Jean-Michel Basquiat (French pronunciation: [\u0292\u0251\u0303 mi\u0283\u025bl baskja]; December 22, 1960 \u2013 August 12, 1988) was an American artist who rose to success during the 1980s as part of the neo-expressionism movement.",
+      "movements": [
+        "6830bcaf83a1a567c05d469e"
+      ],
+      "notable_works": [
+        "6830bcb283a1a567c05d46a5"
+      ],
+      "portrait_url": null,
+      "__v": 0
+    },
+    {
+      "_id": "6830bcb283a1a567c05d46a7",
+      "name": "Cao Fei",
+      "birth_year": null,
+      "death_year": null,
+      "nationality": null,
+      "biography": "Cao Fei (Chinese: \u66f9\u6590, ; born 1978) is a Chinese multimedia artist born in Guangzhou. Her work, which includes video, performance, and digital media, examines the daily life of Chinese citizens born after the Cultural Revolution. Her work explores China's widespread internet culture as well as the borders between dreams and reality. Cao has captured the rapid social and cultural transformation of contemporary China, highlighting the impact of foreign influences from the United States and Japan.",
+      "movements": [
+        "6830bcb283a1a567c05d46a6"
+      ],
+      "notable_works": [
+        "6830bcb383a1a567c05d46a8"
+      ],
+      "portrait_url": null,
+      "__v": 0
+    },
+    {
+      "_id": "6830bcb383a1a567c05d46a9",
+      "name": "Trevor Paglen",
+      "birth_year": null,
+      "death_year": null,
+      "nationality": null,
+      "biography": "Trevor Paglen (born 1974) is an American artist, geographer, and author whose work covers mass surveillance and data collection.",
+      "movements": [
+        "6830bcb283a1a567c05d46a6"
+      ],
+      "notable_works": [
+        "6830bcb383a1a567c05d46aa"
+      ],
+      "portrait_url": null,
+      "__v": 0
+    },
+    {
+      "_id": "6830bcb483a1a567c05d46ab",
+      "name": "Hito Steyerl",
+      "birth_year": null,
+      "death_year": null,
+      "nationality": null,
+      "biography": "Hito Steyerl (born 1 January 1966) is a German filmmaker, moving image artist, writer, and innovator of the essay documentary. Her principal topics of interest are media, technology, and the global circulation of images. Steyerl holds a PhD in philosophy from the Academy of Fine Arts Vienna. She has been a professor of Current Digital Media at the Academy of Fine Arts in Munich since 2024. Until 2024, she was a professor of New Media Art at the Berlin University of the Arts, where she co-founded the Research Center for Proxy Politics, together with Vera Tollmann and Boaz Levin.",
+      "movements": [
+        "6830bcb283a1a567c05d46a6"
+      ],
+      "notable_works": [
+        "6830bcb483a1a567c05d46ac"
+      ],
+      "portrait_url": null,
+      "__v": 0
+    },
+    {
+      "_id": "6830bcb583a1a567c05d46ae",
+      "name": "Rirkrit Tiravanija",
+      "birth_year": null,
+      "death_year": null,
+      "nationality": null,
+      "biography": "Rirkrit Tiravanija (Thai: \u0e24\u0e01\u0e29\u0e4c\u0e24\u0e17\u0e18\u0e34\u0e4c \u0e15\u0e35\u0e23\u0e30\u0e27\u0e19\u0e34\u0e0a, pronounced [r\u026fkrit tirawanit]) is a Thai contemporary artist residing in New York City, Berlin, and Chiangmai, Thailand. He was born in Buenos Aires, Argentina in 1961. His installations often take the form of stages or rooms for sharing meals, cooking, reading or playing music; architecture or structures for living and socializing are a core element in his work.",
+      "movements": [
+        "6830bcb483a1a567c05d46ad"
+      ],
+      "notable_works": [
+        "6830bcb583a1a567c05d46af"
+      ],
+      "portrait_url": null,
+      "__v": 0
+    },
+    {
+      "_id": "6830bcb583a1a567c05d46b0",
+      "name": "Philippe Parreno",
+      "birth_year": null,
+      "death_year": null,
+      "nationality": null,
+      "biography": "Philippe Parreno (born 1964 in Grenoble, France) is a French contemporary artist, living and working in Paris. His works include films, installations, performances, drawings, and text.",
+      "movements": [
+        "6830bcb483a1a567c05d46ad"
+      ],
+      "notable_works": [
+        "6830bcb683a1a567c05d46b1"
+      ],
+      "portrait_url": null,
+      "__v": 0
+    },
+    {
+      "_id": "6830bcb683a1a567c05d46b2",
+      "name": "Liam Gillick",
+      "birth_year": null,
+      "death_year": null,
+      "nationality": null,
+      "biography": "Liam Gillick (born 1964) is a British artist. In the 1990s he was one of the informal Young British Artists group; like many of them, he took a degree in fine art from Goldsmiths' College, in London. He was among the artists included in the Traffic exhibition at the Mus\u00e9e d'art contemporain de Bordeaux in Bordeaux in 1996, where Nicolas Bourriaud's concept of relationality was first proposed. Gillick lives in New York.",
+      "movements": [
+        "6830bcb483a1a567c05d46ad"
+      ],
+      "notable_works": [
+        "6830bcb683a1a567c05d46b3"
+      ],
+      "portrait_url": null,
+      "__v": 0
+    }
+  ]
+}

@@ -1145,7 +1145,6 @@ class PaginatedGrid(ttk.Frame):
         context_menu = tk.Menu(self, tearoff=0)
         context_menu.add_command(label="Edit Details", command=lambda: self.context_menu_callback("view", selected_docs[0]))
         context_menu.add_command(label="Export", command=lambda: self.context_menu_callback("export", selected_docs[0]))
-        context_menu.add_command(label="Create Relationship", command=lambda: self.context_menu_callback("relate", selected_docs[0]))
         context_menu.add_separator()
         
         # 根据是否有多选来决定删除操作传递的参数

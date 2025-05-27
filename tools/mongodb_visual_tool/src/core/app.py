@@ -20,6 +20,7 @@ from ..ui.paginated_grid import PaginatedGrid
 from ..utils.cache_manager import CacheManager
 from .view_settings import ViewSettings
 from .collection_views import CollectionViews
+from .relationship_manager import RelationshipManager
 
 class MongoDBViewer(tk.Tk):
     """MongoDB Visual Tool Main Application"""
@@ -46,6 +47,9 @@ class MongoDBViewer(tk.Tk):
         
         # Initialize cache manager
         self.cache_manager = CacheManager()
+        
+        # 初始化关系管理器（创建UI时才会真正创建实例）
+        self.relationship_manager = None
         
         # Create UI
         self.create_ui()
@@ -166,14 +170,32 @@ class MongoDBViewer(tk.Tk):
         self.status_bar = ttk.Label(self.left_frame, textvariable=self.status_var, relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(fill=tk.X, padx=5, pady=5)
         
-        # Right panel - Document viewer
-        self.right_frame = ttk.Frame(self.main_pane)
-        self.main_pane.add(self.right_frame, weight=3)  # Give right panel more space
+        # Center paned window for content and relationships
+        self.center_pane = ttk.PanedWindow(self.main_pane, orient=tk.HORIZONTAL)
+        self.main_pane.add(self.center_pane, weight=3)  # 给中间区域更多空间
+        
+        # Document viewer panel (center)
+        self.doc_frame = ttk.Frame(self.center_pane)
+        self.center_pane.add(self.doc_frame, weight=2)  # 文档区域占据更多空间
         
         # Create paginated grid
-        self.paginated_grid = PaginatedGrid(self.right_frame, on_show_details=self.show_document_details)
+        self.paginated_grid = PaginatedGrid(self.doc_frame, on_show_details=self.show_document_details)
         self.paginated_grid.pack(fill=tk.BOTH, expand=True)
         self.paginated_grid.set_context_menu_callback(self.handle_context_menu)
+        
+        # Relationship management panel (right)
+        self.relationship_frame = ttk.Frame(self.center_pane)
+        self.center_pane.add(self.relationship_frame, weight=1)
+        
+        # 使用RelationshipManager创建关系管理界面
+        self.relationship_manager = RelationshipManager(
+            self.relationship_frame, 
+            self.db_manager, 
+            on_relationship_change=self.refresh_relationships_callback
+        )
+        
+        # 设置关系类型
+        self.relationship_manager.set_relationship_types(RELATIONSHIP_TYPES)
         
         # Bottom panel - JSON viewer
         self.json_frame = ttk.LabelFrame(self, text="Document Details")
@@ -191,6 +213,10 @@ class MongoDBViewer(tk.Tk):
             # Create database manager
             self.db_manager = MongoDBManager(uri)
             self.db_manager.connect()
+            
+            # 更新关系管理器的数据库管理器引用
+            if self.relationship_manager:
+                self.relationship_manager.db_manager = self.db_manager
             
             self.update_status("Successfully connected to MongoDB")
             self.populate_db_tree()
@@ -236,6 +262,10 @@ class MongoDBViewer(tk.Tk):
             # Create database manager
             self.db_manager = MongoDBManager(uri)
             self.db_manager.connect()
+            
+            # 更新关系管理器的数据库管理器引用
+            if self.relationship_manager:
+                self.relationship_manager.db_manager = self.db_manager
             
             self.update_status("Successfully connected to MongoDB")
             messagebox.showinfo("Connection", "Successfully connected to MongoDB")
@@ -301,6 +331,11 @@ class MongoDBViewer(tk.Tk):
             self.current_db = db_name
             self.current_collection = collection_name
             
+            # 更新关系管理器的数据库和集合
+            if hasattr(self, 'relationship_manager') and self.relationship_manager:
+                self.relationship_manager.set_current_database(db_name)
+                self.relationship_manager.set_current_collection(collection_name)
+            
             # 更新集合模式
             self.update_collection_schema()
             
@@ -321,6 +356,11 @@ class MongoDBViewer(tk.Tk):
             # 更新当前选择
             self.current_db = db_name
             self.current_collection = None
+            
+            # 更新关系管理器的数据库
+            if hasattr(self, 'relationship_manager') and self.relationship_manager:
+                self.relationship_manager.set_current_database(db_name)
+                self.relationship_manager.set_current_collection(None)
     
     def update_collection_schema(self):
         """获取并更新集合的字段结构"""
@@ -451,7 +491,19 @@ class MongoDBViewer(tk.Tk):
             elif action == "export":
                 self.export_document(doc)
             elif action == "relate":
-                self.create_relationship(doc)
+                # 使用关系管理器，选中文档并加载关系
+                if isinstance(doc, list) and len(doc) > 0:
+                    doc = doc[0]
+                # 确保文档在选中状态
+                for card in self.paginated_grid.displayed_cards:
+                    if card.doc.get('_id') == doc.get('_id'):
+                        card.set_selected(True)
+                        break
+                # 加载关系
+                if hasattr(self, 'relationship_manager') and self.relationship_manager:
+                    self.relationship_manager.load_document_relationships(doc)
+                # 突出显示关系面板
+                self.center_pane.sashpos(0, int(self.winfo_width() * 0.6))
             elif action == "delete":
                 # 支持批量删除
                 if isinstance(doc, list):
@@ -463,6 +515,8 @@ class MongoDBViewer(tk.Tk):
             elif action == "bulk_relate":
                 self.bulk_create_relationships(doc)
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             messagebox.showerror("Action Error", f"Error performing action: {str(e)}")
             self.update_status(f"Error: {str(e)}")
     
@@ -535,10 +589,19 @@ class MongoDBViewer(tk.Tk):
         Args:
             doc: Document object
         """
-        # Convert BSON document to JSON and display in text box
-        json_text = self.bson_to_json(doc)
-        self.json_text.delete(1.0, tk.END)
-        self.json_text.insert(tk.END, json_text)
+        try:
+            # Convert BSON document to JSON and display in text box
+            json_text = self.bson_to_json(doc)
+            self.json_text.delete(1.0, tk.END)
+            self.json_text.insert(tk.END, json_text)
+            
+            # 加载并显示关系 - 使用关系管理器
+            if self.relationship_manager:
+                self.relationship_manager.load_document_relationships(doc)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            self.update_status(f"Error showing document details: {str(e)}")
     
     def bson_to_json(self, doc):
         """Convert BSON document to JSON string
@@ -560,137 +623,20 @@ class MongoDBViewer(tk.Tk):
                 return [convert(i) for i in obj]
             else:
                 return obj
-        json_doc = convert(doc)
-        return json.dumps(json_doc, indent=2, ensure_ascii=False)
+        try:
+            json_doc = convert(doc)
+            return json.dumps(json_doc, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"JSON conversion error: {e}")
+            import traceback
+            traceback.print_exc()
+            return f"Error converting document to JSON: {str(e)}"
     
-    def create_relationship(self, doc):
-        """Create document relationship
-        
-        Args:
-            doc: Document object
-        """
-        if not self.current_db:
-            messagebox.showwarning("No Database Selected", "No database is currently selected.")
-            return
-            
-        # Get relationship type
-        from ..config.settings import RELATIONSHIP_TYPES
-        
-        # Create dialog
-        dialog = tk.Toplevel(self)
-        dialog.title("Create Relationship")
-        dialog.grab_set()
-        dialog.resizable(False, False)
-        
-        # Configure frame for the inputs
-        main_frame = ttk.Frame(dialog, padding=10)
-        main_frame.pack(fill=tk.BOTH, expand=True)
-        
-        ttk.Label(main_frame, text="Source Document:").grid(row=0, column=0, sticky=tk.W, pady=5)
-        source_label = ttk.Label(main_frame, text=doc.get('filename', str(doc.get('_id', 'Unknown'))))
-        source_label.grid(row=0, column=1, sticky=tk.W, pady=5)
-        
-        ttk.Label(main_frame, text="Relationship Type:").grid(row=1, column=0, sticky=tk.W, pady=5)
-        rel_type_var = tk.StringVar()
-        rel_type_combo = ttk.Combobox(main_frame, textvariable=rel_type_var, values=RELATIONSHIP_TYPES)
-        rel_type_combo.grid(row=1, column=1, sticky=tk.EW, pady=5)
-        
-        ttk.Label(main_frame, text="Target Collection:").grid(row=2, column=0, sticky=tk.W, pady=5)
-        target_coll_var = tk.StringVar()
-        collections = self.db_manager.list_collections(self.current_db)
-        target_coll_combo = ttk.Combobox(main_frame, textvariable=target_coll_var, values=collections)
-        target_coll_combo.grid(row=2, column=1, sticky=tk.EW, pady=5)
-        target_coll_combo.bind("<<ComboboxSelected>>", lambda e: load_targets())
-        
-        ttk.Label(main_frame, text="Target Document:").grid(row=3, column=0, sticky=tk.W, pady=5)
-        target_doc_frame = ttk.Frame(main_frame)
-        target_doc_frame.grid(row=3, column=1, sticky=tk.EW, pady=5)
-        
-        target_docs = []
-        target_doc_var = tk.StringVar()
-        target_doc_combo = ttk.Combobox(target_doc_frame, textvariable=target_doc_var, values=[], width=30)
-        target_doc_combo.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        
-        def load_targets():
-            """Load target documents"""
-            nonlocal target_docs
-            coll = target_coll_var.get()
-            if coll:
-                try:
-                    target_docs = self.db_manager.get_documents(self.current_db, coll, limit=100)
-                    target_doc_combo['values'] = [doc.get('filename', str(doc.get('_id'))) for doc in target_docs]
-                except Exception as e:
-                    messagebox.showerror("Error", f"Failed to load target documents: {e}")
-        
-        # Buttons
-        btn_frame = ttk.Frame(dialog)
-        btn_frame.pack(fill=tk.X, pady=10)
-        
-        result = {'success': False}
-        
-        def on_create():
-            """Create relationship"""
-            if not rel_type_var.get():
-                messagebox.showwarning("Missing Data", "Please select a relationship type.")
-                return
-                
-            if not target_coll_var.get():
-                messagebox.showwarning("Missing Data", "Please select a target collection.")
-                return
-                
-            if not target_doc_var.get():
-                messagebox.showwarning("Missing Data", "Please select a target document.")
-                return
-                
-            try:
-                # Get target document
-                target_idx = target_doc_combo.current()
-                if target_idx < 0:
-                    messagebox.showwarning("Missing Data", "Please select a valid target document.")
-                    return
-                    
-                target_doc = target_docs[target_idx]
-                
-                # Create relationship document
-                rel_doc = {
-                    "source_id": doc.get('_id'),
-                    "source_collection": self.current_collection,
-                    "target_id": target_doc.get('_id'),
-                    "target_collection": target_coll_var.get(),
-                    "relationship_type": rel_type_var.get(),
-                    "created_at": datetime.datetime.now()
-                }
-                
-                # Save relationship to database (in a relationships collection)
-                rel_collection = "relationships"
-                if rel_collection not in self.db_manager.list_collections(self.current_db):
-                    # Create collection if it doesn't exist
-                    self.db_manager.insert_document(self.current_db, rel_collection, {"_placeholder": True})
-                    
-                self.db_manager.insert_document(self.current_db, rel_collection, rel_doc)
-                
-                result['success'] = True
-                messagebox.showinfo("Success", "Relationship created successfully!")
-                dialog.destroy()
-                
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to create relationship: {e}")
-        
-        ttk.Button(btn_frame, text="Create", command=on_create).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
-        
-        # Center dialog
-        dialog.update_idletasks()
-        width = dialog.winfo_width()
-        height = dialog.winfo_height()
-        x = (dialog.winfo_screenwidth() // 2) - (width // 2)
-        y = (dialog.winfo_screenheight() // 2) - (height // 2)
-        dialog.geometry(f'{width}x{height}+{x}+{y}')
-        
-        # Wait for dialog to close
-        self.wait_window(dialog)
-        
-        return result.get('success', False)
+    def refresh_relationships_callback(self):
+        """关系变更的回调函数"""
+        # 在这里可以添加关系变更后需要执行的操作
+        self.update_status("关系已更新")
+        # 如果需要，可以刷新当前文档或视图
     
     def export_document(self, doc):
         """Export document to file
@@ -780,123 +726,13 @@ class MongoDBViewer(tk.Tk):
             messagebox.showwarning("No Database Selected", "No database is currently selected.")
             return
         
-        # Create dialog
-        dialog = tk.Toplevel(self)
-        dialog.title("Bulk Create Relationships")
-        dialog.grab_set()
-        dialog.resizable(False, False)
-        
-        # Configure frame for the inputs
-        main_frame = ttk.Frame(dialog, padding=10)
-        main_frame.pack(fill=tk.BOTH, expand=True)
-        
-        ttk.Label(main_frame, text=f"Selected Documents: {len(docs)}").grid(row=0, column=0, columnspan=2, sticky=tk.W, pady=5)
-        
-        ttk.Label(main_frame, text="Relationship Type:").grid(row=1, column=0, sticky=tk.W, pady=5)
-        rel_type_var = tk.StringVar()
-        rel_type_combo = ttk.Combobox(main_frame, textvariable=rel_type_var, values=RELATIONSHIP_TYPES)
-        rel_type_combo.grid(row=1, column=1, sticky=tk.EW, pady=5)
-        
-        ttk.Label(main_frame, text="Target Collection:").grid(row=2, column=0, sticky=tk.W, pady=5)
-        target_coll_var = tk.StringVar()
-        collections = self.db_manager.list_collections(self.current_db)
-        target_coll_combo = ttk.Combobox(main_frame, textvariable=target_coll_var, values=collections)
-        target_coll_combo.grid(row=2, column=1, sticky=tk.EW, pady=5)
-        target_coll_combo.bind("<<ComboboxSelected>>", lambda e: load_targets())
-        
-        ttk.Label(main_frame, text="Target Document:").grid(row=3, column=0, sticky=tk.W, pady=5)
-        target_doc_frame = ttk.Frame(main_frame)
-        target_doc_frame.grid(row=3, column=1, sticky=tk.EW, pady=5)
-        
-        target_docs = []
-        target_doc_var = tk.StringVar()
-        target_doc_combo = ttk.Combobox(target_doc_frame, textvariable=target_doc_var, values=[], width=30)
-        target_doc_combo.pack(side=tk.LEFT, fill=tk.X, expand=True)
-        
-        def load_targets():
-            """Load target documents"""
-            nonlocal target_docs
-            coll = target_coll_var.get()
-            if coll:
-                try:
-                    target_docs = self.db_manager.get_documents(self.current_db, coll, limit=100)
-                    target_doc_combo['values'] = [doc.get('filename', str(doc.get('_id'))) for doc in target_docs]
-                except Exception as e:
-                    messagebox.showerror("Error", f"Failed to load target documents: {e}")
-        
-        # Buttons
-        btn_frame = ttk.Frame(dialog)
-        btn_frame.pack(fill=tk.X, pady=10)
-        
-        result = {'success': False}
-        
-        def on_create():
-            """Create relationships"""
-            if not rel_type_var.get():
-                messagebox.showwarning("Missing Data", "Please select a relationship type.")
-                return
-                
-            if not target_coll_var.get():
-                messagebox.showwarning("Missing Data", "Please select a target collection.")
-                return
-                
-            if not target_doc_var.get():
-                messagebox.showwarning("Missing Data", "Please select a target document.")
-                return
-                
-            try:
-                # Get target document
-                target_idx = target_doc_combo.current()
-                if target_idx < 0:
-                    messagebox.showwarning("Missing Data", "Please select a valid target document.")
-                    return
-                    
-                target_doc = target_docs[target_idx]
-                
-                # Create relationship documents
-                rel_collection = "relationships"
-                if rel_collection not in self.db_manager.list_collections(self.current_db):
-                    # Create collection if it doesn't exist
-                    self.db_manager.insert_document(self.current_db, rel_collection, {"_placeholder": True})
-                
-                # Create relationships for each selected document
-                successful = 0
-                for source_doc in docs:
-                    rel_doc = {
-                        "source_id": source_doc.get('_id'),
-                        "source_collection": self.current_collection,
-                        "target_id": target_doc.get('_id'),
-                        "target_collection": target_coll_var.get(),
-                        "relationship_type": rel_type_var.get(),
-                        "created_at": datetime.datetime.now()
-                    }
-                    
-                    # Save to database
-                    self.db_manager.insert_document(self.current_db, rel_collection, rel_doc)
-                    successful += 1
-                
-                result['success'] = True
-                messagebox.showinfo("Success", f"Created {successful} relationships successfully!")
-                dialog.destroy()
-                
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to create relationships: {e}")
-        
-        ttk.Button(btn_frame, text="Create", command=on_create).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)
-        
-        # Center dialog
-        dialog.update_idletasks()
-        width = dialog.winfo_width()
-        height = dialog.winfo_height()
-        x = (dialog.winfo_screenwidth() // 2) - (width // 2)
-        y = (dialog.winfo_screenheight() // 2) - (height // 2)
-        dialog.geometry(f'{width}x{height}+{x}+{y}')
-        
-        # Wait for dialog to close
-        self.wait_window(dialog)
-        
-        return result.get('success', False)
+        # 使用关系管理器的批量创建关系功能
+        if hasattr(self, 'relationship_manager') and self.relationship_manager:
+            success = self.relationship_manager.bulk_create_relationships(docs)
+            if success:
+                self.update_status(f"成功创建关系")
+        else:
+            messagebox.showwarning("Error", "Relationship manager not available")
     
     def delete_document(self, doc):
         """Delete document

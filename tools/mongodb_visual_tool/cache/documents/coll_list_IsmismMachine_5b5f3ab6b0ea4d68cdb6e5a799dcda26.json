@@ -1,8 +1,9 @@
 {
-  "timestamp": 1748349727.4028435,
+  "timestamp": 1748362250.0623636,
   "data": [
     "art_movements",
     "artists",
-    "artworks"
+    "artworks",
+    "relationships"
   ]
 }

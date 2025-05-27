@@ -1,0 +1,11 @@
+{
+  "timestamp": 1748362400.5056176,
+  "data": [
+    {
+      "_id": "6835e3fbdf18512034f7d40a",
+      "source_id": "6833a325af1816532c48663d",
+      "source_collection": "artworks",
+      "target_id": "6830bc9e83a1a567c05d4673",
+      "target_collection": "artists",
+      "relationship_type": "Same Artist",
+      "created_at": 
