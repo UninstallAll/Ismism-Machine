@@ -11,17 +11,19 @@ from bson.objectid import ObjectId
 class RelationshipManager:
     """关系管理器类，处理文档之间的关系管理"""
     
-    def __init__(self, parent, db_manager, on_relationship_change=None):
+    def __init__(self, parent, db_manager, on_relationship_change=None, on_navigate_to_target=None):
         """初始化关系管理器
         
         Args:
             parent: 父容器组件
             db_manager: 数据库管理器实例
             on_relationship_change: 关系变更时的回调函数
+            on_navigate_to_target: 导航到目标文档的回调函数
         """
         self.parent = parent
         self.db_manager = db_manager
         self.on_relationship_change = on_relationship_change
+        self.on_navigate_to_target = on_navigate_to_target
         
         # 当前状态
         self.current_db = None
@@ -58,6 +60,9 @@ class RelationshipManager:
         # 布局关系列表和滚动条
         self.rel_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         rel_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # 绑定双击事件
+        self.rel_tree.bind("<Double-1>", self._on_double_click)
         
         # 添加关系的操作区域
         add_rel_frame = ttk.LabelFrame(self.parent, text="添加关系")
@@ -509,4 +514,53 @@ class RelationshipManager:
     def clear_relationships(self):
         """清空关系列表"""
         if hasattr(self, 'rel_tree'):
-            self.rel_tree.delete(*self.rel_tree.get_children()) 
+            self.rel_tree.delete(*self.rel_tree.get_children())
+    
+    def _on_double_click(self, event):
+        """处理关系树双击事件
+        
+        Args:
+            event: 事件对象
+        """
+        selection = self.rel_tree.selection()
+        if not selection:
+            return
+            
+        try:
+            # 获取选中项
+            item = selection[0]
+            values = self.rel_tree.item(item, "values")
+            
+            if len(values) >= 3:
+                target_collection = values[1]
+                target_doc_name = values[2]
+                rel_id = self.rel_tree.item(item, "tags")[0]
+                
+                # 获取关系记录
+                rel_doc = None
+                try:
+                    rel_id_query = rel_id
+                    if ObjectId.is_valid(rel_id):
+                        rel_id_query = ObjectId(rel_id)
+                    
+                    rel_docs = self.db_manager.get_documents(
+                        self.current_db,
+                        "relationships",
+                        query={"_id": rel_id_query}
+                    )
+                    if rel_docs and len(rel_docs) > 0:
+                        rel_doc = rel_docs[0]
+                except Exception as e:
+                    print(f"获取关系记录失败: {e}")
+                
+                # 获取目标ID
+                target_id = None
+                if rel_doc:
+                    target_id = rel_doc.get('target_id')
+                
+                if self.on_navigate_to_target and target_collection and target_id:
+                    self.on_navigate_to_target(target_collection, target_id)
+                
+        except Exception as e:
+            print(f"处理双击事件失败: {e}")
+            messagebox.showerror("错误", f"导航失败: {e}") 

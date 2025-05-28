@@ -773,22 +773,14 @@ class PaginatedGrid(ttk.Frame):
                 pass
     
     def next_page(self):
-        """Next page"""
+        """Go to next page"""
         if self.current_page < self.total_pages:
-            self.current_page += 1
-            if self.current_view == "grid":
-                self.refresh_grid()
-            else:
-                self.refresh_list()
+            self.go_to_page(self.current_page + 1)
     
     def prev_page(self):
-        """Previous page"""
+        """Go to previous page"""
         if self.current_page > 1:
-            self.current_page -= 1
-            if self.current_view == "grid":
-                self.refresh_grid()
-            else:
-                self.refresh_list()
+            self.go_to_page(self.current_page - 1)
     
     def _update_pagination_controls(self):
         """Update pagination controls"""
@@ -1441,3 +1433,41 @@ class PaginatedGrid(ttk.Frame):
                 json.dump(self.column_config, f, indent=2)
         except Exception as e:
             print(f"Error saving column config: {e}")
+
+    def go_to_page(self, page_number):
+        """跳转到指定页面
+        
+        Args:
+            page_number (int): 页码
+        """
+        if page_number < 1:
+            page_number = 1
+        elif page_number > self.total_pages:
+            page_number = self.total_pages
+            
+        if page_number != self.current_page:
+            self.current_page = page_number
+            
+            # 更新页码输入框
+            if hasattr(self, 'page_entry'):
+                self.page_entry.delete(0, tk.END)
+                self.page_entry.insert(0, str(page_number))
+                
+            # 刷新视图
+            if self.current_view == "grid":
+                self.refresh_grid()
+            else:
+                self.refresh_list()
+                
+            # 更新分页控件
+            self._update_pagination_controls()
+            
+    def next_page(self):
+        """Go to next page"""
+        if self.current_page < self.total_pages:
+            self.go_to_page(self.current_page + 1)
+    
+    def prev_page(self):
+        """Go to previous page"""
+        if self.current_page > 1:
+            self.go_to_page(self.current_page - 1)

@@ -1,7 +1,7 @@
 {
-  "total_size": 18205,
-  "file_count": 8,
+  "total_size": 18397,
+  "file_count": 12,
   "last_cleanup": null,
-  "cache_hits": 88,
-  "cache_misses": 51
+  "cache_hits": 165,
+  "cache_misses": 101
 }

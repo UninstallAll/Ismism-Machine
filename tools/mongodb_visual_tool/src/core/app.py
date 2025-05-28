@@ -51,6 +51,9 @@ class MongoDBViewer(tk.Tk):
         # 初始化关系管理器（创建UI时才会真正创建实例）
         self.relationship_manager = None
         
+        # 当前高亮的文档ID
+        self.highlighted_doc_id = None
+        
         # Create UI
         self.create_ui()
         
@@ -191,7 +194,8 @@ class MongoDBViewer(tk.Tk):
         self.relationship_manager = RelationshipManager(
             self.relationship_frame, 
             self.db_manager, 
-            on_relationship_change=self.refresh_relationships_callback
+            on_relationship_change=self.refresh_relationships_callback,
+            on_navigate_to_target=self.navigate_to_target_document
         )
         
         # 设置关系类型
@@ -377,11 +381,18 @@ class MongoDBViewer(tk.Tk):
             self.paginated_grid.set_schema(None)
             self.update_status(f"获取集合结构失败: {e}")
     
-    def load_collection_data(self):
-        """Load collection data"""
+    def load_collection_data(self, highlight_doc_id=None):
+        """Load collection data
+        
+        Args:
+            highlight_doc_id (str, optional): 需要高亮显示的文档ID
+        """
         if not self.current_db or not self.current_collection or not self.db_manager:
             return
         
+        if highlight_doc_id:
+            self.highlighted_doc_id = highlight_doc_id
+            
         self.update_status(f"Loading {self.current_db}.{self.current_collection} data...")
         
         # Create and start loading thread
@@ -407,6 +418,9 @@ class MongoDBViewer(tk.Tk):
             
         except Exception as e:
             self.after(0, lambda: self.update_status(f"Failed to load data: {str(e)}"))
+            print(f"加载数据失败: {e}")
+            import traceback
+            traceback.print_exc()
     
     def validate_documents_with_files(self, docs):
         """Validate file paths in documents
@@ -462,6 +476,10 @@ class MongoDBViewer(tk.Tk):
         
         doc_count = len(docs)
         self.update_status(f"Loaded {doc_count} documents")
+        
+        # 如果有高亮的文档ID，查找并高亮
+        if self.highlighted_doc_id:
+            self.highlight_document(self.highlighted_doc_id)
     
     def update_status(self, message):
         """Update status bar
@@ -1117,4 +1135,125 @@ MongoDB可视化工具
             enabled = self.cache_enabled.get()
             self.db_manager.set_cache_enabled(enabled)
             status = "启用" if enabled else "禁用"
-            self.update_status(f"缓存已{status}") 
+            self.update_status(f"缓存已{status}")
+    
+    def navigate_to_target_document(self, target_collection, target_id):
+        """导航到目标文档
+        
+        Args:
+            target_collection (str): 目标集合名称
+            target_id (str): 目标文档ID
+        """
+        try:
+            # 保存当前DB，这样我们在导航后可以返回
+            previous_db = self.current_db
+            previous_collection = self.current_collection
+            
+            # 在树中查找目标集合
+            found = False
+            db_nodes = self.db_tree.get_children()
+            
+            for db_node in db_nodes:
+                db_name = self.db_tree.item(db_node, "text")
+                
+                # 获取集合节点
+                collection_nodes = self.db_tree.get_children(db_node)
+                for coll_node in collection_nodes:
+                    coll_name = self.db_tree.item(coll_node, "text")
+                    
+                    if coll_name == target_collection:
+                        # 找到目标集合，选中它
+                        self.db_tree.see(coll_node)
+                        self.db_tree.selection_set(coll_node)
+                        self.db_tree.item(db_node, open=True)  # 确保数据库节点展开
+                        
+                        # 触发选择事件，加载集合数据
+                        self.on_tree_select(None)
+                        
+                        # 记住我们正在查找的ID
+                        self.highlighted_doc_id = target_id
+                        
+                        # 使用loadDocument会设置highlighted_doc_id
+                        self.load_collection_data(target_id)
+                        found = True
+                        break
+                if found:
+                    break
+            
+            if not found:
+                messagebox.showinfo("导航", f"未找到目标集合: {target_collection}")
+            
+        except Exception as e:
+            print(f"导航到目标文档失败: {e}")
+            import traceback
+            traceback.print_exc()
+            messagebox.showerror("导航错误", f"导航到目标文档失败: {e}")
+    
+    def highlight_document(self, doc_id):
+        """高亮显示指定ID的文档
+        
+        Args:
+            doc_id (str): 文档ID
+        """
+        try:
+            # 查找文档
+            target_doc = None
+            target_index = -1
+            
+            for i, doc in enumerate(self.current_docs):
+                doc_id_str = str(doc.get('_id', ''))
+                if doc_id_str == doc_id:
+                    target_doc = doc
+                    target_index = i
+                    break
+            
+            if target_doc:
+                # 计算文档在哪一页
+                if hasattr(self.paginated_grid, 'items_per_page'):
+                    items_per_page = self.paginated_grid.items_per_page
+                    target_page = target_index // items_per_page + 1
+                    
+                    # 跳转到目标页
+                    if hasattr(self.paginated_grid, 'current_page') and self.paginated_grid.current_page != target_page:
+                        self.paginated_grid.go_to_page(target_page)
+                
+                # 如果支持选中，选中文档
+                highlighted = False
+                for card in self.paginated_grid.displayed_cards:
+                    card_id = str(card.doc.get('_id', ''))
+                    if card_id == doc_id:
+                        # 先取消所有选中
+                        for c in self.paginated_grid.displayed_cards:
+                            if hasattr(c, 'set_selected'):
+                                c.set_selected(False)
+                        
+                        # 高亮目标文档
+                        if hasattr(card, 'set_selected'):
+                            card.set_selected(True)
+                            
+                        # 滚动到可见区域
+                        if hasattr(card, 'winfo_y') and hasattr(self.paginated_grid, 'canvas'):
+                            y_pos = card.winfo_y()
+                            self.paginated_grid.canvas.yview_moveto(y_pos / self.paginated_grid.canvas.winfo_height())
+                            
+                        highlighted = True
+                        
+                        # 显示文档详情
+                        self.show_document_details(target_doc)
+                        break
+                
+                if highlighted:
+                    self.update_status(f"已导航到文档: {doc_id}")
+                else:
+                    self.update_status(f"文档已加载，但无法高亮显示: {doc_id}")
+            else:
+                self.update_status(f"未找到文档: {doc_id}")
+            
+            # 重置高亮ID
+            self.highlighted_doc_id = None
+            
+        except Exception as e:
+            print(f"高亮文档失败: {e}")
+            import traceback
+            traceback.print_exc()
+            self.update_status(f"高亮文档失败: {e}") 
