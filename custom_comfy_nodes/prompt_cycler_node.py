@@ -7,7 +7,7 @@ import numpy as np
 class PromptCyclerNode:
     """
     A node that reads prompts from a text file line by line and cycles through them.
-    Each line with a number prefix (like "1.", "2.", etc.) is considered a separate prompt.
+    Each line in the text file is considered a separate prompt.
     """
     
     @classmethod
@@ -43,15 +43,8 @@ class PromptCyclerNode:
             # Read the file
             if os.path.exists(text_file):
                 with open(text_file, 'r', encoding='utf-8') as f:
-                    content = f.read()
-                
-                # Extract numbered lines
-                self.lines = []
-                pattern = r'^\s*\d+\.\s*(.*?)$'
-                for line in content.split('\n'):
-                    match = re.match(pattern, line.strip())
-                    if match:
-                        self.lines.append(match.group(1).strip())
+                    # Read all non-empty lines
+                    self.lines = [line.strip() for line in f.readlines() if line.strip()]
             else:
                 self.lines = ["File not found: " + text_file]
         
