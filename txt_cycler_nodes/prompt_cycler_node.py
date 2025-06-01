@@ -3,11 +3,13 @@ import re
 import json
 from pathlib import Path
 import numpy as np
+import time
 
 class PromptCyclerNode:
     """
     A node that reads prompts from a text file line by line and cycles through them.
     Each line in the text file is considered a separate prompt.
+    The node displays a countdown of remaining uses directly in the UI.
     """
     
     @classmethod
@@ -17,12 +19,15 @@ class PromptCyclerNode:
                 "text_file": ("STRING", {"default": "", "multiline": False}),
                 "uses_per_prompt": ("INT", {"default": 1, "min": 1, "max": 100, "step": 1}),
                 "enable_loop": ("BOOLEAN", {"default": True}),
-                "show_status_in_prompt": ("BOOLEAN", {"default": False}),
+                "reset_counter": ("BOOLEAN", {"default": False}),
             },
+            "optional": {
+                "trigger_next": ("*", {}),  # This can accept any input to trigger counting down
+            }
         }
     
-    RETURN_TYPES = ("STRING", "INT", "INT")
-    RETURN_NAMES = ("prompt", "remaining_uses", "current_line")
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("prompt",)
     FUNCTION = "process"
     CATEGORY = "prompt"
     
@@ -32,12 +37,14 @@ class PromptCyclerNode:
         self.lines = []
         self.last_file = ""
         self.total_uses = 1
+        self.status_text = ""
+        self.last_trigger_time = 0
     
-    def process(self, text_file, uses_per_prompt, enable_loop, show_status_in_prompt):
-        # Reset if file changed
-        if text_file != self.last_file:
+    def process(self, text_file, uses_per_prompt, enable_loop, reset_counter, trigger_next=None):
+        # Reset if file changed or reset_counter is True
+        if text_file != self.last_file or reset_counter:
             self.current_line_index = 0
-            self.remaining_uses = 0
+            self.remaining_uses = uses_per_prompt
             self.last_file = text_file
             self.total_uses = uses_per_prompt
             
@@ -49,12 +56,13 @@ class PromptCyclerNode:
             else:
                 self.lines = ["File not found: " + text_file]
         
-        # If no remaining uses or first run, move to next prompt
+        # Check if we need to move to the next prompt
         if self.remaining_uses <= 0:
             self.remaining_uses = uses_per_prompt
             self.total_uses = uses_per_prompt
+            self.current_line_index += 1
             
-            # Move to next line
+            # Handle looping
             if len(self.lines) > 0:
                 if self.current_line_index >= len(self.lines):
                     if enable_loop:
@@ -67,55 +75,58 @@ class PromptCyclerNode:
         if len(self.lines) > 0 and self.current_line_index < len(self.lines):
             current_prompt = self.lines[self.current_line_index]
         
-        # Create status text
-        status_text = f"[Line: {self.current_line_index + 1}/{len(self.lines)} | Uses: {self.remaining_uses + 1}/{self.total_uses}]"
+        # Update status text for UI display
+        self.status_text = f"Line: {self.current_line_index + 1}/{len(self.lines)} | Remaining: {self.remaining_uses}/{self.total_uses}"
         
-        # Add status to prompt if enabled
-        if show_status_in_prompt:
-            current_prompt = f"{status_text} {current_prompt}"
+        # If trigger_next is provided and different from last time, decrement the counter
+        current_time = time.time()
+        if trigger_next is not None and current_time - self.last_trigger_time > 1.0:
+            self.remaining_uses -= 1
+            self.last_trigger_time = current_time
         
-        # Decrement remaining uses
-        self.remaining_uses -= 1
+        # Add the status directly to the prompt
+        prompt_with_status = f"{current_prompt} [Line: {self.current_line_index + 1}/{len(self.lines)} | Remaining: {self.remaining_uses}/{self.total_uses}]"
         
-        # If remaining uses is 0, prepare to move to next prompt on next call
-        if self.remaining_uses <= 0:
-            self.current_line_index += 1
-        
-        return (current_prompt, self.remaining_uses, self.current_line_index + 1)
+        return (prompt_with_status,)
+    
+    @classmethod
+    def IS_CHANGED(cls, text_file, uses_per_prompt, enable_loop, reset_counter, trigger_next=None):
+        # This ensures the node always updates when trigger_next changes
+        return float("NaN")
 
-# Add a new node that displays the status
-class PromptCyclerDisplayNode:
+# A node that connects to VAE decoder output to trigger prompt cycling
+class PromptCyclerTriggerNode:
     """
-    A node that displays the status of the Prompt Cycler.
+    A node that connects to VAE decoder output to trigger prompt cycling.
     """
     
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "remaining_uses": ("INT", {"default": 0, "min": 0}),
-                "current_line": ("INT", {"default": 1, "min": 1}),
-                "total_lines": ("INT", {"default": 1, "min": 1}),
-                "total_uses": ("INT", {"default": 1, "min": 1}),
+                "images": ("IMAGE",),
+                "prompt_cycler": ("STRING", {"default": "", "multiline": False}),
             },
         }
     
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("status",)
+    RETURN_TYPES = ("IMAGE", "TRIGGER")
+    RETURN_NAMES = ("images", "trigger")
     FUNCTION = "process"
     CATEGORY = "prompt"
     
-    def process(self, remaining_uses, current_line, total_lines, total_uses):
-        status = f"Line: {current_line}/{total_lines} | Uses: {remaining_uses}/{total_uses}"
-        return (status,)
+    def process(self, images, prompt_cycler):
+        # Simply pass through the images and generate a trigger signal
+        # The trigger signal is just the current timestamp
+        trigger = time.time()
+        return (images, trigger)
 
 # Node registration for ComfyUI
 NODE_CLASS_MAPPINGS = {
     "PromptCyclerNode": PromptCyclerNode,
-    "PromptCyclerDisplayNode": PromptCyclerDisplayNode
+    "PromptCyclerTriggerNode": PromptCyclerTriggerNode
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "PromptCyclerNode": "Prompt Cycler",
-    "PromptCyclerDisplayNode": "Prompt Cycler Display"
+    "PromptCyclerTriggerNode": "Prompt Cycler Trigger"
 } 

@@ -6,8 +6,9 @@
 
 1. 按照分段读取输入txt文件，每一行作为单独的提示词
 2. 自动切换：用过一行提示词后，按照设定的使用次数切换到下一行提示词输入
-3. 显示剩余使用次数：在使用过程中会逐渐递减显示剩余使用次数
+3. 直接在提示词中显示剩余使用次数倒计时
 4. 可选循环模式：当读完所有提示词后，可以选择是否重新从第一个提示词开始
+5. 可以连接VAE解码器输出，在图像生成完成后自动减少使用次数
 
 ## 安装方法
 
@@ -21,7 +22,7 @@
    - `text_file`: 提示词文本文件的路径
    - `uses_per_prompt`: 每个提示词使用的次数
    - `enable_loop`: 是否启用循环模式（读完所有提示词后重新开始）
-   - `show_status_in_prompt`: 是否在提示词中显示状态信息（行号和剩余使用次数）
+   - `reset_counter`: 是否重置计数器（重新从第一个提示词开始）
 
 ## 提示词文件格式
 
@@ -35,27 +36,29 @@
 
 空行会被自动忽略。
 
-## 输出
+## 剩余使用次数倒计时显示
 
-节点有三个输出：
-- `prompt`: 当前的提示词文本
-- `remaining_uses`: 当前提示词剩余的使用次数
-- `current_line`: 当前正在使用的提示词行号
+节点会直接在提示词后面显示剩余使用次数和当前行号，格式为：
+```
+提示词内容 [Line: 当前行/总行数 | Remaining: 剩余次数/总次数]
+```
 
-## 显示剩余使用次数
+这样你可以直接看到当前使用的是哪一行提示词，以及还剩多少次使用次数。
 
-有两种方式可以显示剩余使用次数和当前行号：
+## 与VAE解码器连接
 
-1. **在提示词中显示**：启用`show_status_in_prompt`选项，状态信息将直接添加到提示词前面，格式为`[Line: 当前行/总行数 | Uses: 剩余次数/总次数]`
+要实现图像生成完成后自动减少使用次数，可以使用"Prompt Cycler Trigger"节点：
 
-2. **使用显示节点**：使用"Prompt Cycler Display"节点，将Prompt Cycler的`remaining_uses`和`current_line`输出连接到显示节点的输入，并设置总行数和总使用次数。
+1. 将VAE解码器的图像输出连接到"Prompt Cycler Trigger"节点的`images`输入
+2. 将"Prompt Cycler Trigger"节点的`trigger`输出连接到"Prompt Cycler"节点的`trigger_next`输入
+3. 每当有图像通过VAE解码器生成完成，使用次数就会自动减少1
 
 ## 示例工作流
 
 ### 基本用法
 将Prompt Cycler节点的`prompt`输出连接到KSampler的提示词输入，这样每次生成图像时都会按照设定自动切换提示词。
 
-### 显示状态信息
-1. 将Prompt Cycler的`remaining_uses`和`current_line`输出连接到Prompt Cycler Display节点
-2. 设置总行数和总使用次数
-3. 使用Text节点显示状态信息 
+### 自动减少使用次数
+1. 将VAE解码器的图像输出连接到Prompt Cycler Trigger节点
+2. 将Prompt Cycler Trigger的trigger输出连接到Prompt Cycler的trigger_next输入
+3. 这样每生成一张图像，使用次数就会自动减少1，当使用次数减少到0时，会自动切换到下一行提示词 
