@@ -1,0 +1,6 @@
+torch
+transformers
+timm
+Pillow
+gradio
+git+https://github.com/pharmapsychotic/clip-interrogator.git 
