@@ -14,7 +14,7 @@ app.use(cors());
 app.use(express.json());
 
 // 路由
-app.use('/api', artMovementRoutes);
+app.use('/api/art-movements', artMovementRoutes);
 app.use('/api/movements', movementsRoutes);
 
 const PORT = process.env.PORT || 5000;

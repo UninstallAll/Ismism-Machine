@@ -1,0 +1,290 @@
+[
+  {
+    "_id": "6840bc9983a1a567c05d5036",
+    "name": "Molecular Gastronomy Art Movement",
+    "start_year": 2012,
+    "end_year": null,
+    "description": "At the intersection of culinary art and science, the Molecular Gastronomy Art Movement explores the aesthetic possibilities of food. This movement creates multisensory dining experiences through scientific techniques and artistic presentation. The theoretical foundation merges Hervé This's molecular gastronomy, Brillat-Savarin's gastronomy philosophy, and Marinetti's futurist cooking, forming a framework for culinary art. Chefs and artists create innovative dining experiences through molecular transformation, sensory design, and narrative gastronomy.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5037",
+    "name": "Hyper-Transparency Governance Platform",
+    "start_year": 2020,
+    "end_year": null,
+    "description": "In the era of information democracy, the Hyper-Transparency Governance Platform explores new models of institutional transparency. This platform creates radical transparency in art institutions through open data and participatory governance. The theoretical foundation merges Habermas's public sphere theory, Lawrence Lessig's open source philosophy, and Elinor Ostrom's institutional analysis, forming a framework for transparent governance. Artists and administrators establish transparent institutional operations through open decision-making systems, financial transparency platforms, and participatory governance mechanisms.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5038",
+    "name": "Quantum Computing Aesthetics",
+    "start_year": 2029,
+    "end_year": null,
+    "description": "At the frontier of computational art, Quantum Computing Aesthetics explores the artistic possibilities of quantum computation. This movement creates art experiences that harness quantum phenomena through quantum algorithms and entanglement. The theoretical foundation merges David Deutsch's quantum computation theory, Donna Haraway's posthuman theory, and Whitehead's process philosophy, forming a framework for quantum aesthetics. Artists create works that utilize quantum properties through quantum algorithm composition, entanglement visualization, and superposition-based generative art.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5039",
+    "name": "Speculative Design Movement",
+    "start_year": 2015,
+    "end_year": null,
+    "description": "In the context of future uncertainty, the Speculative Design Movement explores possible futures through critical design practices. This movement creates artifacts from alternative futures to provoke reflection on present technological and social trajectories. The theoretical foundation merges Anthony Dunne and Fiona Raby's critical design, Fredric Jameson's utopian theory, and Bruno Latour's actor-network theory, forming a framework for speculative design. Designers create provocative future scenarios through design fiction, alternative reality artifacts, and critical future narratives.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5040",
+    "name": "Neuro-Phenomenological Art",
+    "start_year": 2023,
+    "end_year": null,
+    "description": "At the intersection of neuroscience and phenomenology, Neuro-Phenomenological Art explores the relationship between brain activity and subjective experience. This movement creates art experiences that bridge objective neural processes and subjective consciousness through neurofeedback and perceptual manipulation. The theoretical foundation merges Francisco Varela's neurophenomenology, Maurice Merleau-Ponty's phenomenology of perception, and Antonio Damasio's somatic marker hypothesis, forming a framework for experiential neuroscience. Artists create works that make neural processes perceptible through brain-computer interfaces, neural data visualization, and consciousness-altering installations.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5041",
+    "name": "Biomorphic Architecture School",
+    "start_year": 2018,
+    "end_year": null,
+    "description": "Inspired by natural forms and processes, the Biomorphic Architecture School explores the integration of biological principles into architectural design. This school creates buildings with life-like characteristics through biomimetic design and organic form generation. The theoretical foundation merges D'Arcy Thompson's morphology studies, Lynn Margulis's symbiogenesis theory, and Christopher Alexander's pattern language, forming a framework for biomorphic design. Architects create structures with biological characteristics through evolutionary form-finding, biological growth simulation, and organic material applications.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5042",
+    "name": "Autonomous Art System Theory",
+    "start_year": 2022,
+    "end_year": null,
+    "description": "In the age of artificial intelligence, Autonomous Art System Theory explores the emergence of machine creativity. This theory examines self-generating art systems that operate with minimal human intervention. The theoretical foundation merges Niklas Luhmann's social systems theory, Katherine Hayles' posthumanism, and Manuel DeLanda's assemblage theory, forming a framework for autonomous art. Researchers and artists create self-evolving art systems through artificial intelligence, complex adaptive systems, and emergent behavior models.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5043",
+    "name": "Holistic Ecology Design Movement",
+    "start_year": 2017,
+    "end_year": null,
+    "description": "In response to environmental fragmentation, the Holistic Ecology Design Movement proposes integrated approaches to ecological design. This movement creates regenerative systems that harmonize human activities with natural processes. The theoretical foundation merges Fritjof Capra's systems theory, John Todd's living machines concept, and Sim Van der Ryn's ecological design principles, forming a framework for holistic ecology. Designers create integrated ecological systems through whole systems thinking, regenerative design, and closed-loop resource cycles.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5044",
+    "name": "Artificial Mythology School",
+    "start_year": 2024,
+    "end_year": null,
+    "description": "In the post-religious era, the Artificial Mythology School explores the creation of new mythological systems. This school constructs contemporary myths through digital narrative and symbolic creation. The theoretical foundation merges Joseph Campbell's monomyth, Roland Barthes' mythology theory, and Donna Haraway's cyborg theory, forming a framework for contemporary mythology. Artists create new mythological systems through world-building, symbolic language creation, and ritual design.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5045",
+    "name": "Micro-Utopian Design Movement",
+    "start_year": 2016,
+    "end_year": null,
+    "description": "Against the backdrop of grand narrative failures, the Micro-Utopian Design Movement proposes small-scale utopian interventions. This movement creates localized spaces of possibility through participatory design and community engagement. The theoretical foundation merges Ernst Bloch's concrete utopia, Henri Lefebvre's right to the city, and John Dewey's pragmatic aesthetics, forming a framework for achievable utopias. Designers create small-scale utopian projects through tactical urbanism, community co-creation, and temporary autonomous zones.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5046",
+    "name": "Quantum Consciousness Art",
+    "start_year": 2026,
+    "end_year": null,
+    "description": "At the intersection of quantum physics and consciousness studies, Quantum Consciousness Art explores the relationship between quantum phenomena and human awareness. This movement creates art experiences that engage with quantum interpretations of consciousness through experimental installations and perceptual explorations. The theoretical foundation merges Roger Penrose's quantum consciousness theory, David Bohm's implicate order, and Stuart Hameroff's orchestrated objective reduction, forming a framework for quantum mind art. Artists create works that explore quantum consciousness through perceptual experiments, consciousness-altering environments, and quantum-influenced installations.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5047",
+    "name": "Algorithmic Justice Art Movement",
+    "start_year": 2021,
+    "end_year": null,
+    "description": "In the context of algorithmic governance, the Algorithmic Justice Art Movement explores the ethics of automated decision-making. This movement creates works that reveal and challenge algorithmic bias through critical code art and data visualization. The theoretical foundation merges Cathy O'Neil's weapons of math destruction concept, Safiya Noble's algorithmic oppression theory, and Virginia Eubanks' digital discrimination analysis, forming a framework for algorithmic justice. Artists create works that expose algorithmic bias through reverse engineering, counter-algorithmic interventions, and critical data visualization.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5048",
+    "name": "Hyper-Dimensional Sculpture School",
+    "start_year": 2025,
+    "end_year": null,
+    "description": "At the frontier of mathematical art, the Hyper-Dimensional Sculpture School explores the visualization of higher-dimensional spaces. This school creates tangible representations of mathematical concepts that transcend three-dimensional space. The theoretical foundation merges Linda Henderson's fourth dimension in art, Thomas Banchoff's dimensional geometry, and Edwin Abbott's dimensional narrative, forming a framework for hyper-dimensional sculpture. Artists create physical manifestations of higher dimensions through dimensional projection techniques, topological transformations, and geometric algorithms.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5049",
+    "name": "Synthetic Biology Art Movement",
+    "start_year": 2019,
+    "end_year": null,
+    "description": "At the intersection of art and biotechnology, the Synthetic Biology Art Movement explores the creative possibilities of engineered life. This movement creates living artworks through genetic modification and biological design. The theoretical foundation merges Eduardo Kac's bioart theory, Donna Haraway's cyborg manifesto, and Craig Venter's synthetic biology principles, forming a framework for living art. Artists create novel biological entities through genetic engineering, synthetic biology techniques, and tissue culture.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5050",
+    "name": "Augmented Performance Art",
+    "start_year": 2018,
+    "end_year": null,
+    "description": "In the era of mixed reality, Augmented Performance Art explores the integration of digital and physical performance spaces. This movement creates hybrid performance experiences through augmented reality and digital overlays on physical actions. The theoretical foundation merges Steve Dixon's digital performance theory, Brenda Laurel's computers as theatre concept, and Philip Auslander's liveness theory, forming a framework for augmented performance. Artists create performances that blend physical and virtual elements through augmented reality interfaces, motion capture systems, and real-time digital transformations.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5051",
+    "name": "Post-Anthropocene Design Theory",
+    "start_year": 2023,
+    "end_year": null,
+    "description": "In response to ecological crisis, Post-Anthropocene Design Theory proposes design approaches that transcend human-centered thinking. This theory creates design frameworks that acknowledge the agency of non-human actors through more-than-human design methods. The theoretical foundation merges Timothy Morton's hyperobjects, Jane Bennett's vital materialism, and Bruno Latour's actor-network theory, forming a framework for post-anthropocentric design. Designers create works that decenter human experience through multispecies design, geological time-scale thinking, and non-human centered interfaces.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5052",
+    "name": "Neuro-Symbolic Art Movement",
+    "start_year": 2027,
+    "end_year": null,
+    "description": "At the intersection of neural networks and symbolic reasoning, the Neuro-Symbolic Art Movement explores the integration of connectionist and symbolic AI in artistic creation. This movement creates works that combine the pattern recognition capabilities of neural networks with the logical structure of symbolic systems. The theoretical foundation merges Gary Marcus's hybrid AI theory, Douglas Hofstadter's symbolic cognition, and Marvin Minsky's society of mind, forming a framework for neuro-symbolic art. Artists create hybrid AI art systems through the integration of neural networks, symbolic reasoning engines, and knowledge representation structures.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5053",
+    "name": "Quantum Social Sculpture",
+    "start_year": 2028,
+    "end_year": null,
+    "description": "Extending Joseph Beuys's social sculpture concept into the quantum era, Quantum Social Sculpture explores collective consciousness through principles of quantum physics. This movement creates social artworks that emphasize entanglement and non-locality in human relationships. The theoretical foundation merges Beuys's social sculpture theory, Karen Barad's agential realism, and David Bohm's implicate order, forming a framework for quantum social practice. Artists create participatory works that manifest quantum principles through entangled social networks, non-local collaboration systems, and quantum randomness in social processes.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5054",
+    "name": "Regenerative Media Art",
+    "start_year": 2021,
+    "end_year": null,
+    "description": "In response to the environmental impact of digital technologies, Regenerative Media Art explores sustainable approaches to media creation. This movement develops art practices that restore rather than deplete ecological systems through conscious technological choices. The theoretical foundation merges Joanna Berzowska's slow technology, Jussi Parikka's geology of media, and John Thackara's clean design, forming a framework for regenerative media. Artists create environmentally positive media works through energy-harvesting technologies, carbon-negative computing, and ecosystem-integrated media.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5055",
+    "name": "Hyperlocal Design Movement",
+    "start_year": 2019,
+    "end_year": null,
+    "description": "Against the backdrop of globalization, the Hyperlocal Design Movement explores the radical potential of locality in design practice. This movement creates deeply site-specific design solutions through intensive engagement with local materials, knowledge, and ecosystems. The theoretical foundation merges Ezio Manzini's cosmopolitan localism, Arturo Escobar's autonomous design, and Lucy Lippard's lure of the local, forming a framework for hyperlocal practice. Designers create works deeply embedded in place through bioregional material sourcing, indigenous knowledge collaboration, and local production systems.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5056",
+    "name": "Quantum Material Design School",
+    "start_year": 2026,
+    "end_year": null,
+    "description": "At the frontier of materials science, the Quantum Material Design School explores the artistic potential of quantum material properties. This school creates materials with unprecedented characteristics through quantum engineering and nanoscale manipulation. The theoretical foundation merges Neri Oxman's material ecology, Donna Haraway's material-semiotic theory, and Richard Feynman's quantum mechanics, forming a framework for quantum material design. Artists and scientists develop materials with quantum properties through quantum dot synthesis, topological material engineering, and quantum coherence manipulation.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5057",
+    "name": "Deep Time Art Movement",
+    "start_year": 2022,
+    "end_year": null,
+    "description": "In response to the acceleration of contemporary life, the Deep Time Art Movement explores geological and cosmic temporalities. This movement creates works that operate on vastly extended time scales through durational processes and geological materials. The theoretical foundation merges Siegfried Zielinski's deep time of media, Jussi Parikka's geology of media, and Trevor Paglen's orbital reflector concept, forming a framework for deep time art. Artists create works that unfold over extreme durations through geological processes, evolutionary systems, and cosmic-scale interventions.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5058",
+    "name": "Cognitive Architecture Movement",
+    "start_year": 2020,
+    "end_year": null,
+    "description": "At the intersection of neuroscience and architectural design, the Cognitive Architecture Movement explores how built environments affect mental processes. This movement creates spaces that actively engage with human cognition through neuro-informed design principles. The theoretical foundation merges Harry Francis Mallgrave's neuroaesthetics, Juhani Pallasmaa's embodied architecture, and Antonio Damasio's somatic marker hypothesis, forming a framework for cognitive architecture. Architects create spaces that interact with cognitive processes through sensory calibration, cognitive ergonomics, and neurological response design.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5059",
+    "name": "Algorithmic Ecology Movement",
+    "start_year": 2024,
+    "end_year": null,
+    "description": "At the intersection of computation and environmental systems, the Algorithmic Ecology Movement explores the application of algorithmic thinking to ecological challenges. This movement creates computational systems that model and interact with natural processes through ecological algorithms and environmental data processing. The theoretical foundation merges James Lovelock's Gaia theory, Neri Oxman's material ecology, and Kevin Kelly's out-of-control systems, forming a framework for algorithmic ecology. Artists and scientists develop computational ecosystems through environmental sensing networks, ecological simulation algorithms, and adaptive environmental response systems.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5060",
+    "name": "Embodied Cognition Design School",
+    "start_year": 2017,
+    "end_year": null,
+    "description": "Drawing on cognitive science research, the Embodied Cognition Design School explores how physical interactions shape thought and experience. This school creates designs that engage the whole body as a thinking entity through sensorimotor-informed design approaches. The theoretical foundation merges Andy Clark's extended mind theory, Alva Noë's enactive perception, and George Lakoff's embodied metaphor theory, forming a framework for embodied design. Designers create works that activate bodily cognition through movement-based interfaces, haptic feedback systems, and full-body engagement environments.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5061",
+    "name": "Neuromorphic Computing Art",
+    "start_year": 2025,
+    "end_year": null,
+    "description": "Inspired by the structure and function of the brain, Neuromorphic Computing Art explores creative applications of brain-inspired computing. This movement creates artworks that utilize neuromorphic hardware and algorithms through spike-based processing and artificial neural dynamics. The theoretical foundation merges Carver Mead's neuromorphic engineering, Gerald Edelman's neural Darwinism, and Karl Friston's free energy principle, forming a framework for neuromorphic art. Artists create works that harness brain-like computation through spike-based generative systems, artificial sensory processing networks, and self-organizing computational structures.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5062",
+    "name": "Metamaterial Design School",
+    "start_year": 2023,
+    "end_year": null,
+    "description": "At the frontier of materials engineering, the Metamaterial Design School explores artificially structured materials with properties not found in nature. This school creates materials with extraordinary behaviors through precise micro and nanostructural design. The theoretical foundation merges John Pendry's transformation optics, Nicholas Fang's acoustic metamaterials research, and Nader Engheta's near-zero-index materials theory, forming a framework for metamaterial design. Designers create materials with unprecedented properties through structural engineering at multiple scales, computational material design, and advanced fabrication techniques.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5063",
+    "name": "Multispecies Design Movement",
+    "start_year": 2022,
+    "end_year": null,
+    "description": "In response to the ecological crisis and species extinction, the Multispecies Design Movement explores collaborative design with non-human species. This movement creates environments and systems that benefit multiple species through interspecies collaboration and ecological thinking. The theoretical foundation merges Donna Haraway's companion species concept, Eduardo Kohn's anthropology beyond the human, and Jakob von Uexküll's umwelt theory, forming a framework for multispecies design. Designers create works that facilitate interspecies cooperation through animal architecture, plant-human interfaces, and microbial co-design systems.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5064",
+    "name": "Quantum Information Art",
+    "start_year": 2029,
+    "end_year": null,
+    "description": "At the frontier of quantum computing, Quantum Information Art explores the creative potential of quantum information principles. This movement creates artworks that utilize quantum phenomena such as superposition, entanglement, and quantum randomness. The theoretical foundation merges Seth Lloyd's quantum information theory, Scott Aaronson's quantum complexity theory, and Karen Barad's agential realism, forming a framework for quantum information art. Artists create works that harness quantum properties through quantum random number generators, quantum entanglement experiments, and quantum algorithm compositions.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5065",
+    "name": "Biosemiotic Design School",
+    "start_year": 2021,
+    "end_year": null,
+    "description": "Drawing on the study of signs in living systems, the Biosemiotic Design School explores meaning-making processes across species boundaries. This school creates designs that recognize and engage with non-human semiotic systems through interspecies communication frameworks. The theoretical foundation merges Thomas Sebeok's zoosemiotics, Jesper Hoffmeyer's biosemiotics, and Eduardo Kohn's anthropology beyond the human, forming a framework for biosemiotic design. Designers create works that facilitate cross-species meaning exchange through animal-computer interfaces, plant signaling systems, and microbial communication platforms.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5066",
+    "name": "Synthetic Biology Art Movement",
+    "start_year": 2020,
+    "end_year": null,
+    "description": "At the intersection of biology and engineering, the Synthetic Biology Art Movement explores the creative potential of designed living systems. This movement creates artworks that utilize synthetic biology techniques through genetic design, metabolic engineering, and biocomputation. The theoretical foundation merges Drew Endy's biological engineering principles, Alexandra Daisy Ginsberg's synthetic aesthetics, and Oron Catts's contestable design, forming a framework for synthetic biology art. Artists create living artworks through genetic circuit design, engineered microorganisms, and designed metabolic pathways.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5067",
+    "name": "Computational Animism Movement",
+    "start_year": 2024,
+    "end_year": null,
+    "description": "Drawing on indigenous ontologies and computational theory, the Computational Animism Movement explores the attribution of spirit and agency to computational systems. This movement creates works that reimagine digital technologies through animistic frameworks through algorithmic spirits, digital entities, and computational rituals. The theoretical foundation merges Arturo Escobar's pluriversal design, Jason Edward Lewis's indigenous AI, and Jane Bennett's vibrant matter theory, forming a framework for computational animism. Artists create digital entities with perceived personhood through autonomous agent systems, algorithmic ritual design, and digital spirit interfaces.",
+    "representative_artists": [],
+    "notable_artworks": []
+  }
+] 

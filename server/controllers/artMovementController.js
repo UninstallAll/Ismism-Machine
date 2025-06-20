@@ -1,76 +1,178 @@
-const Movement = require('../models/Movement');
-const Artist = require('../models/Artist');
-const Artwork = require('../models/Artwork');
+const mongoose = require('mongoose');
+const ArtMovement = require('../models/ArtMovement');
 
-// 获取所有艺术运动数据，包括相关的艺术家和作品信息
+/**
+ * Get all art movements
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response with art movements
+ */
 exports.getAllArtMovements = async (req, res) => {
   try {
-    const movements = await Movement.find();
-    const enrichedMovements = await Promise.all(movements.map(async (movement) => {
-      // 获取相关艺术家信息
-      const artists = await Artist.find({
-        _id: { $in: movement.representative_artists }
-      });
-      
-      // 获取相关作品信息
-      const artworks = await Artwork.find({
-        _id: { $in: movement.notable_artworks }
-      });
+    const artMovements = await ArtMovement.find({})
+      .select('name description tags') // Return only essential fields for list view
+      .sort({ name: 1 });
+    
+    return res.status(200).json({
+      success: true,
+      count: artMovements.length,
+      data: artMovements
+    });
+  } catch (err) {
+    console.error('Error fetching art movements:', err);
+    return res.status(500).json({
+      success: false,
+      error: 'Server error'
+    });
+  }
+};
 
-      // 处理新的images数据结构
-      const processedImages = artworks.reduce((acc, artwork) => {
-        if (artwork.images && artwork.images.length > 0) {
-          // 如果images是对象数组，提取url属性
-          const imageUrls = artwork.images.map(img => typeof img === 'object' && img.url ? img.url : img);
-          return [...acc, ...imageUrls];
-        }
-        return acc;
-      }, []);
+/**
+ * Get a single art movement by ID
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response with art movement details
+ */
+exports.getArtMovementById = async (req, res) => {
+  try {
+    const artMovement = await ArtMovement.findById(req.params.id);
+    
+    if (!artMovement) {
+      return res.status(404).json({
+        success: false,
+        error: 'Art movement not found'
+      });
+    }
+    
+    return res.status(200).json({
+      success: true,
+      data: artMovement
+    });
+  } catch (err) {
+    console.error('Error fetching art movement:', err);
+    
+    // Check if error is due to invalid ObjectId
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({
+        success: false,
+        error: 'Art movement not found'
+      });
+    }
+    
+    return res.status(500).json({
+      success: false,
+      error: 'Server error'
+    });
+  }
+};
 
-      // 返回与IArtStyle接口匹配的数据结构
-      return {
-        id: movement._id,
-        title: movement.name,
-        year: movement.start_year,
-        description: movement.description,
-        characteristics: [], // 默认为空数组
-        artists: artists.map(artist => artist.name),
-        images: processedImages, // 使用处理后的图片URL数组
-        period: {
-          start: movement.start_year,
-          end: movement.end_year || new Date().getFullYear()
-        },
-        artworks: artworks.map(artwork => ({
-          id: artwork._id,
-          title: artwork.title,
-          year: artwork.year_created || movement.start_year,
-          artist: artists.find(a => a._id.toString() === artwork.artist_id?.toString())?.name || '未知艺术家',
-          imageUrl: artwork.images && artwork.images.length > 0 ? 
-            (typeof artwork.images[0] === 'object' ? artwork.images[0].url : artwork.images[0]) : '',
-          description: artwork.description,
-          medium: artwork.medium,
-          location: artwork.location,
-          // 添加完整的图片信息
-          fullImages: artwork.images
-        })),
-        keyArtists: artists.map(artist => ({
-          id: artist._id,
-          name: artist.name,
-          birthYear: artist.birth_year,
-          deathYear: artist.death_year,
-          nationality: artist.nationality,
-          biography: artist.biography
-        })),
-        styleMovement: movement.name,
-        influences: [],
-        influencedBy: [],
-        tags: []
-      };
+/**
+ * Get art movements as a timeline
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response with timeline data
+ */
+exports.getArtMovementsTimeline = async (req, res) => {
+  try {
+    const artMovements = await ArtMovement.find({})
+      .select('name description start_year end_year')
+      .sort({ start_year: 1 });
+    
+    const timeline = artMovements.map(movement => ({
+      id: movement._id,
+      name: movement.name,
+      description: movement.description.substring(0, 150) + '...',
+      startYear: movement.start_year || 2000, // Default to contemporary if no date
+      endYear: movement.end_year || 2023
     }));
+    
+    return res.status(200).json({
+      success: true,
+      count: timeline.length,
+      data: timeline
+    });
+  } catch (err) {
+    console.error('Error fetching art movements timeline:', err);
+    return res.status(500).json({
+      success: false,
+      error: 'Server error'
+    });
+  }
+};
 
-    res.json(enrichedMovements);
-  } catch (error) {
-    console.error('Error fetching art movements:', error);
-    res.status(500).json({ message: 'Error fetching art movements' });
+/**
+ * Search art movements by query
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response with search results
+ */
+exports.searchArtMovements = async (req, res) => {
+  try {
+    const { query } = req.query;
+    
+    if (!query) {
+      return res.status(400).json({
+        success: false,
+        error: 'Search query is required'
+      });
+    }
+    
+    // Create a text index for full-text search
+    const searchResults = await ArtMovement.find({
+      $or: [
+        { name: { $regex: query, $options: 'i' } },
+        { description: { $regex: query, $options: 'i' } },
+        { tags: { $regex: query, $options: 'i' } }
+      ]
+    }).select('name description tags');
+    
+    return res.status(200).json({
+      success: true,
+      count: searchResults.length,
+      data: searchResults
+    });
+  } catch (err) {
+    console.error('Error searching art movements:', err);
+    return res.status(500).json({
+      success: false,
+      error: 'Server error'
+    });
+  }
+};
+
+/**
+ * Filter art movements by tags
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response with filtered movements
+ */
+exports.filterByTags = async (req, res) => {
+  try {
+    const { tags } = req.query;
+    
+    if (!tags) {
+      return res.status(400).json({
+        success: false,
+        error: 'Tags are required for filtering'
+      });
+    }
+    
+    const tagArray = tags.split(',').map(tag => tag.trim().toLowerCase());
+    
+    const filteredMovements = await ArtMovement.find({
+      tags: { $in: tagArray }
+    }).select('name description tags');
+    
+    return res.status(200).json({
+      success: true,
+      count: filteredMovements.length,
+      data: filteredMovements
+    });
+  } catch (err) {
+    console.error('Error filtering art movements:', err);
+    return res.status(500).json({
+      success: false,
+      error: 'Server error'
+    });
   }
 }; 

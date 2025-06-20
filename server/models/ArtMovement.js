@@ -16,6 +16,17 @@ const ArtMovementSchema = new Schema({
   description: {
     type: String
   },
+  theoretical_foundation: {
+    type: String
+  },
+  context: {
+    type: String
+  },
+  characteristics: [String],
+  forms: {
+    type: String
+  },
+  tags: [String],
   representative_artists: [{
     type: Schema.Types.ObjectId,
     ref: 'Artist'
@@ -31,6 +42,7 @@ const ArtMovementSchema = new Schema({
 // 创建索引
 ArtMovementSchema.index({ name: 1 });
 ArtMovementSchema.index({ start_year: 1, end_year: 1 });
+ArtMovementSchema.index({ tags: 1 });
 
 const ArtMovement = mongoose.model('ArtMovement', ArtMovementSchema);
 

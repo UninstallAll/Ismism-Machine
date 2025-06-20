@@ -1,0 +1,65 @@
+[
+  {
+    "_id": "6840bc9983a1a567c05d5068",
+    "name": "Xenodesign Movement",
+    "start_year": 2027,
+    "end_year": null,
+    "description": "At the edge of human comprehension, the Xenodesign Movement explores design approaches that engage with radical alterity and the fundamentally alien. This movement creates works that attempt to transcend human perceptual and cognitive limitations through non-anthropocentric design methods. The theoretical foundation merges Eugene Thacker's cosmic pessimism, Luciana Parisi's alien reason, and Benjamin Bratton's stack theory, forming a framework for xenodesign. Designers create works that manifest alien logics through machine-generated aesthetics, incomputable forms, and non-human sensory experiences.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5069",
+    "name": "Speculative Realist Art School",
+    "start_year": 2019,
+    "end_year": null,
+    "description": "Drawing on contemporary philosophy, the Speculative Realist Art School explores object-oriented ontology and non-correlationist approaches to art. This school creates works that attempt to engage with reality beyond human perception through object-oriented aesthetics. The theoretical foundation merges Graham Harman's object-oriented ontology, Quentin Meillassoux's speculative materialism, and Timothy Morton's hyperobjects, forming a framework for speculative realist art. Artists create works that manifest object autonomy through withdrawn object installations, hyperobject visualizations, and non-anthropocentric aesthetic systems.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5070",
+    "name": "Algorithmic Governance Art",
+    "start_year": 2023,
+    "end_year": null,
+    "description": "In response to the increasing role of algorithms in social control, Algorithmic Governance Art critically examines computational power structures. This movement creates works that expose and intervene in algorithmic governance systems through tactical media approaches. The theoretical foundation merges Antoinette Rouvroy's algorithmic governmentality, Wendy Hui Kyong Chun's programmed visions, and Alexander Galloway's protocol theory, forming a framework for algorithmic governance art. Artists create works that reveal computational control through algorithm auditing projects, counter-surveillance systems, and governance algorithm interventions.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5071",
+    "name": "Posthuman Performance School",
+    "start_year": 2021,
+    "end_year": null,
+    "description": "Beyond the boundaries of the human body, the Posthuman Performance School explores expanded embodiment and non-human performance. This school creates performances that transcend traditional human physicality through technological and biological extensions. The theoretical foundation merges Rosi Braidotti's posthuman theory, Donna Haraway's cyborg manifesto, and N. Katherine Hayles's posthuman body, forming a framework for posthuman performance. Artists create works that manifest expanded embodiment through human-machine performances, interspecies collaborations, and distributed agency works.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5072",
+    "name": "Technosomatic Art Movement",
+    "start_year": 2022,
+    "end_year": null,
+    "description": "At the intersection of technology and embodied cognition, the Technosomatic Art Movement explores the reciprocal relationship between technological systems and bodily experience. This movement creates works that investigate how technologies reshape somatic experience through embodied technological interfaces. The theoretical foundation merges Mark Hansen's bodies in code, Richard Shusterman's somaesthetics, and Lucy Suchman's situated action, forming a framework for technosomatic art. Artists create works that manifest the technological mediation of embodiment through haptic interfaces, proprioceptive technologies, and somatic computing systems.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5073",
+    "name": "Climate Fiction Design Movement",
+    "start_year": 2020,
+    "end_year": null,
+    "description": "In response to the climate crisis, the Climate Fiction Design Movement explores possible climate futures through designed scenarios and artifacts. This movement creates speculative designs that materialize potential climate realities through narrative-driven design approaches. The theoretical foundation merges Amitav Ghosh's climate fiction theory, Anthony Dunne and Fiona Raby's speculative design, and Rob Nixon's slow violence concept, forming a framework for climate fiction design. Designers create tangible manifestations of climate futures through climate scenario artifacts, adaptation technology prototypes, and climate future experience designs.",
+    "representative_artists": [],
+    "notable_artworks": []
+  },
+  {
+    "_id": "6840bc9983a1a567c05d5074",
+    "name": "Decolonial Computing Movement",
+    "start_year": 2018,
+    "end_year": null,
+    "description": "Against the backdrop of technological hegemony, the Decolonial Computing Movement challenges Western technological paradigms and explores alternative computing traditions. This movement creates computational systems that embody non-Western epistemologies through culturally situated computing practices. The theoretical foundation merges Arturo Escobar's designs for the pluriverse, Walter Mignolo's decolonial theory, and Linda Tuhiwai Smith's decolonizing methodologies, forming a framework for decolonial computing. Artists and technologists create works that manifest alternative technological worldviews through indigenous computing systems, non-Western algorithmic practices, and culturally situated digital tools.",
+    "representative_artists": [],
+    "notable_artworks": []
+  }
+] 
